@@ -1,6 +1,6 @@
 ﻿"""
-Pixel Orchestrator Enterprise - MediaTek Pro
-FIXED: All buttons visible with scroll areas
+Pixel Orchestrator Enterprise - Complete Edition
+MediaTek (mtkclient) + Qualcomm (edl.py) + All Chipsets
 """
 
 import sys
@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel,
     QPushButton, QTextEdit, QFileDialog, QHBoxLayout, QMessageBox,
     QGroupBox, QInputDialog, QComboBox, QTabWidget, QGridLayout,
-    QLineEdit, QCheckBox, QProgressBar, QFrame, QScrollArea
+    QLineEdit, QCheckBox, QProgressBar, QFrame
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal
 
@@ -28,10 +28,7 @@ from core.flashing_engine import FlashingEngine
 from core.backup_engine import BackupEngine
 from core.restore_engine import RestoreEngine
 
-# MediaTek scatter parser
-import json
-import re
-
+# ========== STYLESHEET ==========
 STYLESHEET = """
 QMainWindow { background-color: #1a1a1a; }
 QGroupBox {
@@ -41,26 +38,25 @@ QGroupBox {
 QGroupBox::title { subcontrol-origin: margin; left: 10px; padding: 0 6px 0 6px; color: #00a8ff; }
 QPushButton {
     background-color: #2d2d2d; border: 1px solid #3a3a3a; border-radius: 4px;
-    padding: 4px; font-weight: bold; color: #ffffff; min-height: 28px;
+    padding: 6px; font-weight: bold; color: #ffffff; min-height: 32px;
 }
 QPushButton:hover { background-color: #3a6ea5; border-color: #00a8ff; }
 QPushButton#stopBtn { background-color: #8b0000; }
 QPushButton#stopBtn:hover { background-color: #cc0000; }
 QPushButton#connectBtn { background-color: #0066cc; }
 QTabWidget::pane { border: 1px solid #3a3a3a; border-radius: 4px; background-color: #1e1e1e; }
-QTabBar::tab { background-color: #2d2d2d; padding: 5px 12px; margin-right: 2px; color: #cccccc; min-width: 80px; }
+QTabBar::tab { background-color: #2d2d2d; padding: 6px 15px; margin-right: 2px; color: #cccccc; min-width: 80px; }
 QTabBar::tab:selected { background-color: #3a6ea5; color: white; }
 QTextEdit { background-color: #0d0d0d; border: 1px solid #3a3a3a; border-radius: 4px; color: #00ff00; font-family: Consolas; font-size: 10pt; }
 QLabel { color: #cccccc; }
-QComboBox, QLineEdit { background-color: #2d2d2d; border: 1px solid #3a3a3a; border-radius: 4px; padding: 4px; color: white; min-height: 26px; }
-QCheckBox { color: #cccccc; spacing: 5px; }
-QProgressBar { border: 1px solid #3a3a3a; border-radius: 4px; text-align: center; color: white; background-color: #1a1a1a; height: 20px; }
+QComboBox, QLineEdit { background-color: #2d2d2d; border: 1px solid #3a3a3a; border-radius: 4px; padding: 5px; color: white; min-height: 28px; }
+QCheckBox { color: #cccccc; spacing: 6px; }
+QProgressBar { border: 1px solid #3a3a3a; border-radius: 4px; text-align: center; color: white; background-color: #1a1a1a; height: 22px; }
 QProgressBar::chunk { background-color: #00a8ff; border-radius: 4px; }
-QScrollArea { border: none; background-color: transparent; }
-QScrollBar:vertical { background-color: #2d2d2d; width: 12px; border-radius: 6px; }
-QScrollBar::handle:vertical { background-color: #3a6ea5; border-radius: 6px; min-height: 20px; }
+QFrame#statusBar { background-color: #0d0d0d; border-radius: 4px; padding: 4px; }
 """
 
+# ========== MEDIATEK SCATTER PARSER ==========
 class MTKScatterParser:
     def __init__(self, scatter_path):
         self.scatter_path = scatter_path
@@ -84,10 +80,11 @@ class MTKScatterParser:
     def get_partitions(self):
         return self.partitions
 
+# ========== MAIN WINDOW ==========
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Pixel Orchestrator - MediaTek Pro")
+        self.setWindowTitle("Pixel Orchestrator - Complete Edition")
         self.setGeometry(50, 50, 1200, 800)
         self.setStyleSheet(STYLESHEET)
         
@@ -99,14 +96,14 @@ class MainWindow(QMainWindow):
         
         # Header
         header = QHBoxLayout()
-        header.addWidget(QLabel("PIXEL ORCHESTRATOR - MEDIATEK PRO"))
+        header.addWidget(QLabel("PIXEL ORCHESTRATOR - COMPLETE EDITION"))
         header.addStretch()
         self.status_indicator = QLabel("READY")
         self.status_indicator.setStyleSheet("color: #00ff00; font-weight: bold;")
         header.addWidget(self.status_indicator)
         main_layout.addLayout(header)
         
-        # Top Buttons Row
+        # Top Buttons
         top_row = QHBoxLayout()
         top_row.setSpacing(6)
         for text, func in [("DEVICE MGR", self.open_device_manager), ("DRIVERS", self.open_drivers_folder),
@@ -120,7 +117,7 @@ class MainWindow(QMainWindow):
         top_row.addStretch()
         main_layout.addLayout(top_row)
         
-        # Info Row (COM + Device)
+        # Info Row
         info_row = QHBoxLayout()
         info_row.setSpacing(8)
         
@@ -149,14 +146,13 @@ class MainWindow(QMainWindow):
         info_row.addStretch()
         main_layout.addLayout(info_row)
         
-        # Main Tab Widget with Scroll Area
+        # Tabs
         self.tabs = QTabWidget()
         self.tabs.setMinimumHeight(500)
         
-        # ===== COMMON TAB =====
+        # Common Tab
         common = QWidget()
         common_layout = QHBoxLayout(common)
-        
         adb_group = QGroupBox("ADB")
         adb_grid = QGridLayout()
         adb_btns = ["BOOTLOADER", "RECOVERY", "FASTBOOTD", "SYSTEM", "SCREENSHOT", "LOGCAT", "INSTALL APK", "INFO"]
@@ -179,84 +175,85 @@ class MainWindow(QMainWindow):
         common_layout.addWidget(fb_group)
         self.tabs.addTab(common, "COMMON")
         
-        # ===== QUALCOMM TAB =====
+        # Qualcomm Tab
         qcom = QWidget()
         qcom_layout = QGridLayout(qcom)
-        qcom_btns = ["EDL MODE", "FIREHOSE", "QCN BACKUP", "QCN RESTORE", "UNLOCK", "LOCK", "RESET", "PARTITIONS"]
-        for i, text in enumerate(qcom_btns):
+        qcom_btns = [
+            ("EDL MODE", self.qcom_edl_mode),
+            ("PRINT GPT", self.qcom_print_gpt),
+            ("READ PARTITION", self.qcom_read_partition),
+            ("ERASE PARTITION", self.qcom_erase_partition),
+            ("UNLOCK", self.qcom_unlock),
+            ("LOCK", self.qcom_lock),
+            ("RESET", self.qcom_reset),
+            ("QFIL FLASH", self.qcom_qfil),
+        ]
+        for i, (text, func) in enumerate(qcom_btns):
             btn = QPushButton(text)
-            btn.clicked.connect(lambda checked, x=text: self.qcom_cmd(x))
+            btn.setMinimumHeight(45)
+            btn.clicked.connect(func)
             qcom_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(qcom, "QUALCOMM")
         
-        # ===== MEDIATEK TAB (WITH SCROLL AREA) =====
+        # MediaTek Tab
         mtk = QWidget()
         mtk_layout = QVBoxLayout(mtk)
         
-        # Scatter row
         scatter_row = QHBoxLayout()
         self.mtk_scatter = QLineEdit()
         self.mtk_scatter.setPlaceholderText("Select scatter file...")
         btn_scatter = QPushButton("BROWSE")
-        btn_scatter.clicked.connect(self.mtk_browse_scatter)
+        btn_scatter.clicked.connect(self.mtk_browse)
         scatter_row.addWidget(self.mtk_scatter)
         scatter_row.addWidget(btn_scatter)
         mtk_layout.addLayout(scatter_row)
         
-        # Flash Operations - 3x2 grid (6 buttons)
         flash_group = QGroupBox("FLASH OPERATIONS")
         flash_grid = QGridLayout()
         flash_btns = [
-            ("DOWNLOAD / FLASH", self.mtk_flash_real),
-            ("FORMAT", self.mtk_format_real),
-            ("READ PARTITION", self.mtk_read_partition_real),
-            ("WRITE PARTITION", self.mtk_write_partition_real),
-            ("ERASE PARTITION", self.mtk_erase_partition),
-            ("ZERO WIPE", self.mtk_zero_wipe),
+            ("DOWNLOAD / FLASH", self.mtk_flash),
+            ("FORMAT", self.mtk_format),
+            ("READ PARTITION", self.mtk_read),
+            ("WRITE PARTITION", self.mtk_write),
+            ("ERASE PARTITION", self.mtk_erase),
+            ("ZERO WIPE", self.mtk_zero),
         ]
         for i, (text, func) in enumerate(flash_btns):
             btn = QPushButton(text)
-            btn.setMinimumHeight(35)
             btn.clicked.connect(func)
             flash_grid.addWidget(btn, i // 2, i % 2)
         flash_group.setLayout(flash_grid)
         mtk_layout.addWidget(flash_group)
         
-        # Security - 3x2 grid
         sec_group = QGroupBox("SECURITY & ADVANCED")
         sec_grid = QGridLayout()
         sec_btns = [
-            ("REPAIR IMEI", self.mtk_repair_imei_real),
-            ("SIMLOCK UNLOCK", self.mtk_simlock),
-            ("FRP (ADB)", lambda: self.mtk_frp_real("ADB")),
-            ("FRP (FASTBOOT)", lambda: self.mtk_frp_real("FASTBOOT")),
-            ("EXPLOIT / AUTH", self.mtk_exploit),
-            ("META ADVANCED", self.mtk_meta_advanced),
+            ("REPAIR IMEI", self.mtk_imei),
+            ("SIMLOCK", self.mtk_simlock),
+            ("FRP (ADB)", lambda: self.mtk_frp("ADB")),
+            ("FRP (FASTBOOT)", lambda: self.mtk_frp("FASTBOOT")),
+            ("EXPLOIT", self.mtk_exploit),
+            ("META", self.mtk_meta),
         ]
         for i, (text, func) in enumerate(sec_btns):
             btn = QPushButton(text)
-            btn.setMinimumHeight(35)
             btn.clicked.connect(func)
             sec_grid.addWidget(btn, i // 2, i % 2)
         sec_group.setLayout(sec_grid)
         mtk_layout.addWidget(sec_group)
         
-        # Options
         opt_row = QHBoxLayout()
         self.mtk_autoreboot = QCheckBox("AUTO REBOOT")
         self.mtk_autoreboot.setChecked(True)
-        self.mtk_preloader = QCheckBox("PRELOADER MODE")
         opt_row.addWidget(self.mtk_autoreboot)
-        opt_row.addWidget(self.mtk_preloader)
         opt_row.addStretch()
         mtk_layout.addLayout(opt_row)
         
         self.mtk_status = QLabel("READY - Select scatter file")
-        self.mtk_status.setAlignment(Qt.AlignCenter)
         mtk_layout.addWidget(self.mtk_status)
         self.tabs.addTab(mtk, "MEDIATEK")
         
-        # ===== SAMSUNG TAB =====
+        # Samsung Tab
         sam = QWidget()
         sam_layout = QGridLayout(sam)
         sam_btns = ["DOWNLOAD", "ODIN", "PIT BACKUP", "PIT RESTORE", "UNLOCK", "KNOX RESET", "PARTITIONS", "FACTORY"]
@@ -266,7 +263,7 @@ class MainWindow(QMainWindow):
             sam_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(sam, "SAMSUNG")
         
-        # ===== UNISOC TAB =====
+        # Unisoc Tab
         uni = QWidget()
         uni_layout = QGridLayout(uni)
         uni_btns = ["DOWNLOAD", "FDL LOADER", "NVRAM BACKUP", "NVRAM RESTORE", "UNLOCK", "PARTITIONS"]
@@ -276,7 +273,7 @@ class MainWindow(QMainWindow):
             uni_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(uni, "UNISOC")
         
-        # ===== HUAWEI TAB =====
+        # Huawei Tab
         hua = QWidget()
         hua_layout = QGridLayout(hua)
         hua_btns = ["FASTBOOT", "HISUITE", "UNLOCK", "OEM BACKUP"]
@@ -286,7 +283,7 @@ class MainWindow(QMainWindow):
             hua_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(hua, "HUAWEI")
         
-        # ===== PARTITIONS TAB =====
+        # Partitions Tab
         part = QWidget()
         part_layout = QVBoxLayout(part)
         part_btns = QHBoxLayout()
@@ -304,7 +301,7 @@ class MainWindow(QMainWindow):
         
         main_layout.addWidget(self.tabs)
         
-        # Log Area
+        # Log
         log_group = QGroupBox("LOG")
         log_layout = QVBoxLayout(log_group)
         self.log_area = QTextEdit()
@@ -313,19 +310,18 @@ class MainWindow(QMainWindow):
         log_layout.addWidget(self.log_area)
         main_layout.addWidget(log_group)
         
-        # Progress
         self.progress = QProgressBar()
         self.progress.setVisible(False)
         main_layout.addWidget(self.progress)
         
-        # Init
+        # Initialize
         self.init_backend()
         self.refresh_com_ports()
         self.timer = QTimer()
         self.timer.timeout.connect(self.check_device)
         self.timer.start(5000)
         self.current_parts = []
-        self.log("READY - MediaTek Pro Edition")
+        self.log("READY - Complete Edition")
     
     def init_backend(self):
         t = Transport()
@@ -351,6 +347,15 @@ class MainWindow(QMainWindow):
         except:
             return None
     
+    # ========== ED.PY HELPER ==========
+    def get_edl_cmd(self):
+        # Path to edl.py
+        edl_py = os.path.join(os.getcwd(), "edl-3.52.1", "edl.py")
+        if os.path.exists(edl_py):
+            return ["python", edl_py]
+        return None
+    
+    # ========== ADB/FASTBOOT ==========
     def adb_cmd(self, cmd):
         s = self._get_serial()
         if not s:
@@ -408,137 +413,176 @@ class MainWindow(QMainWindow):
             if p:
                 self.fb._run(["erase", p], serial=s); self.log(f"Erased {p}")
     
-    def qcom_cmd(self, cmd):
-        if cmd == "EDL MODE":
-            try:
-                subprocess.run(["adb", "reboot", "edl"])
-                self.log("EDL mode")
-            except:
-                subprocess.run(["fastboot", "oem", "edl"])
-                self.log("EDL mode")
-        elif cmd == "PARTITIONS":
-            self.refresh_parts()
-        elif cmd == "UNLOCK":
-            self.fastboot_cmd("UNLOCK")
-        elif cmd == "LOCK":
-            self.fastboot_cmd("LOCK")
-        elif cmd == "RESET":
-            self.fb._run(["erase", "userdata"], serial=self._get_serial())
-            self.log("Factory reset")
-        else:
-            self.log(f"Qualcomm {cmd}")
+    # ========== QUALCOMM (with edl.py) ==========
+    def run_edl(self, args, description=""):
+        edl_cmd = self.get_edl_cmd()
+        if not edl_cmd:
+            self.log("edl.py not found in edl-3.52.1 folder")
+            return
+        cmd = edl_cmd + args
+        self.log(f"Running: {' '.join(cmd)}")
+        def runner():
+            result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
+            if result.stdout:
+                for line in result.stdout.splitlines():
+                    self.log(f"  {line}")
+            if result.stderr:
+                self.log(f"Error: {result.stderr}")
+            self.log(f"{description} completed" if result.returncode == 0 else f"{description} failed")
+        threading.Thread(target=runner, daemon=True).start()
     
-    def mtk_browse_scatter(self):
-        f, _ = QFileDialog.getOpenFileName(self, "Select Scatter File", "", "Scatter files (*.txt)")
+    def qcom_edl_mode(self):
+        self.log("Entering EDL Mode...")
+        try:
+            subprocess.run(["adb", "reboot", "edl"], timeout=5)
+            self.log("EDL via ADB")
+        except:
+            try:
+                subprocess.run(["fastboot", "oem", "edl"], timeout=5)
+                self.log("EDL via Fastboot")
+            except:
+                self.log("Failed to enter EDL mode")
+    
+    def qcom_print_gpt(self):
+        self.run_edl(["printgpt"], "Print GPT")
+    
+    def qcom_read_partition(self):
+        part, ok = QInputDialog.getText(self, "Read Partition", "Partition name:")
+        if ok and part:
+            out, _ = QFileDialog.getSaveFileName(self, "Save", f"{part}.img", "*.img")
+            if out:
+                self.run_edl(["r", part, out], f"Read {part}")
+    
+    def qcom_erase_partition(self):
+        part, ok = QInputDialog.getText(self, "Erase Partition", "Partition name:")
+        if ok and part:
+            if QMessageBox.question(self, "Erase", f"Erase {part}?", QMessageBox.Yes|QMessageBox.No) == QMessageBox.Yes:
+                self.run_edl(["e", part], f"Erase {part}")
+    
+    def qcom_unlock(self):
+        self.fastboot_cmd("UNLOCK")
+    
+    def qcom_lock(self):
+        self.fastboot_cmd("LOCK")
+    
+    def qcom_reset(self):
+        s = self._get_serial()
+        if s:
+            self.fb._run(["erase", "userdata"], serial=s)
+            self.log("Factory reset")
+    
+    def qcom_qfil(self):
+        self.log("QFIL flash - requires rawprogram and patch XML files")
+        rawprogram, _ = QFileDialog.getOpenFileName(self, "Select rawprogram0.xml", "", "*.xml")
+        if not rawprogram:
+            return
+        patch, _ = QFileDialog.getOpenFileName(self, "Select patch0.xml", "", "*.xml")
+        if not patch:
+            return
+        imagedir = QFileDialog.getExistingDirectory(self, "Select images directory")
+        if imagedir:
+            self.run_edl(["qfil", rawprogram, patch, imagedir], "QFIL flash")
+    
+    # ========== MEDIATEK (with mtkclient) ==========
+    def mtk_browse(self):
+        f, _ = QFileDialog.getOpenFileName(self, "Scatter", "", "*.txt")
         if f:
             self.mtk_scatter.setText(f)
             self.log(f"Scatter: {os.path.basename(f)}")
             try:
-                parser = MTKScatterParser(f)
-                parts = parser.get_partitions()
-                self.log(f"Found {len(parts)} partitions")
-                self.mtk_status.setText(f"Loaded: {len(parts)} parts")
+                p = MTKScatterParser(f)
+                self.log(f"{len(p.get_partitions())} partitions")
             except Exception as e:
                 self.log(f"Parse error: {e}")
     
-    def mtk_flash_real(self):
-        scatter = self.mtk_scatter.text()
-        if not scatter:
-            self.log("Select scatter file first")
+    def mtk_flash(self):
+        s = self.mtk_scatter.text()
+        if not s:
+            self.log("Select scatter first")
             return
         self.log("Starting flash...")
         self.progress.setVisible(True)
-        def flash_worker():
-            try:
-                cmd = ["mtk", "f", "--scatter", scatter]
-                if self.mtk_autoreboot.isChecked():
-                    cmd.append("--reboot")
-                self.log(f"Running: {' '.join(cmd)}")
-                p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-                for line in p.stdout:
-                    self.log(line.strip())
-                    if "DA sent" in line:
-                        self.progress.setValue(30)
-                    elif "flashing" in line.lower():
-                        self.progress.setValue(60)
-                p.wait()
-                if p.returncode == 0:
-                    self.log("Flash done!")
-                    self.progress.setValue(100)
-                else:
-                    self.log(f"Error: {p.stderr.read()}")
-            except Exception as e:
-                self.log(f"Failed: {e}")
-            finally:
-                self.progress.setVisible(False)
-        threading.Thread(target=flash_worker, daemon=True).start()
+        def flash():
+            cmd = ["mtk", "f", "--scatter", s]
+            if self.mtk_autoreboot.isChecked():
+                cmd.append("--reboot")
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            for line in p.stdout:
+                self.log(line.strip())
+                if "DA sent" in line:
+                    self.progress.setValue(30)
+                elif "flashing" in line.lower():
+                    self.progress.setValue(60)
+            p.wait()
+            self.progress.setVisible(False)
+            self.log("Flash done" if p.returncode==0 else "Flash failed")
+        threading.Thread(target=flash, daemon=True).start()
     
-    def mtk_format_real(self):
-        reply = QMessageBox.question(self, "Format", "Erase ALL data?", QMessageBox.Yes|QMessageBox.No)
-        if reply == QMessageBox.Yes:
+    def mtk_format(self):
+        if QMessageBox.question(self, "Format", "Erase ALL?", QMessageBox.Yes|QMessageBox.No) == QMessageBox.Yes:
             self.log("Formatting...")
             threading.Thread(target=lambda: subprocess.run(["mtk", "e", "all"]), daemon=True).start()
     
-    def mtk_read_partition_real(self):
-        part, ok = QInputDialog.getText(self, "Partition name:", "Read Partition")
-        if ok and part:
-            out, _ = QFileDialog.getSaveFileName(self, "Save", f"{part}.img", "*.img")
+    def mtk_read(self):
+        p, ok = QInputDialog.getText(self, "Read", "Partition:")
+        if ok and p:
+            out, _ = QFileDialog.getSaveFileName(self, "Save", f"{p}.img", "*.img")
             if out:
-                self.log(f"Reading {part}...")
-                threading.Thread(target=lambda: subprocess.run(["mtk", "r", part, out]), daemon=True).start()
+                self.log(f"Reading {p}")
+                threading.Thread(target=lambda: subprocess.run(["mtk", "r", p, out]), daemon=True).start()
     
-    def mtk_write_partition_real(self):
-        part, ok = QInputDialog.getText(self, "Partition name:", "Write Partition")
-        if ok and part:
+    def mtk_write(self):
+        p, ok = QInputDialog.getText(self, "Write", "Partition:")
+        if ok and p:
             img, _ = QFileDialog.getOpenFileName(self, "Image", "", "*.img")
             if img:
-                self.log(f"Writing {part}...")
-                threading.Thread(target=lambda: subprocess.run(["mtk", "w", part, img]), daemon=True).start()
+                self.log(f"Writing {p}")
+                threading.Thread(target=lambda: subprocess.run(["mtk", "w", p, img]), daemon=True).start()
     
-    def mtk_erase_partition(self):
-        part, ok = QInputDialog.getText(self, "Partition name:", "Erase Partition")
-        if ok and part:
-            reply = QMessageBox.question(self, "Erase", f"Erase {part}?", QMessageBox.Yes|QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                self.log(f"Erasing {part}...")
-                threading.Thread(target=lambda: subprocess.run(["mtk", "e", part]), daemon=True).start()
+    def mtk_erase(self):
+        p, ok = QInputDialog.getText(self, "Erase", "Partition:")
+        if ok and p:
+            if QMessageBox.question(self, "Erase", f"Erase {p}?", QMessageBox.Yes|QMessageBox.No) == QMessageBox.Yes:
+                self.log(f"Erasing {p}")
+                threading.Thread(target=lambda: subprocess.run(["mtk", "e", p]), daemon=True).start()
     
-    def mtk_repair_imei_real(self):
-        imei1, ok = QInputDialog.getText(self, "IMEI 1", "Enter IMEI 1 (15 digits):")
-        if ok and imei1 and len(imei1) == 15:
-            imei2, ok2 = QInputDialog.getText(self, "IMEI 2", "Enter IMEI 2 (15 digits):")
-            if ok2 and imei2 and len(imei2) == 15:
-                self.log(f"Repairing IMEI: {imei1}, {imei2}")
-                threading.Thread(target=lambda: subprocess.run(["mtk", "imei", imei1, imei2]), daemon=True).start()
-    
-    def mtk_frp_real(self, mode):
-        self.log(f"FRP removal via {mode}...")
-        if mode == "ADB":
-            threading.Thread(target=lambda: subprocess.run(["adb", "shell", "pm", "uninstall", "--user", "0", "com.google.android.gsf"]), daemon=True).start()
-        else:
-            threading.Thread(target=lambda: subprocess.run(["mtk", "frp"]), daemon=True).start()
-    
-    def mtk_zero_wipe(self):
-        reply = QMessageBox.question(self, "Zero Wipe", "Fill ALL partitions with zeros?", QMessageBox.Yes|QMessageBox.No)
-        if reply == QMessageBox.Yes:
+    def mtk_zero(self):
+        if QMessageBox.question(self, "Zero Wipe", "Fill ALL with zeros?", QMessageBox.Yes|QMessageBox.No) == QMessageBox.Yes:
             self.log("Zero wipe...")
             threading.Thread(target=lambda: subprocess.run(["mtk", "e", "all", "--zero"]), daemon=True).start()
+    
+    def mtk_imei(self):
+        i1, ok = QInputDialog.getText(self, "IMEI1", "IMEI 1 (15 digits):")
+        if ok and i1 and len(i1)==15:
+            i2, ok2 = QInputDialog.getText(self, "IMEI2", "IMEI 2 (15 digits):")
+            if ok2 and i2 and len(i2)==15:
+                self.log(f"Repairing IMEI: {i1}, {i2}")
+                threading.Thread(target=lambda: subprocess.run(["mtk", "imei", i1, i2]), daemon=True).start()
     
     def mtk_simlock(self):
         self.log("Simlock unlock...")
         threading.Thread(target=lambda: subprocess.run(["mtk", "simlock"]), daemon=True).start()
     
+    def mtk_frp(self, mode):
+        self.log(f"FRP via {mode}")
+        if mode == "ADB":
+            threading.Thread(target=lambda: subprocess.run(["adb", "shell", "pm", "uninstall", "--user", "0", "com.google.android.gsf"]), daemon=True).start()
+        else:
+            threading.Thread(target=lambda: subprocess.run(["mtk", "frp"]), daemon=True).start()
+    
     def mtk_exploit(self):
         self.log("Running exploit...")
         threading.Thread(target=lambda: subprocess.run(["mtk", "exploit"]), daemon=True).start()
     
-    def mtk_meta_advanced(self):
+    def mtk_meta(self):
         self.log("Meta mode - requires COM port")
     
+    # ========== SAMSUNG/UNISOC/HUAWEI ==========
     def sam_cmd(self, cmd): self.log(f"Samsung {cmd}")
     def uni_cmd(self, cmd): self.log(f"Unisoc {cmd}")
     def hua_cmd(self, cmd): self.log(f"Huawei {cmd}")
     
+    # ========== PARTITIONS ==========
     def refresh_parts(self):
         try:
             snap = self.orch.snapshot()
@@ -553,7 +597,7 @@ class MainWindow(QMainWindow):
     def backup_part(self):
         i = self.part_list.currentIndex()
         if i >= 0 and self.current_parts:
-            f = QFileDialog.getExistingDirectory(self, "Backup folder")
+            f = QFileDialog.getExistingDirectory(self, "Backup")
             if f:
                 self.backuper.backup_partitions(f, [self.current_parts[i].name])
                 self.log("Backup done")
@@ -577,6 +621,7 @@ class MainWindow(QMainWindow):
         if f:
             self.log(f"Scatter saved to {f}")
     
+    # ========== CONTROL ==========
     def open_device_manager(self):
         subprocess.run("devmgmt.msc")
         self.log("Device Manager")

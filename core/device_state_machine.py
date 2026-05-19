@@ -1,13 +1,14 @@
 """
-Device State Machine – Deterministic State Management
+Device State Machine – Deterministic State Management for Device Orchestration
 """
 
-from enum import Enum, auto
-from typing import Optional, Callable, Dict, Any
+from enum import Enum
+from typing import Optional, Callable, Dict, Any, List
 from dataclasses import dataclass, field
 from datetime import datetime
 import threading
 import time
+
 
 class DeviceState(Enum):
     """Deterministic device states for orchestration."""
@@ -25,6 +26,15 @@ class DeviceState(Enum):
     REBOOTING = "rebooting"
     BUSY = "busy"
     FAILED = "failed"
+    
+    @classmethod
+    def from_string(cls, value: str) -> "DeviceState":
+        """Convert string to DeviceState enum."""
+        try:
+            return cls(value.lower())
+        except ValueError:
+            return cls.DISCONNECTED
+
 
 class StateTransition:
     """Allowed transitions between states."""
@@ -48,6 +58,7 @@ class StateTransition:
         DeviceState.FAILED: [DeviceState.DISCONNECTED, DeviceState.DETECTING],
     }
 
+
 @dataclass
 class DeviceContext:
     """Context for each device."""
@@ -58,6 +69,7 @@ class DeviceContext:
     retry_count: int = 0
     error_message: str = ""
 
+
 class DeviceStateMachine:
     """Manages state transitions for multiple devices."""
     
@@ -65,7 +77,7 @@ class DeviceStateMachine:
         self._devices: Dict[str, DeviceContext] = {}
         self._lock = threading.Lock()
         self._on_state_change = on_state_change
-        self._transition_times: Dict[str, list] = {}
+        self._transition_times: Dict[str, List[Dict]] = {}
     
     def get_or_create(self, serial: str) -> DeviceContext:
         """Get existing or create new device context."""
@@ -82,11 +94,9 @@ class DeviceStateMachine:
                 return self._devices[serial].state
             return DeviceState.DISCONNECTED
     
-    def transition(self, serial: str, new_state: DeviceState, metadata: Optional[Dict] = None) -> bool:
-        """
-        Transition device to new state if allowed.
-        Returns True if transition successful.
-        """
+    def transition(self, serial: str, new_state: DeviceState, 
+                   metadata: Optional[Dict] = None) -> bool:
+        """Transition device to new state if allowed."""
         with self._lock:
             if serial not in self._devices:
                 self._devices[serial] = DeviceContext(serial=serial)
@@ -126,6 +136,15 @@ class DeviceStateMachine:
             
             return True
     
+    def transition_to_string(self, serial: str, state_str: str, 
+                             metadata: Optional[Dict] = None) -> bool:
+        """Transition using string state name."""
+        try:
+            new_state = DeviceState(state_str)
+            return self.transition(serial, new_state, metadata)
+        except ValueError:
+            return False
+    
     def is_busy(self, serial: str) -> bool:
         """Check if device is currently busy."""
         state = self.get_state(serial)
@@ -150,3 +169,14 @@ class DeviceStateMachine:
         with self._lock:
             self._devices.clear()
             self._transition_times.clear()
+    
+    def get_transition_history(self, serial: str, limit: int = 20) -> List[Dict]:
+        """Get transition history for a device."""
+        with self._lock:
+            if serial in self._transition_times:
+                return self._transition_times[serial][-limit:]
+            return []
+
+
+# Global instance for easy import
+device_state_machine = DeviceStateMachine()

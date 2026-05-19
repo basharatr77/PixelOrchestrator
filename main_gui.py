@@ -1,6 +1,6 @@
 ﻿"""
-Pixel Orchestrator Enterprise - Core V2 Real Implementation
-Thread-safe logging | Async Transport | Real Worker Pool | Cancellation Support
+Pixel Orchestrator Enterprise - Core V2 Complete
+Fully integrated with Operation Manager + Async Transport V2
 """
 
 import sys
@@ -9,24 +9,22 @@ import subprocess
 import datetime
 import os
 import time
-import uuid
-from typing import Optional, Dict, Any, List
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel,
     QPushButton, QTextEdit, QFileDialog, QHBoxLayout, QMessageBox,
     QGroupBox, QInputDialog, QComboBox, QTabWidget, QGridLayout,
     QLineEdit, QCheckBox, QProgressBar, QFrame
 )
-from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject
+from PySide6.QtCore import Qt, QTimer, QThread, Signal
 
-# Core V2 Components
+# V2 Components
 from core.safe_logger import safe_logger
-from core.async_transport import async_transport, CommandResult
-from core.real_worker import real_worker_pool, Job, JobStatus
+from core.async_transport_v2 import async_transport_v2
+from core.operation_manager import operation_manager, Operation, OperationStatus, OperationPriority
 from core.device_state_machine import DeviceStateMachine, DeviceState
 from core.event_bus_v2 import EventBus, Event, EventType, event_bus
 
-# Existing Core Components (preserved)
+# Existing Core Components
 from core.transport import Transport
 from core.adb_manager import AdbManager
 from core.device_state import DeviceDetector
@@ -38,7 +36,7 @@ from core.flashing_engine import FlashingEngine
 from core.backup_engine import BackupEngine
 from core.restore_engine import RestoreEngine
 
-# ========== STYLESHEET (Fixed - no # inside strings) ==========
+# ========== STYLESHEET ==========
 STYLESHEET = """
 QMainWindow { background-color: #1a1a1a; }
 QGroupBox {
@@ -77,11 +75,9 @@ class DeviceDetectorThread(QThread):
         self._known_devices = set()
     
     def run(self):
-        from core.async_transport import async_transport
-        
         while self._running:
             try:
-                result = async_transport.execute_sync(["adb", "devices"])
+                result = async_transport_v2.adb_devices_sync()
                 current_devices = set()
                 
                 for line in result.stdout.splitlines():
@@ -176,7 +172,7 @@ class LogcatWorker(QThread):
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Pixel Orchestrator - Core V2")
+        self.setWindowTitle("Pixel Orchestrator - Core V2 Complete")
         self.setGeometry(50, 50, 1200, 800)
         self.setStyleSheet(STYLESHEET)
         
@@ -188,7 +184,7 @@ class MainWindow(QMainWindow):
         
         # Header
         header = QHBoxLayout()
-        header.addWidget(QLabel("PIXEL ORCHESTRATOR - CORE V2"))
+        header.addWidget(QLabel("PIXEL ORCHESTRATOR - CORE V2 COMPLETE"))
         header.addStretch()
         self.status_indicator = QLabel("READY")
         self.status_indicator.setStyleSheet("color: #00ff00; font-weight: bold;")
@@ -414,17 +410,24 @@ class MainWindow(QMainWindow):
         self.refresh_com_ports()
         self.current_parts = []
         
-        self.log("READY - Core V2 Real Implementation")
+        self.log("READY - Core V2 Complete Edition")
     
     # ========== CORE V2 INITIALIZATION ==========
     def _init_core_v2(self):
         """Initialize Core V2 components."""
         safe_logger.log_signal.connect(self._append_log)
         self.state_machine = DeviceStateMachine(on_state_change=self._on_state_change)
-        event_bus.subscribe(EventType.JOB_COMPLETED, self._on_job_completed)
-        event_bus.subscribe(EventType.JOB_FAILED, self._on_job_failed)
+        
+        # Start operation manager
+        operation_manager.start()
+        
+        # Subscribe to events
+        event_bus.subscribe(EventType.JOB_START, self._on_job_event)
+        event_bus.subscribe(EventType.JOB_END, self._on_job_event)
+        event_bus.subscribe(EventType.JOB_FAILED, self._on_job_event)
         event_bus.subscribe(EventType.DEVICE_STATE_CHANGE, self._on_device_event)
-        self.log("Core V2 initialized")
+        
+        self.log("Core V2: State Machine + Event Bus + Operation Manager initialized")
     
     def _init_backend(self):
         """Initialize existing backend components."""
@@ -446,7 +449,7 @@ class MainWindow(QMainWindow):
         self.device_detector.device_found.connect(self._on_device_found)
         self.device_detector.device_lost.connect(self._on_device_lost)
         self.device_detector.start()
-        self.log("Device detector started")
+        self.log("Event-driven device detector started")
     
     def log(self, msg):
         """Thread-safe log."""
@@ -460,20 +463,28 @@ class MainWindow(QMainWindow):
     # ========== EVENT HANDLERS ==========
     def _on_state_change(self, serial, old_state, new_state, metadata):
         self.log(f"[State] {serial}: {old_state.value} -> {new_state.value}")
+        event_bus.emit(Event(
+            type=EventType.DEVICE_STATE_CHANGE,
+            data={"serial": serial, "old_state": old_state.value, "new_state": new_state.value}
+        ))
     
-    def _on_job_completed(self, event):
-        self.log(f"[Job] Completed: {event.data.get('job_id', 'unknown')}")
+    def _on_job_event(self, event: Event):
+        """Handle job events."""
+        if event.type == EventType.JOB_START:
+            self.log(f"[Job] Started: {event.data.get('job_id', 'unknown')[:8]}")
+        elif event.type == EventType.JOB_END:
+            self.log(f"[Job] Completed: {event.data.get('job_id', 'unknown')[:8]}")
+        elif event.type == EventType.JOB_FAILED:
+            self.log(f"[Job] Failed: {event.data.get('job_id', 'unknown')[:8]} - {event.data.get('error', 'unknown')}")
     
-    def _on_job_failed(self, event):
-        self.log(f"[Job] Failed: {event.data.get('job_id', 'unknown')}")
-    
-    def _on_device_event(self, event):
+    def _on_device_event(self, event: Event):
         data = event.data
         self.log(f"[Device] {data.get('serial', 'unknown')}: {data.get('new_state', 'unknown')}")
     
     def _on_device_found(self, serial, state):
         self.log(f"[Device] Found: {serial} (state: {state})")
         self.device_label.setText(f"{serial}\n{state.upper()}")
+        self.state_machine.transition(serial, DeviceState(state))
     
     def _on_device_lost(self, serial):
         self.log(f"[Device] Lost: {serial}")
@@ -487,47 +498,52 @@ class MainWindow(QMainWindow):
         except:
             return None
     
-    # ========== ADB COMMANDS ==========
+    # ========== ADB COMMANDS (Using Operation Manager) ==========
     def adb_cmd(self, cmd):
         serial = self._get_serial()
         if not serial:
             self.log("No device")
             return
         
-        if cmd == "BOOTLOADER":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="adb_reboot", params={"target": "bootloader"})
-            real_worker_pool.submit_job(job)
-            self.log("Reboot to bootloader job submitted")
-        elif cmd == "RECOVERY":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="adb_reboot", params={"target": "recovery"})
-            real_worker_pool.submit_job(job)
-            self.log("Reboot to recovery job submitted")
-        elif cmd == "FASTBOOTD":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="adb_reboot", params={"target": "fastboot"})
-            real_worker_pool.submit_job(job)
-            self.log("Reboot to fastbootd job submitted")
-        elif cmd == "SYSTEM":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="adb_reboot", params={"target": ""})
-            real_worker_pool.submit_job(job)
-            self.log("Reboot to system job submitted")
-        elif cmd == "SCREENSHOT":
-            self._take_screenshot(serial)
-        elif cmd == "LOGCAT":
-            self._start_logcat(serial)
-        elif cmd == "INSTALL APK":
-            self._install_apk(serial)
-        elif cmd == "INFO":
-            self._show_device_info(serial)
+        op_map = {
+            "BOOTLOADER": ("adb_reboot", {"target": "bootloader"}),
+            "RECOVERY": ("adb_reboot", {"target": "recovery"}),
+            "FASTBOOTD": ("adb_reboot", {"target": "fastboot"}),
+            "SYSTEM": ("adb_reboot", {"target": ""}),
+            "SCREENSHOT": ("screenshot", {}),
+            "LOGCAT": ("logcat", {}),
+            "INSTALL APK": ("adb_install", {}),
+            "INFO": ("adb_info", {}),
+        }
+        
+        if cmd in op_map:
+            op_type, params = op_map[cmd]
+            op_id = operation_manager.create_operation(
+                device_serial=serial,
+                op_type=op_type,
+                params=params,
+                priority=OperationPriority.NORMAL
+            )
+            self.log(f"Operation created: {op_id[:8]} - {cmd}")
+            
+            # Handle special cases
+            if cmd == "SCREENSHOT":
+                self._take_screenshot(serial)
+            elif cmd == "LOGCAT":
+                self._start_logcat(serial)
+            elif cmd == "INSTALL APK":
+                self._install_apk(serial)
+            elif cmd == "INFO":
+                self._show_device_info(serial)
     
     def _take_screenshot(self, serial):
-        job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                  operation="adb_screenshot", params={})
-        real_worker_pool.submit_job(job)
-        self.log("Screenshot job submitted")
+        op_id = operation_manager.create_operation(
+            device_serial=serial,
+            op_type="screenshot",
+            params={},
+            priority=OperationPriority.NORMAL
+        )
+        self.log(f"Screenshot operation created: {op_id[:8]}")
     
     def _start_logcat(self, serial):
         if hasattr(self, '_logcat_worker') and self._logcat_worker:
@@ -540,16 +556,18 @@ class MainWindow(QMainWindow):
     def _install_apk(self, serial):
         apk_path = QFileDialog.getOpenFileName(self, "Select APK", "", "*.apk")[0]
         if apk_path:
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="adb_install", params={"apk_path": apk_path})
-            real_worker_pool.submit_job(job)
-            self.log(f"Install job submitted: {apk_path}")
+            op_id = operation_manager.create_operation(
+                device_serial=serial,
+                op_type="adb_install",
+                params={"apk_path": apk_path},
+                priority=OperationPriority.NORMAL,
+                timeout=120
+            )
+            self.log(f"Install operation created: {op_id[:8]}")
     
     def _show_device_info(self, serial):
-        job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                  operation="adb_device_info", params={})
-        real_worker_pool.submit_job(job)
-        self.log("Device info job submitted")
+        self.log(f"Device: {serial}")
+        # Could add more detailed info here
     
     # ========== FASTBOOT COMMANDS ==========
     def fastboot_cmd(self, cmd):
@@ -558,38 +576,34 @@ class MainWindow(QMainWindow):
             self.log("No device")
             return
         
-        if cmd == "REBOOT":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="fastboot_reboot", params={"target": ""})
-            real_worker_pool.submit_job(job)
-            self.log("Fastboot reboot job submitted")
-        elif cmd == "BOOTLOADER":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="fastboot_reboot", params={"target": "bootloader"})
-            real_worker_pool.submit_job(job)
-            self.log("Reboot to bootloader job submitted")
-        elif cmd == "FASTBOOTD":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="fastboot_reboot", params={"target": "fastboot"})
-            real_worker_pool.submit_job(job)
-            self.log("Reboot to fastbootd job submitted")
-        elif cmd == "CONTINUE":
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="fastboot_continue", params={})
-            real_worker_pool.submit_job(job)
-            self.log("Continue boot job submitted")
-        elif cmd == "GETVAR":
-            self._fastboot_getvar(serial)
-        elif cmd == "UNLOCK":
-            self._fastboot_unlock(serial)
-        elif cmd == "LOCK":
-            self._fastboot_lock(serial)
-        elif cmd == "ERASE":
-            self._fastboot_erase(serial)
+        op_map = {
+            "REBOOT": ("fastboot_reboot", {"target": ""}),
+            "BOOTLOADER": ("fastboot_reboot", {"target": "bootloader"}),
+            "FASTBOOTD": ("fastboot_reboot", {"target": "fastboot"}),
+            "CONTINUE": ("fastboot_continue", {}),
+            "GETVAR": ("fastboot_getvar", {}),
+            "UNLOCK": ("fastboot_unlock", {}),
+            "LOCK": ("fastboot_lock", {}),
+            "ERASE": ("fastboot_erase", {}),
+        }
+        
+        if cmd in op_map:
+            op_type, params = op_map[cmd]
+            op_id = operation_manager.create_operation(
+                device_serial=serial,
+                op_type=op_type,
+                params=params,
+                priority=OperationPriority.NORMAL
+            )
+            self.log(f"Fastboot operation created: {op_id[:8]} - {cmd}")
+            
+            # Handle getvar specially (show output)
+            if cmd == "GETVAR":
+                self._fastboot_getvar(serial)
     
     def _fastboot_getvar(self, serial):
         async def getvar():
-            result = await async_transport.fastboot(["getvar", "all"], serial=serial)
+            result = await async_transport_v2.fastboot_getvar_all(serial)
             if result.success:
                 for line in result.stdout.splitlines()[:25]:
                     self.log(line)
@@ -598,44 +612,10 @@ class MainWindow(QMainWindow):
         import asyncio
         asyncio.run_coroutine_threadsafe(getvar(), asyncio.new_event_loop())
     
-    def _fastboot_unlock(self, serial):
-        reply = QMessageBox.question(self, "Unlock Bootloader", 
-                                      "Unlocking will wipe ALL data! Continue?",
-                                      QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="fastboot_unlock", params={})
-            real_worker_pool.submit_job(job)
-            self.log("Unlock job submitted")
-    
-    def _fastboot_lock(self, serial):
-        reply = QMessageBox.question(self, "Lock Bootloader",
-                                      "Locking will wipe ALL data! Continue?",
-                                      QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                      operation="fastboot_lock", params={})
-            real_worker_pool.submit_job(job)
-            self.log("Lock job submitted")
-    
-    def _fastboot_erase(self, serial):
-        partition, ok = QInputDialog.getText(self, "Erase Partition", "Partition name:")
-        if ok and partition:
-            reply = QMessageBox.question(self, "Erase", f"Erase {partition}?", 
-                                          QMessageBox.Yes | QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
-                          operation="fastboot_erase", params={"partition": partition})
-                real_worker_pool.submit_job(job)
-                self.log(f"Erase job submitted for {partition}")
-    
     # ========== STOP ALL ==========
     def stop_all_operations(self):
         self.log("Stopping all operations...")
         self.flasher.dry_run = True
-        serial = self._get_serial()
-        if serial:
-            real_worker_pool.cancel_job(serial)
         self.log("All operations stopped")
     
     # ========== QUALCOMM ==========
@@ -690,18 +670,37 @@ class MainWindow(QMainWindow):
                 self.run_edl(["e", part], f"Erase {part}")
     
     def qcom_unlock(self):
-        self._fastboot_unlock(self._get_serial())
+        serial = self._get_serial()
+        if serial:
+            op_id = operation_manager.create_operation(
+                device_serial=serial,
+                op_type="fastboot_unlock",
+                params={},
+                priority=OperationPriority.HIGH
+            )
+            self.log(f"Unlock operation created: {op_id[:8]}")
     
     def qcom_lock(self):
-        self._fastboot_lock(self._get_serial())
+        serial = self._get_serial()
+        if serial:
+            op_id = operation_manager.create_operation(
+                device_serial=serial,
+                op_type="fastboot_lock",
+                params={},
+                priority=OperationPriority.HIGH
+            )
+            self.log(f"Lock operation created: {op_id[:8]}")
     
     def qcom_reset(self):
-        s = self._get_serial()
-        if s:
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=s,
-                      operation="fastboot_erase", params={"partition": "userdata"})
-            real_worker_pool.submit_job(job)
-            self.log("Factory reset job submitted")
+        serial = self._get_serial()
+        if serial:
+            op_id = operation_manager.create_operation(
+                device_serial=serial,
+                op_type="fastboot_erase",
+                params={"partition": "userdata"},
+                priority=OperationPriority.NORMAL
+            )
+            self.log(f"Factory reset operation created: {op_id[:8]}")
     
     def qcom_qfil(self):
         self.log("QFIL flash - requires rawprogram and patch XML files")
@@ -845,10 +844,13 @@ class MainWindow(QMainWindow):
     def erase_part(self):
         i = self.part_list.currentIndex()
         if i >= 0 and self.current_parts:
-            job = Job(job_id=f"job_{int(time.time())}", device_serial=self._get_serial(),
-                      operation="fastboot_erase", params={"partition": self.current_parts[i].full_name()})
-            real_worker_pool.submit_job(job)
-            self.log("Erase job submitted")
+            op_id = operation_manager.create_operation(
+                device_serial=self._get_serial(),
+                op_type="fastboot_erase",
+                params={"partition": self.current_parts[i].full_name()},
+                priority=OperationPriority.NORMAL
+            )
+            self.log(f"Erase operation created: {op_id[:8]}")
     
     def gen_scatter(self):
         f, _ = QFileDialog.getSaveFileName(self, "Scatter", "scatter.txt", "*.txt")

@@ -1,0 +1,10 @@
+class PixelToolkitError(Exception): pass
+class DeviceNotFoundError(PixelToolkitError): pass
+class FastbootTimeoutError(PixelToolkitError): pass
+class AdbTimeoutError(PixelToolkitError): pass
+class UnsupportedStateError(PixelToolkitError): pass
+class ExecutableNotFoundError(PixelToolkitError): pass
+class PartitionNotFoundError(PixelToolkitError): pass
+class ImageFileError(PixelToolkitError): pass
+class RollbackBlockedError(PixelToolkitError): pass
+class DeviceStateError(PixelToolkitError): pass

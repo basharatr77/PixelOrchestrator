@@ -1,0 +1,7 @@
+﻿PySide6>=6.5
+websockets>=10.0
+fastapi>=0.100
+uvicorn>=0.23
+prometheus-client>=0.17
+pandas>=1.5
+pyserial>=3.5

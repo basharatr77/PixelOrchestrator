@@ -1,6 +1,6 @@
 ﻿"""
-Pixel Orchestrator Enterprise - Complete Edition
-MediaTek (mtkclient) + Qualcomm (edl.py) + All Chipsets
+Pixel Orchestrator Enterprise - Core V2 Real Implementation
+Thread-safe logging | Async Transport | Real Worker Pool | Cancellation Support
 """
 
 import sys
@@ -9,14 +9,24 @@ import subprocess
 import datetime
 import os
 import time
+import uuid
+from typing import Optional, Dict, Any, List
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel,
     QPushButton, QTextEdit, QFileDialog, QHBoxLayout, QMessageBox,
     QGroupBox, QInputDialog, QComboBox, QTabWidget, QGridLayout,
     QLineEdit, QCheckBox, QProgressBar, QFrame
 )
-from PySide6.QtCore import Qt, QTimer, QThread, Signal
+from PySide6.QtCore import Qt, QTimer, QThread, Signal, QObject
 
+# Core V2 Components
+from core.safe_logger import safe_logger
+from core.async_transport import async_transport, CommandResult
+from core.real_worker import real_worker_pool, Job, JobStatus
+from core.device_state_machine import DeviceStateMachine, DeviceState
+from core.event_bus_v2 import EventBus, Event, EventType, event_bus
+
+# Existing Core Components (preserved)
 from core.transport import Transport
 from core.adb_manager import AdbManager
 from core.device_state import DeviceDetector
@@ -28,7 +38,7 @@ from core.flashing_engine import FlashingEngine
 from core.backup_engine import BackupEngine
 from core.restore_engine import RestoreEngine
 
-# ========== STYLESHEET ==========
+# ========== STYLESHEET (Fixed - no # inside strings) ==========
 STYLESHEET = """
 QMainWindow { background-color: #1a1a1a; }
 QGroupBox {
@@ -56,12 +66,57 @@ QProgressBar::chunk { background-color: #00a8ff; border-radius: 4px; }
 QFrame#statusBar { background-color: #0d0d0d; border-radius: 4px; padding: 4px; }
 """
 
+# ========== DEVICE DETECTOR THREAD ==========
+class DeviceDetectorThread(QThread):
+    device_found = Signal(str, str)
+    device_lost = Signal(str)
+    
+    def __init__(self):
+        super().__init__()
+        self._running = True
+        self._known_devices = set()
+    
+    def run(self):
+        from core.async_transport import async_transport
+        
+        while self._running:
+            try:
+                result = async_transport.execute_sync(["adb", "devices"])
+                current_devices = set()
+                
+                for line in result.stdout.splitlines():
+                    if line.strip() and not line.startswith("List"):
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            serial = parts[0]
+                            state = parts[1]
+                            current_devices.add(serial)
+                            
+                            if serial not in self._known_devices:
+                                self.device_found.emit(serial, state)
+                            elif state != "device":
+                                self.device_found.emit(serial, state)
+                
+                for serial in self._known_devices - current_devices:
+                    self.device_lost.emit(serial)
+                
+                self._known_devices = current_devices
+                
+            except Exception as e:
+                print(f"Device detection error: {e}")
+            
+            time.sleep(2)
+    
+    def stop(self):
+        self._running = False
+
 # ========== MEDIATEK SCATTER PARSER ==========
 class MTKScatterParser:
     def __init__(self, scatter_path):
         self.scatter_path = scatter_path
         self.partitions = []
         self._parse()
+    
     def _parse(self):
         with open(self.scatter_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
@@ -77,14 +132,51 @@ class MTKScatterParser:
                 current[k.strip()] = v.strip().strip('"')
         if current:
             self.partitions.append(current)
+    
     def get_partitions(self):
         return self.partitions
+
+# ========== LOG WORKER ==========
+class LogcatWorker(QThread):
+    log_line = Signal(str)
+    
+    def __init__(self, serial: str):
+        super().__init__()
+        self.serial = serial
+        self._running = True
+        self._process = None
+    
+    def run(self):
+        try:
+            self._process = subprocess.Popen(
+                ["adb", "-s", self.serial, "logcat", "-v", "time"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                bufsize=1
+            )
+            for line in iter(self._process.stdout.readline, ''):
+                if not self._running:
+                    break
+                if line:
+                    self.log_line.emit(line.strip())
+        except Exception as e:
+            self.log_line.emit(f"Logcat error: {e}")
+        finally:
+            if self._process:
+                self._process.terminate()
+    
+    def stop(self):
+        self._running = False
+        if self._process:
+            self._process.terminate()
+            self._process = None
 
 # ========== MAIN WINDOW ==========
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Pixel Orchestrator - Complete Edition")
+        self.setWindowTitle("Pixel Orchestrator - Core V2")
         self.setGeometry(50, 50, 1200, 800)
         self.setStyleSheet(STYLESHEET)
         
@@ -96,7 +188,7 @@ class MainWindow(QMainWindow):
         
         # Header
         header = QHBoxLayout()
-        header.addWidget(QLabel("PIXEL ORCHESTRATOR - COMPLETE EDITION"))
+        header.addWidget(QLabel("PIXEL ORCHESTRATOR - CORE V2"))
         header.addStretch()
         self.status_indicator = QLabel("READY")
         self.status_indicator.setStyleSheet("color: #00ff00; font-weight: bold;")
@@ -107,7 +199,7 @@ class MainWindow(QMainWindow):
         top_row = QHBoxLayout()
         top_row.setSpacing(6)
         for text, func in [("DEVICE MGR", self.open_device_manager), ("DRIVERS", self.open_drivers_folder),
-                           ("REFRESH COM", self.refresh_com_ports), ("STOP", self.stop_operations)]:
+                           ("REFRESH COM", self.refresh_com_ports), ("STOP", self.stop_all_operations)]:
             btn = QPushButton(text)
             btn.setMinimumHeight(32)
             if text == "STOP":
@@ -315,15 +407,27 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(self.progress)
         
         # Initialize
-        self.init_backend()
+        self._init_core_v2()
+        self._init_backend()
+        self._init_device_detector()
+        
         self.refresh_com_ports()
-        self.timer = QTimer()
-        self.timer.timeout.connect(self.check_device)
-        self.timer.start(5000)
         self.current_parts = []
-        self.log("READY - Complete Edition")
+        
+        self.log("READY - Core V2 Real Implementation")
     
-    def init_backend(self):
+    # ========== CORE V2 INITIALIZATION ==========
+    def _init_core_v2(self):
+        """Initialize Core V2 components."""
+        safe_logger.log_signal.connect(self._append_log)
+        self.state_machine = DeviceStateMachine(on_state_change=self._on_state_change)
+        event_bus.subscribe(EventType.JOB_COMPLETED, self._on_job_completed)
+        event_bus.subscribe(EventType.JOB_FAILED, self._on_job_failed)
+        event_bus.subscribe(EventType.DEVICE_STATE_CHANGE, self._on_device_event)
+        self.log("Core V2 initialized")
+    
+    def _init_backend(self):
+        """Initialize existing backend components."""
         t = Transport()
         self.adb = AdbManager(t)
         self.fb = FastbootManager(t)
@@ -334,12 +438,48 @@ class MainWindow(QMainWindow):
         self.flasher = FlashingEngine(self.orch)
         self.backuper = BackupEngine(self.orch)
         self.restorer = RestoreEngine(self.orch)
-        self.log("Engine ready")
+        self.log("Backend engine ready")
+    
+    def _init_device_detector(self):
+        """Initialize event-driven device detector."""
+        self.device_detector = DeviceDetectorThread()
+        self.device_detector.device_found.connect(self._on_device_found)
+        self.device_detector.device_lost.connect(self._on_device_lost)
+        self.device_detector.start()
+        self.log("Device detector started")
     
     def log(self, msg):
+        """Thread-safe log."""
         ts = datetime.datetime.now().strftime('%H:%M:%S')
-        self.log_area.append(f"[{ts}] {msg}")
+        safe_logger.log(f"[{ts}] {msg}")
     
+    def _append_log(self, msg):
+        """Append log to GUI."""
+        self.log_area.append(msg)
+    
+    # ========== EVENT HANDLERS ==========
+    def _on_state_change(self, serial, old_state, new_state, metadata):
+        self.log(f"[State] {serial}: {old_state.value} -> {new_state.value}")
+    
+    def _on_job_completed(self, event):
+        self.log(f"[Job] Completed: {event.data.get('job_id', 'unknown')}")
+    
+    def _on_job_failed(self, event):
+        self.log(f"[Job] Failed: {event.data.get('job_id', 'unknown')}")
+    
+    def _on_device_event(self, event):
+        data = event.data
+        self.log(f"[Device] {data.get('serial', 'unknown')}: {data.get('new_state', 'unknown')}")
+    
+    def _on_device_found(self, serial, state):
+        self.log(f"[Device] Found: {serial} (state: {state})")
+        self.device_label.setText(f"{serial}\n{state.upper()}")
+    
+    def _on_device_lost(self, serial):
+        self.log(f"[Device] Lost: {serial}")
+        self.device_label.setText("No Device")
+    
+    # ========== HELPER ==========
     def _get_serial(self):
         try:
             snap = self.orch.snapshot()
@@ -347,80 +487,170 @@ class MainWindow(QMainWindow):
         except:
             return None
     
-    # ========== ED.PY HELPER ==========
+    # ========== ADB COMMANDS ==========
+    def adb_cmd(self, cmd):
+        serial = self._get_serial()
+        if not serial:
+            self.log("No device")
+            return
+        
+        if cmd == "BOOTLOADER":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="adb_reboot", params={"target": "bootloader"})
+            real_worker_pool.submit_job(job)
+            self.log("Reboot to bootloader job submitted")
+        elif cmd == "RECOVERY":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="adb_reboot", params={"target": "recovery"})
+            real_worker_pool.submit_job(job)
+            self.log("Reboot to recovery job submitted")
+        elif cmd == "FASTBOOTD":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="adb_reboot", params={"target": "fastboot"})
+            real_worker_pool.submit_job(job)
+            self.log("Reboot to fastbootd job submitted")
+        elif cmd == "SYSTEM":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="adb_reboot", params={"target": ""})
+            real_worker_pool.submit_job(job)
+            self.log("Reboot to system job submitted")
+        elif cmd == "SCREENSHOT":
+            self._take_screenshot(serial)
+        elif cmd == "LOGCAT":
+            self._start_logcat(serial)
+        elif cmd == "INSTALL APK":
+            self._install_apk(serial)
+        elif cmd == "INFO":
+            self._show_device_info(serial)
+    
+    def _take_screenshot(self, serial):
+        job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                  operation="adb_screenshot", params={})
+        real_worker_pool.submit_job(job)
+        self.log("Screenshot job submitted")
+    
+    def _start_logcat(self, serial):
+        if hasattr(self, '_logcat_worker') and self._logcat_worker:
+            self._logcat_worker.stop()
+        self._logcat_worker = LogcatWorker(serial)
+        self._logcat_worker.log_line.connect(lambda line: self.log(f"[LOGCAT] {line}"))
+        self._logcat_worker.start()
+        self.log("Logcat started")
+    
+    def _install_apk(self, serial):
+        apk_path = QFileDialog.getOpenFileName(self, "Select APK", "", "*.apk")[0]
+        if apk_path:
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="adb_install", params={"apk_path": apk_path})
+            real_worker_pool.submit_job(job)
+            self.log(f"Install job submitted: {apk_path}")
+    
+    def _show_device_info(self, serial):
+        job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                  operation="adb_device_info", params={})
+        real_worker_pool.submit_job(job)
+        self.log("Device info job submitted")
+    
+    # ========== FASTBOOT COMMANDS ==========
+    def fastboot_cmd(self, cmd):
+        serial = self._get_serial()
+        if not serial:
+            self.log("No device")
+            return
+        
+        if cmd == "REBOOT":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="fastboot_reboot", params={"target": ""})
+            real_worker_pool.submit_job(job)
+            self.log("Fastboot reboot job submitted")
+        elif cmd == "BOOTLOADER":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="fastboot_reboot", params={"target": "bootloader"})
+            real_worker_pool.submit_job(job)
+            self.log("Reboot to bootloader job submitted")
+        elif cmd == "FASTBOOTD":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="fastboot_reboot", params={"target": "fastboot"})
+            real_worker_pool.submit_job(job)
+            self.log("Reboot to fastbootd job submitted")
+        elif cmd == "CONTINUE":
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="fastboot_continue", params={})
+            real_worker_pool.submit_job(job)
+            self.log("Continue boot job submitted")
+        elif cmd == "GETVAR":
+            self._fastboot_getvar(serial)
+        elif cmd == "UNLOCK":
+            self._fastboot_unlock(serial)
+        elif cmd == "LOCK":
+            self._fastboot_lock(serial)
+        elif cmd == "ERASE":
+            self._fastboot_erase(serial)
+    
+    def _fastboot_getvar(self, serial):
+        async def getvar():
+            result = await async_transport.fastboot(["getvar", "all"], serial=serial)
+            if result.success:
+                for line in result.stdout.splitlines()[:25]:
+                    self.log(line)
+            else:
+                self.log(f"Getvar failed: {result.stderr}")
+        import asyncio
+        asyncio.run_coroutine_threadsafe(getvar(), asyncio.new_event_loop())
+    
+    def _fastboot_unlock(self, serial):
+        reply = QMessageBox.question(self, "Unlock Bootloader", 
+                                      "Unlocking will wipe ALL data! Continue?",
+                                      QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="fastboot_unlock", params={})
+            real_worker_pool.submit_job(job)
+            self.log("Unlock job submitted")
+    
+    def _fastboot_lock(self, serial):
+        reply = QMessageBox.question(self, "Lock Bootloader",
+                                      "Locking will wipe ALL data! Continue?",
+                                      QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                      operation="fastboot_lock", params={})
+            real_worker_pool.submit_job(job)
+            self.log("Lock job submitted")
+    
+    def _fastboot_erase(self, serial):
+        partition, ok = QInputDialog.getText(self, "Erase Partition", "Partition name:")
+        if ok and partition:
+            reply = QMessageBox.question(self, "Erase", f"Erase {partition}?", 
+                                          QMessageBox.Yes | QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                job = Job(job_id=f"job_{int(time.time())}", device_serial=serial,
+                          operation="fastboot_erase", params={"partition": partition})
+                real_worker_pool.submit_job(job)
+                self.log(f"Erase job submitted for {partition}")
+    
+    # ========== STOP ALL ==========
+    def stop_all_operations(self):
+        self.log("Stopping all operations...")
+        self.flasher.dry_run = True
+        serial = self._get_serial()
+        if serial:
+            real_worker_pool.cancel_job(serial)
+        self.log("All operations stopped")
+    
+    # ========== QUALCOMM ==========
     def get_edl_cmd(self):
-        # Path to edl.py
         edl_py = os.path.join(os.getcwd(), "edl-3.52.1", "edl.py")
         if os.path.exists(edl_py):
             return ["python", edl_py]
         return None
     
-    # ========== ADB/FASTBOOT ==========
-    def adb_cmd(self, cmd):
-        s = self._get_serial()
-        if not s:
-            self.log("No device")
-            return
-        cmds = {"BOOTLOADER": "bootloader", "RECOVERY": "recovery", "FASTBOOTD": "fastboot", "SYSTEM": ""}
-        if cmd in cmds:
-            self.adb.reboot(cmds[cmd], serial=s)
-            self.log(f"Reboot to {cmd}")
-        elif cmd == "SCREENSHOT":
-            name = f"ss_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-            self.adb.shell("screencap /sdcard/s.png", serial=s)
-            self.adb.pull("/sdcard/s.png", name, serial=s)
-            self.adb.shell("rm /sdcard/s.png", serial=s)
-            self.log(f"Screenshot: {name}")
-        elif cmd == "LOGCAT":
-            def lc():
-                p = subprocess.Popen(["adb", "-s", s, "logcat", "-v", "time"], stdout=subprocess.PIPE, text=True)
-                for line in iter(p.stdout.readline, ''):
-                    if line:
-                        self.log(f"[LOGCAT] {line.strip()}")
-            threading.Thread(target=lc, daemon=True).start()
-        elif cmd == "INSTALL APK":
-            f = QFileDialog.getOpenFileName(self, "APK", "", "*.apk")[0]
-            if f:
-                self.adb.shell(f"pm install -r {f}", serial=s)
-                self.log(f"Installed {f}")
-        elif cmd == "INFO":
-            snap = self.orch.snapshot()
-            self.log(f"Device: {snap.serial} State: {snap.state.value}")
-    
-    def fastboot_cmd(self, cmd):
-        s = self._get_serial()
-        if not s:
-            self.log("No device")
-            return
-        if cmd == "REBOOT":
-            self.fb._run(["reboot"], serial=s); self.log("Reboot")
-        elif cmd == "BOOTLOADER":
-            self.fb._run(["reboot", "bootloader"], serial=s); self.log("To bootloader")
-        elif cmd == "FASTBOOTD":
-            self.fb._run(["reboot", "fastboot"], serial=s); self.log("To fastbootd")
-        elif cmd == "CONTINUE":
-            self.fb._run(["continue"], serial=s); self.log("Continue")
-        elif cmd == "GETVAR":
-            v = self.fb.get_all_vars(serial=s)
-            for k, val in list(v.items())[:15]:
-                self.log(f"{k}: {val}")
-        elif cmd == "UNLOCK":
-            self.fb._run(["flashing", "unlock"], serial=s); self.log("Unlock sent")
-        elif cmd == "LOCK":
-            self.fb._run(["flashing", "lock"], serial=s); self.log("Lock sent")
-        elif cmd == "ERASE":
-            p = QInputDialog.getText(self, "Erase", "Partition:")[0]
-            if p:
-                self.fb._run(["erase", p], serial=s); self.log(f"Erased {p}")
-    
-    # ========== QUALCOMM (with edl.py) ==========
     def run_edl(self, args, description=""):
         edl_cmd = self.get_edl_cmd()
         if not edl_cmd:
-            self.log("edl.py not found in edl-3.52.1 folder")
+            self.log("edl.py not found")
             return
         cmd = edl_cmd + args
-        self.log(f"Running: {' '.join(cmd)}")
         def runner():
             result = subprocess.run(cmd, capture_output=True, text=True, cwd=os.getcwd())
             if result.stdout:
@@ -460,16 +690,18 @@ class MainWindow(QMainWindow):
                 self.run_edl(["e", part], f"Erase {part}")
     
     def qcom_unlock(self):
-        self.fastboot_cmd("UNLOCK")
+        self._fastboot_unlock(self._get_serial())
     
     def qcom_lock(self):
-        self.fastboot_cmd("LOCK")
+        self._fastboot_lock(self._get_serial())
     
     def qcom_reset(self):
         s = self._get_serial()
         if s:
-            self.fb._run(["erase", "userdata"], serial=s)
-            self.log("Factory reset")
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=s,
+                      operation="fastboot_erase", params={"partition": "userdata"})
+            real_worker_pool.submit_job(job)
+            self.log("Factory reset job submitted")
     
     def qcom_qfil(self):
         self.log("QFIL flash - requires rawprogram and patch XML files")
@@ -483,7 +715,7 @@ class MainWindow(QMainWindow):
         if imagedir:
             self.run_edl(["qfil", rawprogram, patch, imagedir], "QFIL flash")
     
-    # ========== MEDIATEK (with mtkclient) ==========
+    # ========== MEDIATEK ==========
     def mtk_browse(self):
         f, _ = QFileDialog.getOpenFileName(self, "Scatter", "", "*.txt")
         if f:
@@ -613,8 +845,10 @@ class MainWindow(QMainWindow):
     def erase_part(self):
         i = self.part_list.currentIndex()
         if i >= 0 and self.current_parts:
-            self.fb._run(["erase", self.current_parts[i].full_name()], serial=self._get_serial())
-            self.log("Erased")
+            job = Job(job_id=f"job_{int(time.time())}", device_serial=self._get_serial(),
+                      operation="fastboot_erase", params={"partition": self.current_parts[i].full_name()})
+            real_worker_pool.submit_job(job)
+            self.log("Erase job submitted")
     
     def gen_scatter(self):
         f, _ = QFileDialog.getSaveFileName(self, "Scatter", "scatter.txt", "*.txt")
@@ -631,10 +865,6 @@ class MainWindow(QMainWindow):
         os.startfile("drivers")
         self.log("Drivers folder")
     
-    def stop_operations(self):
-        self.flasher.dry_run = True
-        self.log("Dry mode")
-    
     def refresh_com_ports(self):
         self.com_port_combo.clear()
         self.com_port_combo.addItem("No ports")
@@ -645,16 +875,6 @@ class MainWindow(QMainWindow):
         self.com_status.setStyleSheet("color: #00ff00")
         self.btn_connect.setText("DISCONNECT")
         self.log("COM connected")
-    
-    def check_device(self):
-        try:
-            s = self.orch.snapshot(force_refresh=True)
-            if s.serial:
-                self.device_label.setText(f"{s.serial}\n{s.state.value.upper()}")
-            else:
-                self.device_label.setText("No Device")
-        except:
-            self.device_label.setText("Error")
 
 def main():
     app = QApplication(sys.argv)

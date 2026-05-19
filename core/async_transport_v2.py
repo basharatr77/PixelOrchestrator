@@ -169,20 +169,6 @@ class AsyncTransportV2:
                 self._pending_commands.pop(cmd_id, None)
             asyncio.create_task(cleanup())
     
-    async def _execute_with_retry(self, cmd: List[str], max_retries: int = 3,
-                                   timeout: int = 30, backoff: float = 2.0) -> CommandResult:
-        """Execute command with automatic retry and exponential backoff."""
-        last_result = None
-        for attempt in range(max_retries + 1):
-            result = await self._execute(cmd, timeout)
-            if result.success:
-                return result
-            last_result = result
-            if attempt < max_retries:
-                wait_time = backoff ** attempt
-                await asyncio.sleep(wait_time)
-        return last_result
-    
     # ========== PUBLIC API ==========
     def cancel_command(self, cmd_id: str) -> bool:
         """Cancel a running command."""

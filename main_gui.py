@@ -1,6 +1,6 @@
 ﻿"""
 Pixel Orchestrator Enterprise - Core V2 Complete
-Fully integrated with Operation Manager + Async Transport V2
+Fully integrated with Operation Manager + Async Transport V2 + AI Assistant
 """
 
 import sys
@@ -13,7 +13,7 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QVBoxLayout, QWidget, QLabel,
     QPushButton, QTextEdit, QFileDialog, QHBoxLayout, QMessageBox,
     QGroupBox, QInputDialog, QComboBox, QTabWidget, QGridLayout,
-    QLineEdit, QCheckBox, QProgressBar, QFrame
+    QLineEdit, QCheckBox, QProgressBar, QFrame, QSizePolicy
 )
 from PySide6.QtCore import Qt, QTimer, QThread, Signal
 
@@ -23,6 +23,9 @@ from core.async_transport_v2 import async_transport_v2
 from core.operation_manager import operation_manager, Operation, OperationStatus, OperationPriority
 from core.device_state_machine import DeviceStateMachine, DeviceState
 from core.event_bus_v2 import EventBus, Event, EventType, event_bus
+
+# AI Service
+from core.ai_service import ai_service
 
 # Existing Core Components
 from core.transport import Transport
@@ -234,11 +237,24 @@ class MainWindow(QMainWindow):
         info_row.addStretch()
         main_layout.addLayout(info_row)
         
-        # Tabs
+        # ========== TABS ==========
         self.tabs = QTabWidget()
         self.tabs.setMinimumHeight(500)
         
-        # Common Tab
+        # ========== AI ASSISTANT TAB (FIXED LAYOUT) ==========
+        ai_tab = QWidget()
+        ai_tab.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        ai_layout = QVBoxLayout(ai_tab)
+        ai_layout.setContentsMargins(0, 0, 0, 0)
+        ai_layout.setSpacing(0)
+        
+        from gui.ai_chat_widget import AIChatWidget
+        self.ai_chat = AIChatWidget(ai_service)
+        ai_layout.addWidget(self.ai_chat)
+        
+        self.tabs.addTab(ai_tab, "🤖 AI Assistant")
+        
+        # ========== COMMON TAB ==========
         common = QWidget()
         common_layout = QHBoxLayout(common)
         adb_group = QGroupBox("ADB")
@@ -263,7 +279,7 @@ class MainWindow(QMainWindow):
         common_layout.addWidget(fb_group)
         self.tabs.addTab(common, "COMMON")
         
-        # Qualcomm Tab
+        # ========== QUALCOMM TAB ==========
         qcom = QWidget()
         qcom_layout = QGridLayout(qcom)
         qcom_btns = [
@@ -283,7 +299,7 @@ class MainWindow(QMainWindow):
             qcom_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(qcom, "QUALCOMM")
         
-        # MediaTek Tab
+        # ========== MEDIATEK TAB ==========
         mtk = QWidget()
         mtk_layout = QVBoxLayout(mtk)
         
@@ -341,7 +357,7 @@ class MainWindow(QMainWindow):
         mtk_layout.addWidget(self.mtk_status)
         self.tabs.addTab(mtk, "MEDIATEK")
         
-        # Samsung Tab
+        # ========== SAMSUNG TAB ==========
         sam = QWidget()
         sam_layout = QGridLayout(sam)
         sam_btns = ["DOWNLOAD", "ODIN", "PIT BACKUP", "PIT RESTORE", "UNLOCK", "KNOX RESET", "PARTITIONS", "FACTORY"]
@@ -351,7 +367,7 @@ class MainWindow(QMainWindow):
             sam_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(sam, "SAMSUNG")
         
-        # Unisoc Tab
+        # ========== UNISOC TAB ==========
         uni = QWidget()
         uni_layout = QGridLayout(uni)
         uni_btns = ["DOWNLOAD", "FDL LOADER", "NVRAM BACKUP", "NVRAM RESTORE", "UNLOCK", "PARTITIONS"]
@@ -361,7 +377,7 @@ class MainWindow(QMainWindow):
             uni_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(uni, "UNISOC")
         
-        # Huawei Tab
+        # ========== HUAWEI TAB ==========
         hua = QWidget()
         hua_layout = QGridLayout(hua)
         hua_btns = ["FASTBOOT", "HISUITE", "UNLOCK", "OEM BACKUP"]
@@ -371,7 +387,7 @@ class MainWindow(QMainWindow):
             hua_layout.addWidget(btn, i // 2, i % 2)
         self.tabs.addTab(hua, "HUAWEI")
         
-        # Partitions Tab
+        # ========== PARTITIONS TAB ==========
         part = QWidget()
         part_layout = QVBoxLayout(part)
         part_btns = QHBoxLayout()
@@ -389,7 +405,7 @@ class MainWindow(QMainWindow):
         
         main_layout.addWidget(self.tabs)
         
-        # Log
+        # ========== LOG AREA ==========
         log_group = QGroupBox("LOG")
         log_layout = QVBoxLayout(log_group)
         self.log_area = QTextEdit()
@@ -410,7 +426,7 @@ class MainWindow(QMainWindow):
         self.refresh_com_ports()
         self.current_parts = []
         
-        self.log("READY - Core V2 Complete Edition")
+        self.log("READY - Core V2 Complete Edition with AI Assistant")
     
     # ========== CORE V2 INITIALIZATION ==========
     def _init_core_v2(self):
@@ -498,7 +514,7 @@ class MainWindow(QMainWindow):
         except:
             return None
     
-    # ========== ADB COMMANDS (Using Operation Manager) ==========
+    # ========== ADB COMMANDS ==========
     def adb_cmd(self, cmd):
         serial = self._get_serial()
         if not serial:
@@ -526,7 +542,6 @@ class MainWindow(QMainWindow):
             )
             self.log(f"Operation created: {op_id[:8]} - {cmd}")
             
-            # Handle special cases
             if cmd == "SCREENSHOT":
                 self._take_screenshot(serial)
             elif cmd == "LOGCAT":
@@ -567,7 +582,6 @@ class MainWindow(QMainWindow):
     
     def _show_device_info(self, serial):
         self.log(f"Device: {serial}")
-        # Could add more detailed info here
     
     # ========== FASTBOOT COMMANDS ==========
     def fastboot_cmd(self, cmd):
@@ -597,11 +611,11 @@ class MainWindow(QMainWindow):
             )
             self.log(f"Fastboot operation created: {op_id[:8]} - {cmd}")
             
-            # Handle getvar specially (show output)
             if cmd == "GETVAR":
                 self._fastboot_getvar(serial)
     
     def _fastboot_getvar(self, serial):
+        import asyncio
         async def getvar():
             result = await async_transport_v2.fastboot_getvar_all(serial)
             if result.success:
@@ -609,7 +623,6 @@ class MainWindow(QMainWindow):
                     self.log(line)
             else:
                 self.log(f"Getvar failed: {result.stderr}")
-        import asyncio
         asyncio.run_coroutine_threadsafe(getvar(), asyncio.new_event_loop())
     
     # ========== STOP ALL ==========

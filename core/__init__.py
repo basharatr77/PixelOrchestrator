@@ -23,6 +23,9 @@ from .flashing_engine import FlashingEngine
 from .backup_engine import BackupEngine
 from .restore_engine import RestoreEngine
 
+# AI Service Component
+from .ai_service import ai_service, AIService
+
 __all__ = [
     # V2
     "safe_logger", "SafeLogger",
@@ -31,6 +34,8 @@ __all__ = [
     "operation_manager", "OperationManager", "Operation", "OperationStatus", "OperationPriority",
     "device_state_machine", "DeviceStateMachine", "DeviceState",
     "event_bus", "EventBus", "Event", "EventType",
+    # AI
+    "ai_service", "AIService",
     # Existing
     "Transport", "AdbManager", "FastbootManager", "DeviceDetector",
     "CapabilityDetector", "PartitionManager", "StateOrchestrator",

@@ -1,5 +1,7 @@
 ﻿import sys
 import os
+import asyncio
+import threading
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QGridLayout, QPushButton, QLabel, QMessageBox, QStackedWidget, QHBoxLayout)
 from PySide6.QtCore import Qt
@@ -7,6 +9,8 @@ from PySide6.QtCore import Qt
 from core.hwid import verify_hwid, register_hwid
 from core.module_loader import discover_modules
 from core.operation_manager import OperationManager
+from core.event_bus import event_bus, Event, EventType
+from core.logger import log_event
 
 class LauncherWindow(QMainWindow):
     def __init__(self):
@@ -14,6 +18,7 @@ class LauncherWindow(QMainWindow):
         self.setWindowTitle("Pixel Orchestrator v2 - Professional Edition")
         self.setGeometry(100, 100, 1000, 700)
 
+        # HWID check
         if not verify_hwid():
             reply = QMessageBox.question(self, "Activation Required",
                 "Hardware ID not registered. Activate this PC?",
@@ -30,7 +35,15 @@ class LauncherWindow(QMainWindow):
         self.operation_manager.register_handler("MEDIATEK_CMD", self.operation_manager._handle_mediatek_job_sync)
         self.operation_manager.register_handler("QUALCOMM_CMD", self.operation_manager._handle_qualcomm_job_sync)
 
+        # Start the event bus in a background thread (since Qt already has its own event loop)
+        self._event_loop_thread = threading.Thread(target=self._run_event_bus, daemon=True)
+        self._event_loop_thread.start()
+
         self.setup_ui()
+        log_event("system", "launcher", "INFO", "Launcher started successfully")
+
+    def _run_event_bus(self):
+        asyncio.run(event_bus.start())
 
     def register_active_module(self, name, module_instance):
         self.active_modules[name] = module_instance

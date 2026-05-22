@@ -30,3 +30,9 @@ __all__ = [
     "safe_logger", "AdbManager", "FastbootManager", "DeviceDetector",
     "PartitionManager", "FlashingEngine", "BackupEngine", "RestoreEngine", "StateOrchestrator"
 ]
+
+# Phase 1 – Core stabilization
+from .device_state_machine import DeviceState, DeviceStateMachine
+from .logger import logger, log_event
+from .event_bus import EventBus, Event, EventType, event_bus
+from .supervisor import TaskSupervisor

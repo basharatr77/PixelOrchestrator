@@ -1,40 +1,63 @@
-﻿import time, json, sqlite3, threading, queue
-from dataclasses import dataclass, field
+﻿"""
+Async Event Bus – pure asyncio
+"""
+
+import asyncio
+from typing import Dict, List, Callable
+from dataclasses import dataclass
 from enum import Enum
-from typing import List, Callable, Dict, Optional
+
 class EventType(Enum):
-    JOB_START="job_start"; JOB_END="job_end"; STEP="step"; DEVICE_STATE="device_state"; ERROR="error"
+    DEVICE_STATE_CHANGE = "device_state_change"
+    JOB_CREATED = "job_created"
+    JOB_COMPLETED = "job_completed"
+    FLASH_START = "flash_start"
+    FLASH_PROGRESS = "flash_progress"
+    FLASH_END = "flash_end"
+    ERROR = "error"
+    LOG = "log"
+
 @dataclass
 class Event:
-    job_id: str; type: EventType; message: str; timestamp: float = field(default_factory=time.time); data: Dict = field(default_factory=dict)
+    type: EventType
+    payload: dict
+    source: str = ""
+
 class EventBus:
-    def __init__(self, persist=True, db_path="event_bus.db"):
-        self._subscribers: Dict[EventType, List[Callable]] = {}
-        self._lock = threading.Lock()
-        self._queue = queue.Queue()
-        self._persist = persist
-        if persist:
-            self._conn = sqlite3.connect(db_path, check_same_thread=False)
-            self._conn.execute("CREATE TABLE IF NOT EXISTS events (id INTEGER PRIMARY KEY, type TEXT, payload TEXT, timestamp REAL)")
-            self._conn.commit()
-        self._worker = threading.Thread(target=self._process_queue, daemon=True)
-        self._worker.start()
-    def subscribe(self, event_type: EventType, callback: Callable):
-        with self._lock:
-            if event_type not in self._subscribers: self._subscribers[event_type] = []
-            self._subscribers[event_type].append(callback)
-    def emit(self, event: Event):
-        self._queue.put(event)
-    def _process_queue(self):
-        while True:
-            event = self._queue.get()
-            with self._lock:
-                for cb in self._subscribers.get(event.type, []):
-                    try: cb(event)
-                    except: pass
-            if self._persist:
+    _instance = None
+    def __new__(cls):
+        if cls._instance is None:
+            cls._instance = super().__new__(cls)
+            cls._instance._subscribers = {}
+            cls._instance._queue = asyncio.Queue()
+            cls._instance._running = False
+        return cls._instance
+
+    async def start(self):
+        self._running = True
+        asyncio.create_task(self._dispatch_loop())
+
+    async def _dispatch_loop(self):
+        while self._running:
+            event = await self._queue.get()
+            for cb in self._subscribers.get(event.type, []):
                 try:
-                    self._conn.execute("INSERT INTO events (type, payload, timestamp) VALUES (?, ?, ?)",
-                                       (event.type.value, json.dumps({"job_id":event.job_id,"message":event.message,"data":event.data}), event.timestamp))
-                    self._conn.commit()
-                except: pass
+                    if asyncio.iscoroutinefunction(cb):
+                        await cb(event)
+                    else:
+                        cb(event)
+                except Exception as e:
+                    print(f"Event callback error: {e}")
+
+    def subscribe(self, event_type: EventType, callback: Callable):
+        if event_type not in self._subscribers:
+            self._subscribers[event_type] = []
+        self._subscribers[event_type].append(callback)
+
+    def emit(self, event: Event):
+        self._queue.put_nowait(event)
+
+    async def stop(self):
+        self._running = False
+
+event_bus = EventBus()

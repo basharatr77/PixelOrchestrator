@@ -1,43 +1,32 @@
+﻿"""
+Pixel Orchestrator Core Package – Minimal exports.
 """
-Pixel Orchestrator Core Module
-Exports all core components for easy import
-"""
+# New V2 modules
+from .hwid import get_hwid, verify_hwid, register_hwid
+from .base_module import BaseModule
+from .module_loader import discover_modules
+from .async_transport_v2 import async_transport_v2, AsyncTransportV2, CommandResult
+from .operation_manager import OperationManager, Job, JobStatus, JobPriority
 
-# Core V2 Components
-from .safe_logger import safe_logger, SafeLogger
-from .async_transport import async_transport, AsyncTransport, CommandResult
-from .async_transport_v2 import async_transport_v2, AsyncTransportV2
-from .operation_manager import operation_manager, OperationManager, Operation, OperationStatus, OperationPriority
-from .device_state_machine import device_state_machine, DeviceStateMachine, DeviceState
-from .event_bus_v2 import event_bus, EventBus, Event, EventType
-
-# Existing Core Components
-from .transport import Transport
-from .adb_manager import AdbManager
-from .fastboot_manager import FastbootManager
-from .device_state import DeviceDetector
-from .capabilities import CapabilityDetector
-from .partition_manager import PartitionManager
-from .state_orchestrator import StateOrchestrator
-from .flashing_engine import FlashingEngine
-from .backup_engine import BackupEngine
-from .restore_engine import RestoreEngine
-
-# AI Service Component
-from .ai_service import ai_service, AIService
+# Existing components (if needed for compatibility)
+try:
+    from .safe_logger import safe_logger
+    from .adb_manager import AdbManager
+    from .fastboot_manager import FastbootManager
+    from .device_state import DeviceDetector
+    from .partition_manager import PartitionManager
+    from .flashing_engine import FlashingEngine
+    from .backup_engine import BackupEngine
+    from .restore_engine import RestoreEngine
+    from .state_orchestrator import StateOrchestrator
+except ImportError:
+    pass
 
 __all__ = [
-    # V2
-    "safe_logger", "SafeLogger",
-    "async_transport", "AsyncTransport", "CommandResult",
-    "async_transport_v2", "AsyncTransportV2",
-    "operation_manager", "OperationManager", "Operation", "OperationStatus", "OperationPriority",
-    "device_state_machine", "DeviceStateMachine", "DeviceState",
-    "event_bus", "EventBus", "Event", "EventType",
-    # AI
-    "ai_service", "AIService",
-    # Existing
-    "Transport", "AdbManager", "FastbootManager", "DeviceDetector",
-    "CapabilityDetector", "PartitionManager", "StateOrchestrator",
-    "FlashingEngine", "BackupEngine", "RestoreEngine"
+    "get_hwid", "verify_hwid", "register_hwid",
+    "BaseModule", "discover_modules",
+    "async_transport_v2", "AsyncTransportV2", "CommandResult",
+    "OperationManager", "Job", "JobStatus", "JobPriority",
+    "safe_logger", "AdbManager", "FastbootManager", "DeviceDetector",
+    "PartitionManager", "FlashingEngine", "BackupEngine", "RestoreEngine", "StateOrchestrator"
 ]

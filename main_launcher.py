@@ -1,6 +1,6 @@
 ﻿import sys
 import asyncio
-import threading
+import qasync
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                              QGridLayout, QPushButton, QLabel, QMessageBox, QStackedWidget, QHBoxLayout)
 from PySide6.QtCore import Qt
@@ -95,20 +95,18 @@ class LauncherWindow(QMainWindow):
         self.stacked_widget.setCurrentIndex(self.active_modules_map[module.name])
         self.status_label.setText(f"Active Session: {module.name} Module running...")
 
-def run_event_bus():
-    asyncio.run(event_bus.start())
-
-def main():
+async def main():
     app = QApplication(sys.argv)
     app.setStyle('Fusion')
 
-    # Start event bus in a background thread (avoids qasync import issues)
-    event_thread = threading.Thread(target=run_event_bus, daemon=True)
-    event_thread.start()
+    # Start event bus as an asyncio task (now in the same loop as Qt)
+    asyncio.create_task(event_bus.start())
 
     window = LauncherWindow()
     window.show()
-    sys.exit(app.exec())
+
+    # Keep Qt event loop running
+    await asyncio.get_running_loop().run_in_executor(None, app.exec)
 
 if __name__ == "__main__":
-    main()
+    qasync.run(main())

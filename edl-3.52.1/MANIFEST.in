@@ -1,7 +1,0 @@
-include README.md
-include LICENSE
-include fastpwn
-recursive-include Loaders *
-include edl/Windows/*.dll
-recursive-include edl/Library/TestFiles *
-

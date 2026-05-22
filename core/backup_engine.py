@@ -4,13 +4,14 @@ Backup Engine – Production Grade
 - Resume interrupted backup
 - SHA256 verification
 - Parallel partition pulls
+- Single partition dump for transactional flashing
 """
 
 import os
 import hashlib
 import json
 import time
-from typing import List, Optional, Callable
+from typing import List, Optional, Callable, Dict
 from dataclasses import dataclass
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
@@ -53,7 +54,8 @@ class BackupEngine:
         log_callback: Optional[Callable[[str], None]] = None
     ) -> List[BackupItem]:
         """
-        Backup selected partitions.
+        Backup selected partitions (or all if None) to output_dir.
+        Returns list of BackupItem.
         """
         snap = self.orchestrator.snapshot()
         if snap.state != DeviceState.ADB:
@@ -83,7 +85,6 @@ class BackupEngine:
 
         results = []
 
-        # Use thread pool for parallel backup
         with ThreadPoolExecutor(max_workers=self._parallel_workers) as executor:
             futures = {}
             for part in partitions:
@@ -112,9 +113,49 @@ class BackupEngine:
 
         return results
 
-    def backup_all(self, output_dir: str, log_callback=None) -> List[BackupItem]:
-        """Backup all partitions."""
-        return self.backup_partitions(output_dir, partition_names=None, log_callback=log_callback)
+    def dump_partition(self, serial: str, partition_name: str, output_path: str) -> bool:
+        """
+        Low‑level single partition dump (used by transactional flashing).
+        Returns True on success.
+        """
+        try:
+            # Ensure device is in ADB mode
+            snap = self.orchestrator.snapshot()
+            if snap.state != DeviceState.ADB:
+                self.orchestrator.safe_transition(DeviceState.ADB, serial=serial)
+                snap = self.orchestrator.snapshot(force_refresh=True)
+
+            # Resolve partition
+            part = snap.partitions.get_by_logical(partition_name)
+            if not part:
+                logger.error(f"Partition {partition_name} not found")
+                return False
+
+            full_name = part.full_name()
+            block_path = part.path or f"/dev/block/by-name/{full_name}"
+            device_temp = f"/sdcard/dump_{full_name}.img"
+
+            # dd to device temporary
+            dd_cmd = f"dd if={block_path} of={device_temp} bs=4M"
+            res = self.orchestrator.adb.shell(dd_cmd, serial=serial, timeout=300)
+            if not res.success:
+                logger.error(f"dd failed: {res.stderr}")
+                return False
+
+            # pull to local
+            pull_res = self.orchestrator.adb.pull(device_temp, output_path, serial=serial)
+            if not pull_res.success:
+                logger.error(f"adb pull failed: {pull_res.stderr}")
+                return False
+
+            # cleanup device temp
+            self.orchestrator.adb.shell(f"rm {device_temp}", serial=serial)
+
+            logger.info(f"Dumped {full_name} to {output_path}")
+            return True
+        except Exception as e:
+            logger.error(f"dump_partition failed: {e}")
+            return False
 
     # ------------------------------------------------------------
     # Internal Methods
@@ -126,7 +167,6 @@ class BackupEngine:
         serial: str,
         log_callback: Optional[Callable] = None
     ) -> BackupItem:
-        """Backup a single partition."""
         full_name = part.full_name()
         local_path = os.path.join(output_dir, f"{full_name}.img")
         device_temp = f"/sdcard/{full_name}.img"
@@ -142,7 +182,6 @@ class BackupEngine:
         # Execute dd
         dd_cmd = f"dd if={block_path} of={device_temp} bs=4M"
         res = self.orchestrator.adb.shell(dd_cmd, serial=serial, timeout=300)
-
         if not res.success:
             raise Exception(f"dd failed: {res.stderr}")
 
@@ -168,7 +207,6 @@ class BackupEngine:
         )
 
     def _compute_sha256(self, file_path: str) -> str:
-        """Compute SHA256 hash."""
         sha256 = hashlib.sha256()
         with open(file_path, "rb") as f:
             while chunk := f.read(1024 * 1024):
@@ -176,7 +214,6 @@ class BackupEngine:
         return sha256.hexdigest()
 
     def _save_manifest(self, manifest_path: str, manifest: BackupManifest):
-        """Save backup manifest."""
         data = {
             "device_serial": manifest.device_serial,
             "timestamp": manifest.timestamp,

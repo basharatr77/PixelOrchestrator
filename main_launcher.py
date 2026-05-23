@@ -1,4 +1,10 @@
-﻿import sys
+﻿import os
+import sys
+if sys.platform == 'win32':
+    venv_dll = os.path.join(sys.prefix, 'Lib', 'site-packages', 'PySide6')
+    if os.path.exists(venv_dll):
+        os.add_dll_directory(venv_dll)
+import sys
 import asyncio
 import qasync
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,

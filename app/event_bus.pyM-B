@@ -1,0 +1,110 @@
+import asyncio
+from collections import defaultdict
+
+class EventBus:
+    def __init__(self):
+        self.subscribers = defaultdict(list)
+        self.queue = asyncio.Queue()
+
+    def subscribe(self, event_type, handler):
+        self.subscribers[event_type].append(handler)
+
+    async def publish(self, event):
+        await self.queue.put(event)
+
+    async def start(self):
+        print("Event Bus started 🚀")
+
+        while True:
+            event = await self.queue.get()
+            print(f"\n📩 Event received: {event}")
+
+            handlers = self.subscribers.get(event.get("type"), [])
+
+            if not handlers:
+                print("⚠️ No handler for this event")
+                continue
+
+            for handler in handlers:
+                try:
+                    await handler(event)
+                except Exception as e:
+                    print("❌ Handler error:", e)
+nano main.py
+import asyncio
+from event_bus import EventBus
+
+bus = EventBus()
+
+# Sample handler
+async def device_handler(event):
+    print("⚙️ Processing device event...")
+    print("Device Data:", event["payload"])
+
+async def main():
+    bus.subscribe("DEVICE_CONNECTED", device_handler)
+
+    asyncio.create_task(bus.start())
+
+    await asyncio.sleep(1)
+
+    # Test event send
+    await bus.publish({
+        "type": "DEVICE_CONNECTED",
+        "source": "adb",
+        "payload": {
+            "device": "Samsung A52",
+            "status": "connected"
+        }
+    })
+
+    await asyncio.sleep(2)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+python main.py
+
+
+import asyncio
+from event_bus import EventBus
+
+bus = EventBus()
+
+# Handler
+async def device_handler(event):
+    print("⚙️ Processing device event...")
+    print("Device Data:", event["payload"])
+
+async def main():
+    bus.subscribe("DEVICE_CONNECTED", device_handler)
+
+    # Event bus start properly
+    task = asyncio.create_task(bus.start())
+
+    # allow bus to initialize
+    await asyncio.sleep(0.5)
+
+    # send test event
+    await bus.publish({
+        "type": "DEVICE_CONNECTED",
+        "source": "adb",
+        "payload": {
+            "device": "Samsung A52",
+            "status": "connected"
+        }
+    })
+
+    # wait for processing
+    await asyncio.sleep(2)
+
+    # stop program
+    task.cancel()
+
+if __name__ == "__main__":
+    asyncio.run(main())
+python main.py
+
+CTRL + X
+
+^X
+

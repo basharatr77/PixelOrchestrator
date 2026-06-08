@@ -1,0 +1,85 @@
+#!/bin/bash
+
+CMD=$1
+
+echo "⚡ PixelOrchestrator CLI (PO) v1.0"
+echo "----------------------------------"
+
+case "$CMD" in
+
+  analyze)
+    echo "🧠 System Analysis Starting..."
+
+    echo ""
+    echo "📁 Git Status:"
+    git status --short
+
+    echo ""
+    echo "📊 Core Changes:"
+    git diff --stat
+
+    echo ""
+    echo "🔥 Architecture Changes:"
+    git status --porcelain | grep -E "core|workflow|storage|event" || echo "No core changes detected"
+
+    echo ""
+    echo "💾 Repo Size:"
+    du -sh .
+    ;;
+
+  sync)
+    echo "🚀 Auto Sync Starting..."
+    git add .
+    git commit -m "PO CLI sync: $(date)"
+    git push origin main
+    echo "✅ Sync Complete"
+    ;;
+
+  replay)
+    echo "🔁 Replay Engine Check..."
+
+    if [ -f "event_log.jsonl" ]; then
+        echo "📄 Event log exists"
+        echo "📊 Last 5 events:"
+        tail -n 5 event_log.jsonl
+    else
+        echo "⚠️ No event log found"
+    fi
+    ;;
+
+  health)
+    echo "🩺 System Health Check"
+
+    echo ""
+    echo "📦 Core Modules:"
+    find architecture -type f | wc -l
+
+    echo ""
+    echo "⚙️ Python Files:"
+    find architecture -name "*.py" | wc -l
+
+    echo ""
+    echo "🧠 Event System:"
+    ls architecture/core | grep event | wc -l
+    ;;
+
+  graph)
+    echo "📡 Architecture Map"
+
+    echo ""
+    echo "CORE → WORKFLOW → STORAGE"
+    echo "--------------------------"
+    echo "core/        → event bus, brokers, raft"
+    echo "workflow/    → pipelines & orchestration"
+    echo "storage/     → logs, replay, persistence"
+    ;;
+
+  *)
+    echo "Usage:"
+    echo "  ./po analyze   → analyze system"
+    echo "  ./po sync      → git sync"
+    echo "  ./po replay    → event replay check"
+    echo "  ./po health    → system health"
+    echo "  ./po graph     → architecture view"
+    ;;
+esac

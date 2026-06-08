@@ -1,0 +1,4 @@
+{"type": "device_connected", "payload": {"id": "pixel-1"}, "ts": 1780860922.1442716, "id": "88584f46-d457-4478-b974-fc3682037010"}
+{"type": "device_connected", "payload": {"id": "pixel-2"}, "ts": 1780860922.1451843, "id": "eac15ec0-4d09-438a-8587-28652ea6b040"}
+{"type": "device_connected", "payload": {"id": "pixel-1"}, "ts": 1780861046.0498872, "id": "b6045e04-2caf-4586-bf52-7895deb2d402"}
+{"type": "device_connected", "payload": {"id": "pixel-2"}, "ts": 1780861046.0869558, "id": "66055f6b-d905-46b5-a3c6-47c255685482"}

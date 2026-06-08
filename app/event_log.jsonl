@@ -1,0 +1,12 @@
+{"type": "DEVICE_DETECTED", "data": {"serial": "PIXEL_7_PRO", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:42.881002"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "SAMSUNG_A52", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:42.881632"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "PIXEL_7_PRO", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:45.883948"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "SAMSUNG_A52", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:45.885014"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "FASTBOOT_ONEPLUS", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:45.885476"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "PIXEL_7_PRO", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:48.887866"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "SAMSUNG_A52", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:48.889029"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "FASTBOOT_ONEPLUS", "mode": "FASTBOOT"}, "timestamp": "2026-06-06T19:53:48.889483"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "SAMSUNG_A52", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:51.891906"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "FASTBOOT_ONEPLUS", "mode": "FASTBOOT"}, "timestamp": "2026-06-06T19:53:51.892970"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "SAMSUNG_A52", "mode": "ADB"}, "timestamp": "2026-06-06T19:53:54.895267"}
+{"type": "DEVICE_DETECTED", "data": {"serial": "FASTBOOT_ONEPLUS", "mode": "FASTBOOT"}, "timestamp": "2026-06-06T19:53:54.896390"}

@@ -1,0 +1,9 @@
+from http.server import HTTPServer
+from server.handler import Handler
+
+def start_server(bus):
+    Handler.bus = bus
+    server = HTTPServer(("0.0.0.0", 8000), Handler)
+
+    print("Server running on port 8000 🚀")
+    server.serve_forever()

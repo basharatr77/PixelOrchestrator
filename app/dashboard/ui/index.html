@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>PixelOrchestrator Live Dashboard</title>
+  <style>
+    body {
+      font-family: Arial;
+      background: #0f1117;
+      color: #ffffff;
+      margin: 0;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #00ffcc;
+    }
+
+    .box {
+      background: #1a1d25;
+      padding: 15px;
+      margin-top: 10px;
+      border-radius: 10px;
+    }
+
+    #events {
+      height: 300px;
+      overflow-y: auto;
+      background: black;
+      padding: 10px;
+    }
+
+    .event {
+      color: #00ff88;
+      margin-bottom: 5px;
+      font-size: 14px;
+    }
+
+    .device {
+      color: #66ccff;
+      margin-bottom: 5px;
+    }
+  </style>
+</head>
+
+<body>
+
+<h1>🚀 PixelOrchestrator Live Dashboard</h1>
+
+<div class="box">
+  <h2>📡 Connection</h2>
+  <div id="status">Connecting...</div>
+</div>
+
+<div class="box">
+  <h2>📱 Devices</h2>
+  <div id="devices"></div>
+</div>
+
+<div class="box">
+  <h2>⚡ Live Events</h2>
+  <div id="events"></div>
+</div>
+
+<script>
+let ws = new WebSocket("ws://127.0.0.1:8765");
+
+ws.onopen = () => {
+  document.getElementById("status").innerText = "Connected 🚀";
+};
+
+ws.onmessage = (msg) => {
+  let data = JSON.parse(msg.data);
+
+  // Event log
+  let ev = document.createElement("div");
+  ev.className = "event";
+  ev.innerText = JSON.stringify(data);
+  document.getElementById("events").appendChild(ev);
+
+  // Device tracking
+  if (data.type === "DEVICE_CONNECTED") {
+    let d = document.createElement("div");
+    d.className = "device";
+    d.innerText = "📱 " + data.payload;
+    document.getElementById("devices").appendChild(d);
+  }
+};
+
+ws.onclose = () => {
+  document.getElementById("status").innerText = "Disconnected ❌";
+};
+</script>
+
+</body>
+</html>

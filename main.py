@@ -1,3 +1,35 @@
+<<<<<<< HEAD
+import asyncio
+=======
+<<<<<<< HEAD
+from core.stable_bus import StableEventBus
+>>>>>>> 57b558f (auto update)
+
+from core.event_bus import EventBus
+from core.task_queue import TaskQueue
+from core.workflow_engine import WorkflowEngine
+from core.event_types import EventTypes
+
+from core.event_store import EventStore
+from core.replay_engine import ReplayEngine
+from core.ai_engine import AIDecisionEngine
+
+
+REPLAY_DONE = False   # ✅ GLOBAL GUARD
+
+
+async def main():
+
+    global REPLAY_DONE
+
+    store = EventStore()
+    bus = EventBus(store)
+    queue = TaskQueue()
+
+<<<<<<< HEAD
+=======
+print("System running (STABLE MODE) 🚀")
+=======
 import asyncio
 
 from core.event_bus import EventBus
@@ -21,6 +53,7 @@ async def main():
     bus = EventBus(store)
     queue = TaskQueue()
 
+>>>>>>> 57b558f (auto update)
     workflow = WorkflowEngine(bus, queue)
     ai_engine = AIDecisionEngine(queue, workflow)
 
@@ -47,3 +80,7 @@ async def main():
 
 
 asyncio.run(main())
+<<<<<<< HEAD
+=======
+>>>>>>> 0900c60 (Stable Event-Driven Core: AI engine, workflow, dedup, replay fix, async event bus hardened)
+>>>>>>> 57b558f (auto update)

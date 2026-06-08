@@ -7,3 +7,6 @@ __pycache__/
 data/
 logs/
 .env
+
+# runtime event storage
+events.jsonl

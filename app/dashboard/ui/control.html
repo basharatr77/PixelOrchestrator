@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>PixelOrchestrator Control Center</title>
+
+<style>
+body {
+  background:#0b0f14;
+  color:white;
+  font-family:Arial;
+}
+
+.header {
+  color:#00ffcc;
+  font-size:22px;
+}
+
+.panel {
+  display:flex;
+  gap:10px;
+}
+
+.box {
+  flex:1;
+  background:#151b25;
+  padding:10px;
+  border-radius:10px;
+}
+
+.event {
+  font-size:12px;
+  color:#00ff88;
+}
+
+.device {
+  color:#66ccff;
+}
+</style>
+</head>
+
+<body>
+
+<div class="header">🚀 CONTROL CENTER (AWS STYLE MINI ORCHESTRATOR)</div>
+
+<div class="panel">
+
+  <div class="box">
+    <h3>📡 Connection</h3>
+    <div id="status">Connecting...</div>
+  </div>
+
+  <div class="box">
+    <h3>📱 Devices</h3>
+    <div id="devices"></div>
+  </div>
+
+  <div class="box">
+    <h3>⚡ Events</h3>
+    <div id="events"></div>
+  </div>
+
+</div>
+
+<script>
+let ws = new WebSocket("ws://127.0.0.1:8765");
+
+ws.onopen = () => {
+  document.getElementById("status").innerText = "CONNECTED 🚀";
+};
+
+ws.onmessage = (msg) => {
+  let data = JSON.parse(msg.data);
+
+  // event stream
+  let ev = document.createElement("div");
+  ev.className = "event";
+  ev.innerText = JSON.stringify(data);
+  document.getElementById("events").prepend(ev);
+
+  // device panel
+  if (data.type === "DEVICE_CONNECTED") {
+    let d = document.createElement("div");
+    d.className = "device";
+    d.innerText = "📱 " + data.payload;
+    document.getElementById("devices").appendChild(d);
+  }
+};
+</script>
+
+</body>
+</html>

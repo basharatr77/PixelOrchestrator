@@ -1,11 +1,18 @@
-from architecture.storage.event_store import EventStore
-from architecture.storage.replay_engine import ReplayEngine
+from architecture.core.kafka_broker_v3 import KafkaBrokerV3
+from architecture.core.replay_controller import ReplayController
 
-store = EventStore()
-replay = ReplayEngine(store)
+broker = KafkaBrokerV3()
 
-def print_event(event):
-    print("\n🔁 REPLAY EVENT")
-    print(event)
+def handler(event):
+    print("[REPLAY PROCESS]", event)
 
-replay.replay_all(print_event)
+# produce events
+for i in range(5):
+    broker.publish("DEVICE_DETECTED", {
+        "type": "DEVICE_DETECTED",
+        "data": {"id": f"pixel-{i%2}"}
+    })
+
+# replay system
+replay = ReplayController(broker)
+replay.replay_topic("DEVICE_DETECTED", handler)

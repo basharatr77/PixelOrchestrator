@@ -148,3 +148,17 @@
 {"type": "DEVICE_DETECTED", "data": {"serial": "PIXEL_7_PRO", "mode": "ADB"}, "timestamp": "2026-06-07T20:09:24.103990"}
 {"type": "DEVICE_DETECTED", "data": {"serial": "SAMSUNG_A52", "mode": "ADB"}, "timestamp": "2026-06-07T20:09:24.105568"}
 {"type": "DEVICE_DETECTED", "data": {"serial": "FASTBOOT_ONEPLUS", "mode": "FASTBOOT"}, "timestamp": "2026-06-07T20:09:24.106143"}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-1"}, "timestamp": "2026-06-08 10:43:42.046091"}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-1"}, "timestamp": "2026-06-08 10:46:55.626412"}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-1"}, "_offset": 152, "timestamp": "2026-06-08 10:48:12.876864"}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-1"}, "timestamp": "2026-06-08 10:49:47.314082"}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-0"}, "_leader": "n1"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-1"}, "_leader": "n3"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-2"}, "_leader": "n2"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-0"}, "_leader": "n1"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-1"}, "_leader": "n1"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-2"}, "_leader": "n3"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-0"}, "_leader": "n2"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-1"}, "_leader": "n1"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-2"}, "_leader": "n3"}}
+{"topic": "DEVICE_DETECTED", "event": {"type": "DEVICE_DETECTED", "data": {"id": "pixel-0"}, "_leader": "n3"}}

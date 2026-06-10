@@ -1,85 +1,164 @@
 #!/bin/bash
 
 CMD=$1
+SUB=$2
+ARG=$3
 
-echo "⚡ PixelOrchestrator CLI (PO) v1.0"
-echo "----------------------------------"
+EVENT_LOG="event_log.jsonl"
+PID_FILE=".po.pid"
+WS_PORT=8765
 
+# -------------------------
+# EVENT BUS (memory + file)
+# -------------------------
+emit_event() {
+    TYPE=$1
+    DATA=$2
+    TS=$(date +%s)
+
+    JSON="{\"type\":\"$TYPE\",\"data\":\"$DATA\",\"ts\":$TS}"
+
+    echo "$JSON" >> $EVENT_LOG
+    echo "$JSON"
+}
+
+# -------------------------
+# DAEMON
+# -------------------------
+daemon_start() {
+    if [ -f "$PID_FILE" ]; then
+        echo "⚠️ Already running"
+        exit 1
+    fi
+
+    nohup bash -c '
+        while true; do
+            echo "{\"type\":\"HEARTBEAT\",\"ts\":$(date +%s)}" >> event_log.jsonl
+            sleep 2
+        done
+    ' >/dev/null 2>&1 &
+
+    echo $! > $PID_FILE
+    echo "🚀 DAEMON STARTED PID $(cat $PID_FILE)"
+}
+
+daemon_stop() {
+    kill $(cat $PID_FILE) 2>/dev/null
+    rm -f $PID_FILE
+    echo "🛑 DAEMON STOPPED"
+}
+
+# -------------------------
+# STREAM (CLI live view)
+# -------------------------
+stream() {
+    tail -f $EVENT_LOG
+}
+
+# -------------------------
+# REPLAY
+# -------------------------
+replay() {
+    echo "🔁 LAST EVENTS"
+    tail -n 10 $EVENT_LOG
+}
+
+# -------------------------
+# HEALTH
+# -------------------------
+health() {
+    echo "🩺 PO v6 HEALTH"
+
+    echo "Events: $(wc -l < $EVENT_LOG 2>/dev/null)"
+    echo "Daemon: $( [ -f $PID_FILE ] && echo RUNNING || echo STOPPED )"
+}
+
+# -------------------------
+# WEBSOCKET SERVER (DASHBOARD)
+# -------------------------
+ws_server() {
+python3 - <<EOF
+import asyncio
+import websockets
+import json
+import time
+
+FILE = "event_log.jsonl"
+clients = set()
+
+async def watch_file():
+    last_size = 0
+    global clients
+
+    while True:
+        try:
+            with open(FILE, "r") as f:
+                f.seek(last_size)
+                lines = f.readlines()
+                last_size = f.tell()
+
+                for line in lines:
+                    for c in clients:
+                        asyncio.create_task(c.send(line.strip()))
+        except:
+            pass
+
+        await asyncio.sleep(1)
+
+async def handler(ws):
+    clients.add(ws)
+    try:
+        async for _ in ws:
+            pass
+    finally:
+        clients.remove(ws)
+
+async def main():
+    print("🌐 PO v6 WebSocket Dashboard running on ws://localhost:8765")
+    async with websockets.serve(handler, "0.0.0.0", 8765):
+        await asyncio.gather(watch_file())
+
+asyncio.run(main())
+EOF
+}
+
+# -------------------------
+# ROUTER
+# -------------------------
 case "$CMD" in
 
-  analyze)
-    echo "🧠 System Analysis Starting..."
+daemon)
+    [ "$SUB" = "start" ] && daemon_start
+    [ "$SUB" = "stop" ] && daemon_stop
+;;
 
-    echo ""
-    echo "📁 Git Status:"
-    git status --short
+emit)
+    emit_event "$SUB" "$ARG"
+;;
 
-    echo ""
-    echo "📊 Core Changes:"
-    git diff --stat
+stream)
+    stream
+;;
 
-    echo ""
-    echo "🔥 Architecture Changes:"
-    git status --porcelain | grep -E "core|workflow|storage|event" || echo "No core changes detected"
+replay)
+    replay
+;;
 
-    echo ""
-    echo "💾 Repo Size:"
-    du -sh .
-    ;;
+health)
+    health
+;;
 
-  sync)
-    echo "🚀 Auto Sync Starting..."
-    git add .
-    git commit -m "PO CLI sync: $(date)"
-    git push origin main
-    echo "✅ Sync Complete"
-    ;;
+dashboard)
+    ws_server
+;;
 
-  replay)
-    echo "🔁 Replay Engine Check..."
-
-    if [ -f "event_log.jsonl" ]; then
-        echo "📄 Event log exists"
-        echo "📊 Last 5 events:"
-        tail -n 5 event_log.jsonl
-    else
-        echo "⚠️ No event log found"
-    fi
-    ;;
-
-  health)
-    echo "🩺 System Health Check"
-
-    echo ""
-    echo "📦 Core Modules:"
-    find architecture -type f | wc -l
-
-    echo ""
-    echo "⚙️ Python Files:"
-    find architecture -name "*.py" | wc -l
-
-    echo ""
-    echo "🧠 Event System:"
-    ls architecture/core | grep event | wc -l
-    ;;
-
-  graph)
-    echo "📡 Architecture Map"
-
-    echo ""
-    echo "CORE → WORKFLOW → STORAGE"
-    echo "--------------------------"
-    echo "core/        → event bus, brokers, raft"
-    echo "workflow/    → pipelines & orchestration"
-    echo "storage/     → logs, replay, persistence"
-    ;;
-
-  *)
-    echo "Usage:"
-    echo "  ./po analyze   → analyze system"
-    echo "  ./po sync      → git sync"
-    echo "  ./po replay    → event replay check"
-    echo "  ./po health    → system health"
-    echo "  ./po graph     → architecture view"
-    ;;
+*)
+    echo "PO v6 Commands:"
+    echo "./po daemon start|stop"
+    echo "./po emit TYPE DATA"
+    echo "./po stream"
+    echo "./po replay"
+    echo "./po health"
+    echo "./po dashboard   (WebSocket server)"
+;;
 esac

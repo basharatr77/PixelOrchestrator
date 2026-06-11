@@ -486,3 +486,24 @@
 {"type":"HEARTBEAT","ts":1780924441}
 {"type":"HEARTBEAT","ts":1780924443}
 {"type":"HEARTBEAT","ts":1780924445}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124118}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-g1"}, "ts": 1781124120}
+{"type": "WORKFLOW_START", "data": {"dag": "flash_pipeline"}, "ts": 1781124120}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-g2"}, "ts": 1781124120}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124120}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124122}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124124}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124222}
+{"type": "ACTION_EXECUTED", "data": {"action": "MONITOR", "payload": {}}, "ts": 1781124222}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-h1"}, "ts": 1781124224}
+{"type": "ACTION_EXECUTED", "data": {"action": "REGISTER_DEVICE", "payload": {"id": "pixel-h1"}}, "ts": 1781124224}
+{"type": "WORKFLOW_START", "data": {"dag": "flash_pipeline"}, "ts": 1781124224}
+{"type": "ACTION_EXECUTED", "data": {"action": "EXECUTE_DAG", "payload": {"dag": "flash_pipeline"}}, "ts": 1781124224}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-h2"}, "ts": 1781124224}
+{"type": "ACTION_EXECUTED", "data": {"action": "REGISTER_DEVICE", "payload": {"id": "pixel-h2"}}, "ts": 1781124224}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124224}
+{"type": "ACTION_EXECUTED", "data": {"action": "MONITOR", "payload": {}}, "ts": 1781124224}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124226}
+{"type": "ACTION_EXECUTED", "data": {"action": "MONITOR", "payload": {}}, "ts": 1781124226}
+{"type": "HEARTBEAT", "data": {"alive": true}, "ts": 1781124228}
+{"type": "ACTION_EXECUTED", "data": {"action": "MONITOR", "payload": {}}, "ts": 1781124228}

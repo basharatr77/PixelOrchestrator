@@ -1,14 +1,18 @@
-import asyncio
-from collections import defaultdict
-
 class EventBus:
     def __init__(self):
-        self.subscribers = defaultdict(list)
+        self.subscribers = {}
 
-    def subscribe(self, topic, handler):
-        self.subscribers[topic].append(handler)
+    def publish(self, event_type, data):
+        if event_type not in self.subscribers:
+            return
+        for cb in self.subscribers[event_type]:
+            cb(data)
 
-    async def publish(self, topic, event):
-        if topic in self.subscribers:
-            for h in self.subscribers[topic]:
-                await h(event)
+    def subscribe(self, event_type, callback):
+        self.subscribers.setdefault(event_type, []).append(callback)
+
+    def health(self):
+        return {
+            "event_types": len(self.subscribers),
+            "status": "healthy"
+        }

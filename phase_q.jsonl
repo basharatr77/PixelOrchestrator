@@ -1,0 +1,10 @@
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-q1"}, "ts": 1781155528}
+{"type": "WORKFLOW_START", "data": {"id": "pixel-q1", "dag": "flash_pipeline"}, "ts": 1781155528}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-q2"}, "ts": 1781155528}
+{"type": "WORKFLOW_START", "data": {"id": "pixel-q2", "dag": "frp_remove"}, "ts": 1781155528}
+{"type": "ACTION_EXECUTED", "data": {"action": "auth", "payload": {"device": "pixel-q1"}}, "ts": 1781155529}
+{"type": "ACTION_EXECUTED", "data": {"action": "auth", "payload": {"device": "pixel-q2"}}, "ts": 1781155529}
+{"type": "ACTION_EXECUTED", "data": {"action": "unlock", "payload": {"device": "pixel-q1"}}, "ts": 1781155530}
+{"type": "ACTION_EXECUTED", "data": {"action": "bypass", "payload": {"device": "pixel-q2"}}, "ts": 1781155530}
+{"type": "ACTION_EXECUTED", "data": {"action": "flash", "payload": {"device": "pixel-q1"}}, "ts": 1781155531}
+{"type": "ACTION_EXECUTED", "data": {"action": "cleanup", "payload": {"device": "pixel-q2"}}, "ts": 1781155531}

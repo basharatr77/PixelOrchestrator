@@ -1,0 +1,1 @@
+{"state": {"version": "X", "uptime": 1781157462.7209888}, "telemetry": {"metrics": {"actions": 9}, "avg_latency": 1.0037696891360812}, "workers": [{"id": "w1", "done": 3, "queue": 0}, {"id": "w2", "done": 3, "queue": 0}, {"id": "w3", "done": 3, "queue": 0}], "timestamp": 1781157469}

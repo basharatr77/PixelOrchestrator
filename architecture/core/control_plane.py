@@ -1,22 +1,27 @@
-import time
-from collections import defaultdict
+from architecture.core.event_stream_core import EventStreamCore
 
 class ControlPlane:
-    def __init__(self, timeout=5):
-        self.timeout = timeout
-        self.heartbeats = {}
+    def __init__(self):
+        self.stream = EventStreamCore()
+        self.devices = {}
+        self.running = False
 
-    def beat(self, consumer_id):
-        self.heartbeats[consumer_id] = time.time()
+    async def start(self):
+        self.running = True
+        await self.stream.start()
+        print("[CONTROL] Control Plane ONLINE")
 
-    def is_alive(self, consumer_id):
-        last = self.heartbeats.get(consumer_id)
-        if not last:
-            return False
-        return (time.time() - last) < self.timeout
+    async def stop(self):
+        self.running = False
+        await self.stream.stop()
+        print("[CONTROL] Control Plane STOPPED")
 
-    def get_active_consumers(self):
-        return [
-            cid for cid in self.heartbeats
-            if self.is_alive(cid)
-        ]
+    def get_event_bus(self):
+        return self.stream
+
+    def health(self):
+        return {
+            "devices": len(self.devices),
+            "status": "running" if self.running else "stopped",
+            "events_buffer": len(self.stream.event_log)
+        }

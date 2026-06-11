@@ -1,0 +1,12 @@
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-p1"}, "ts": 1781155256}
+{"type": "WORKFLOW_START", "data": {"dag": "flash_pipeline"}, "ts": 1781155256}
+{"type": "DEVICE_DETECTED", "data": {"id": "pixel-p2"}, "ts": 1781155256}
+{"type": "WORKFLOW_START", "data": {"dag": "frp_remove"}, "ts": 1781155256}
+{"type": "ACTION_EXECUTED", "data": {"action": "REGISTER_DEVICE", "payload": {"id": "pixel-p1"}}, "ts": 1781155257}
+{"type": "ACTION_EXECUTED", "data": {"action": "auth", "payload": {"dag": "flash_pipeline"}}, "ts": 1781155257}
+{"type": "ACTION_EXECUTED", "data": {"action": "unlock", "payload": {"dag": "flash_pipeline"}}, "ts": 1781155257}
+{"type": "ACTION_EXECUTED", "data": {"action": "flash", "payload": {"dag": "flash_pipeline"}}, "ts": 1781155258}
+{"type": "ACTION_EXECUTED", "data": {"action": "REGISTER_DEVICE", "payload": {"id": "pixel-p2"}}, "ts": 1781155258}
+{"type": "ACTION_EXECUTED", "data": {"action": "auth", "payload": {"dag": "frp_remove"}}, "ts": 1781155258}
+{"type": "ACTION_EXECUTED", "data": {"action": "bypass", "payload": {"dag": "frp_remove"}}, "ts": 1781155259}
+{"type": "ACTION_EXECUTED", "data": {"action": "cleanup", "payload": {"dag": "frp_remove"}}, "ts": 1781155259}

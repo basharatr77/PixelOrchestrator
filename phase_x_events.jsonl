@@ -1,0 +1,9 @@
+{"type": "ACTION_DONE", "data": {"action": "auth", "device": "pixel-x1", "dag": "flash_pipeline"}, "ts": 1781157464}
+{"type": "ACTION_DONE", "data": {"action": "unlock", "device": "pixel-x1", "dag": "flash_pipeline"}, "ts": 1781157464}
+{"type": "ACTION_DONE", "data": {"action": "flash", "device": "pixel-x1", "dag": "flash_pipeline"}, "ts": 1781157464}
+{"type": "ACTION_DONE", "data": {"action": "auth", "device": "pixel-x2", "dag": "bootloader_unlock"}, "ts": 1781157465}
+{"type": "ACTION_DONE", "data": {"action": "check", "device": "pixel-x2", "dag": "bootloader_unlock"}, "ts": 1781157465}
+{"type": "ACTION_DONE", "data": {"action": "unlock", "device": "pixel-x2", "dag": "bootloader_unlock"}, "ts": 1781157465}
+{"type": "ACTION_DONE", "data": {"action": "auth", "device": "pixel-x3", "dag": "frp_remove"}, "ts": 1781157466}
+{"type": "ACTION_DONE", "data": {"action": "bypass", "device": "pixel-x3", "dag": "frp_remove"}, "ts": 1781157466}
+{"type": "ACTION_DONE", "data": {"action": "cleanup", "device": "pixel-x3", "dag": "frp_remove"}, "ts": 1781157466}

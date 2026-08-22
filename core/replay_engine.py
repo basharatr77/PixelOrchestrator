@@ -1,3 +1,6 @@
+import json
+
+
 class ReplayEngine:
 
     def __init__(self, store, bus):
@@ -8,18 +11,22 @@ class ReplayEngine:
 
         print("[REPLAY] Loading historical events...")
 
-        events = self.store.load_events()
+        events = self.store.get_events()
 
         print(f"[REPLAY] {len(events)} events found")
 
         for event in events:
+            try:
+                _, event_type, payload, _ = event
 
-            # ✅ IMPORTANT: mark replay mode so AI doesn't re-trigger loops
-            if hasattr(event, "get"):
-                event_type = event.get("type")
-                data = event.get("data")
-            else:
-                continue
+                data = json.loads(payload)
 
-            # ❌ DO NOT re-store replay events again
-            await self.bus.publish(event_type, data)
+                await self.bus.publish(
+                    event_type,
+                    data,
+                    persist=False,
+                    dedup=False
+                )
+
+            except Exception as e:
+                print(f"[REPLAY] Event replay failed: {e}")

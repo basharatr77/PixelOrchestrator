@@ -31,7 +31,11 @@ class LiveDashboard:
             self.clients.remove(websocket)
 
     async def start_ws(self):
-        server = await websockets.serve(self.ws_handler, "0.0.0.0", 8765, process_request=self.process_request)self.ws_handler, "0.0.0.0", 8765)
+        server = await websockets.serve(
+            self.ws_handler,
+            "0.0.0.0",
+            8765
+        )
         print("[WS] LIVE DASHBOARD ws://0.0.0.0:8765")
         await server.wait_closed()
 

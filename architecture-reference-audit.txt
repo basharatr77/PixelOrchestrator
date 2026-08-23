@@ -1,0 +1,233 @@
+=== ARCHITECTURE INTERNAL REFERENCES ===
+
+architecture.core.control_broker	architecture.core.auto_rebalancer
+architecture.core.control_broker	architecture.core.control_plane
+architecture.core.control_plane	architecture.core.event_stream_core
+architecture.core.event_raft_broker	architecture.core.raft_cluster
+architecture.core.event_raft_broker	architecture.core.worker_pool
+architecture.core.event_raft_broker	architecture.storage.event_store_v3
+architecture.core.event_system_v6	architecture.core.autoscaling_workers
+architecture.core.event_system_v6	architecture.storage.wal_store
+architecture.core.event_system_v7	architecture.core.parallel_workers
+architecture.core.event_system_v7	architecture.core.partition_router
+architecture.core.event_system_v7	architecture.storage.wal_store
+architecture.core.event_system_v8	architecture.core.parallel_workers
+architecture.core.event_system_v8	architecture.core.partition_router
+architecture.core.event_system_v8	architecture.storage.wal_store
+architecture.core.kafka_broker	architecture.storage.event_log_v2
+architecture.core.kafka_broker	architecture.storage.offset_store
+architecture.core.persistent_broker	architecture.storage.event_log
+architecture.core.phase_d_dashboard	architecture.core.control_plane
+architecture.core.phase_e_live_dashboard	architecture.core.control_plane
+architecture.core.phase_e_live_dashboard_fixed	architecture.core.control_plane
+architecture.core.raft_cluster_v2	architecture.core.raft_state
+architecture.core.replay_controller	architecture.storage.replay_engine
+architecture.core.replay_controller_v2	architecture.storage.replay_engine_v2
+architecture.core.replicated_broker	architecture.core.raft_cluster_v2
+architecture.core.replicated_broker	architecture.core.raft_log
+architecture.core.replicated_broker_v2	architecture.core.raft_cluster_v2
+architecture.core.replicated_broker_v2	architecture.core.raft_log
+architecture.core.replicated_broker_v3	architecture.core.raft_cluster_v2
+architecture.core.replicated_broker_v3	architecture.core.raft_log
+architecture.core.replicated_broker_v4	architecture.core.raft_cluster_v2
+architecture.core.replicated_broker_v4	architecture.core.raft_log
+architecture.core.routed_bus	architecture.core.event_bus
+architecture.core.routed_bus	architecture.core.partition_router
+architecture.core.smart_replay	architecture.storage.wal_store
+architecture.core.ws_dashboard	architecture.core.control_plane
+architecture.debug.time_travel_debugger	architecture.ai.ai_router
+architecture.debug.time_travel_debugger	architecture.core.device_state
+architecture.debug.time_travel_debugger	architecture.storage.event_store
+architecture.debug.time_travel_debugger	architecture.workflow.executor
+architecture.legacy.kafka_broker_v2	architecture.schema.event_schema
+architecture.legacy.kafka_broker_v2	architecture.storage.dead_letter
+architecture.legacy.kafka_broker_v2	architecture.storage.event_log_v2
+architecture.legacy.kafka_broker_v2	architecture.storage.offset_store
+architecture.legacy.kafka_broker_v3	architecture.core.lag_tracker
+architecture.legacy.kafka_broker_v3	architecture.storage.commit_log
+architecture.legacy.kafka_broker_v4	architecture.core.lag_tracker
+architecture.legacy.kafka_broker_v4	architecture.storage.commit_log
+architecture.legacy.kafka_broker_v4	architecture.storage.idempotency_store
+architecture.legacy.kafka_broker_v5	architecture.core.control_plane_v5
+architecture.legacy.kafka_broker_v5	architecture.core.lease_manager
+architecture.legacy.kafka_broker_v5	architecture.storage.commit_log
+architecture.legacy.kafka_broker_v6	architecture.core.lag_tracker_v2
+architecture.legacy.kafka_broker_v6	architecture.core.partition_router
+architecture.legacy.kafka_broker_v6	architecture.storage.offset_store
+architecture.legacy.kafka_broker_v6	architecture.storage.wal_store
+architecture.storage.replay_from_log	architecture.storage.event_log
+architecture.workflow.ack_pipeline	architecture.core.ack_broker
+architecture.workflow.async_pipeline	architecture.ai.ai_router
+architecture.workflow.async_pipeline	architecture.core.async_event_broker
+architecture.workflow.async_pipeline	architecture.core.device_state
+architecture.workflow.async_pipeline	architecture.workflow.executor
+architecture.workflow.broker_pipeline	architecture.ai.ai_router
+architecture.workflow.broker_pipeline	architecture.core.device_state
+architecture.workflow.broker_pipeline	architecture.core.event_broker
+architecture.workflow.broker_pipeline	architecture.workflow.executor
+architecture.workflow.consumer_group_pipeline	architecture.core.consumer_group_broker
+architecture.workflow.control_pipeline	architecture.core.control_broker
+architecture.workflow.full_pipeline	architecture.ai.ai_router
+architecture.workflow.full_pipeline	architecture.events.event_engine
+architecture.workflow.full_pipeline	architecture.workflow.executor
+architecture.workflow.intelligent_pipeline	architecture.core.intelligent_control_broker
+architecture.workflow.kafka_pipeline	architecture.ai.ai_router
+architecture.workflow.kafka_pipeline	architecture.core.device_state
+architecture.workflow.kafka_pipeline	architecture.core.kafka_broker
+architecture.workflow.kafka_pipeline	architecture.workflow.executor
+architecture.workflow.kafka_pipeline_v2	architecture.ai.ai_router
+architecture.workflow.kafka_pipeline_v2	architecture.core.device_state
+architecture.workflow.kafka_pipeline_v2	architecture.core.kafka_broker_v2
+architecture.workflow.kafka_pipeline_v2	architecture.workflow.executor
+architecture.workflow.kafka_pipeline_v3	architecture.core.kafka_broker_v3
+architecture.workflow.kafka_pipeline_v4	architecture.core.kafka_broker_v4
+architecture.workflow.kafka_pipeline_v5	architecture.core.kafka_broker_v5
+architecture.workflow.kafka_pipeline_v6	architecture.core.kafka_broker_v6
+architecture.workflow.partitioned_pipeline	architecture.core.partitioned_broker
+architecture.workflow.persistent_async_pipeline	architecture.ai.ai_router
+architecture.workflow.persistent_async_pipeline	architecture.core.device_state
+architecture.workflow.persistent_async_pipeline	architecture.core.persistent_broker
+architecture.workflow.persistent_async_pipeline	architecture.workflow.executor
+architecture.workflow.persistent_pipeline	architecture.ai.ai_router
+architecture.workflow.persistent_pipeline	architecture.core.device_state
+architecture.workflow.persistent_pipeline	architecture.events.event_engine
+architecture.workflow.persistent_pipeline	architecture.storage.event_store
+architecture.workflow.persistent_pipeline	architecture.workflow.executor
+architecture.workflow.pipeline	architecture.ai.ai_router
+architecture.workflow.pipeline	architecture.events.event_engine
+architecture.workflow.raft_pipeline	architecture.core.event_raft_broker
+architecture.workflow.replay_pipeline	architecture.core.kafka_broker_v3
+architecture.workflow.replay_pipeline	architecture.core.replay_controller
+architecture.workflow.replay_pipeline_v2	architecture.core.kafka_broker_v3
+architecture.workflow.replay_pipeline_v2	architecture.core.replay_controller_v2
+architecture.workflow.replicated_pipeline	architecture.core.replicated_broker
+architecture.workflow.replicated_pipeline_v2	architecture.core.replicated_broker_v2
+architecture.workflow.replicated_pipeline_v3	architecture.core.replicated_broker_v3
+architecture.workflow.replicated_pipeline_v4	architecture.core.replicated_broker_v4
+architecture.workflow.state_pipeline	architecture.ai.ai_router
+architecture.workflow.state_pipeline	architecture.core.device_state
+architecture.workflow.state_pipeline	architecture.events.event_engine
+architecture.workflow.state_pipeline	architecture.workflow.executor
+architecture.workflow.stream_pipeline	architecture.core.stream_processor
+architecture.workflow.system_v6_pipeline	architecture.core.event_system_v6
+architecture.workflow.system_v7_pipeline	architecture.core.event_system_v7
+architecture.workflow.system_v8_pipeline	architecture.core.event_system_v8
+architecture.workflow.system_v9_pipeline	architecture.core.routed_bus
+
+=== REFERENCED ARCHITECTURE MODULES ===
+
+architecture.ai.ai_router
+architecture.core.ack_broker
+architecture.core.async_event_broker
+architecture.core.auto_rebalancer
+architecture.core.autoscaling_workers
+architecture.core.consumer_group_broker
+architecture.core.control_broker
+architecture.core.control_plane
+architecture.core.control_plane_v5
+architecture.core.device_state
+architecture.core.event_broker
+architecture.core.event_bus
+architecture.core.event_raft_broker
+architecture.core.event_stream_core
+architecture.core.event_system_v6
+architecture.core.event_system_v7
+architecture.core.event_system_v8
+architecture.core.intelligent_control_broker
+architecture.core.kafka_broker
+architecture.core.kafka_broker_v2
+architecture.core.kafka_broker_v3
+architecture.core.kafka_broker_v4
+architecture.core.kafka_broker_v5
+architecture.core.kafka_broker_v6
+architecture.core.lag_tracker
+architecture.core.lag_tracker_v2
+architecture.core.lease_manager
+architecture.core.parallel_workers
+architecture.core.partition_router
+architecture.core.partitioned_broker
+architecture.core.persistent_broker
+architecture.core.raft_cluster
+architecture.core.raft_cluster_v2
+architecture.core.raft_log
+architecture.core.raft_state
+architecture.core.replay_controller
+architecture.core.replay_controller_v2
+architecture.core.replicated_broker
+architecture.core.replicated_broker_v2
+architecture.core.replicated_broker_v3
+architecture.core.replicated_broker_v4
+architecture.core.routed_bus
+architecture.core.stream_processor
+architecture.core.worker_pool
+architecture.events.event_engine
+architecture.schema.event_schema
+architecture.storage.commit_log
+architecture.storage.dead_letter
+architecture.storage.event_log
+architecture.storage.event_log_v2
+architecture.storage.event_store
+architecture.storage.event_store_v3
+architecture.storage.idempotency_store
+architecture.storage.offset_store
+architecture.storage.replay_engine
+architecture.storage.replay_engine_v2
+architecture.storage.wal_store
+architecture.workflow.executor
+
+=== UNREFERENCED ARCHITECTURE FILES ===
+
+C:\PixelOrchestrator-dev\architecture\core\autoscaler_v2.py
+C:\PixelOrchestrator-dev\architecture\core\commit_tracker.py
+C:\PixelOrchestrator-dev\architecture\core\consumer_group.py
+C:\PixelOrchestrator-dev\architecture\core\event_metrics.py
+C:\PixelOrchestrator-dev\architecture\core\event_schema.py
+C:\PixelOrchestrator-dev\architecture\core\phase_c_runtime.py
+C:\PixelOrchestrator-dev\architecture\core\phase_d_dashboard.py
+C:\PixelOrchestrator-dev\architecture\core\phase_e_live_dashboard.py
+C:\PixelOrchestrator-dev\architecture\core\phase_e_live_dashboard_fixed.py
+C:\PixelOrchestrator-dev\architecture\core\raft_election_state.py
+C:\PixelOrchestrator-dev\architecture\core\raft_node.py
+C:\PixelOrchestrator-dev\architecture\core\smart_replay.py
+C:\PixelOrchestrator-dev\architecture\core\ws_dashboard.py
+C:\PixelOrchestrator-dev\architecture\core\ws_fix.py
+C:\PixelOrchestrator-dev\architecture\debug\time_travel_debugger.py
+C:\PixelOrchestrator-dev\architecture\events\test_flow.py
+C:\PixelOrchestrator-dev\architecture\events\unified_event_bus.py
+C:\PixelOrchestrator-dev\architecture\legacy\kafka_broker_v2.py
+C:\PixelOrchestrator-dev\architecture\legacy\kafka_broker_v3.py
+C:\PixelOrchestrator-dev\architecture\legacy\kafka_broker_v4.py
+C:\PixelOrchestrator-dev\architecture\legacy\kafka_broker_v5.py
+C:\PixelOrchestrator-dev\architecture\legacy\kafka_broker_v6.py
+C:\PixelOrchestrator-dev\architecture\storage\replay_from_log.py
+C:\PixelOrchestrator-dev\architecture\storage\snapshot_store.py
+C:\PixelOrchestrator-dev\architecture\workflow\ack_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\async_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\broker_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\consumer_group_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\control_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\full_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\intelligent_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\kafka_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\kafka_pipeline_v2.py
+C:\PixelOrchestrator-dev\architecture\workflow\kafka_pipeline_v3.py
+C:\PixelOrchestrator-dev\architecture\workflow\kafka_pipeline_v4.py
+C:\PixelOrchestrator-dev\architecture\workflow\kafka_pipeline_v5.py
+C:\PixelOrchestrator-dev\architecture\workflow\kafka_pipeline_v6.py
+C:\PixelOrchestrator-dev\architecture\workflow\partitioned_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\persistent_async_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\persistent_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\raft_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\replay_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\replay_pipeline_v2.py
+C:\PixelOrchestrator-dev\architecture\workflow\replicated_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\replicated_pipeline_v2.py
+C:\PixelOrchestrator-dev\architecture\workflow\replicated_pipeline_v3.py
+C:\PixelOrchestrator-dev\architecture\workflow\replicated_pipeline_v4.py
+C:\PixelOrchestrator-dev\architecture\workflow\state_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\stream_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\system_v6_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\system_v7_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\system_v8_pipeline.py
+C:\PixelOrchestrator-dev\architecture\workflow\system_v9_pipeline.py

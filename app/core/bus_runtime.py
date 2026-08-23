@@ -65,5 +65,16 @@ class BusRuntime:
             self.execution_loop()
         )
 
-        while True:
-            await asyncio.sleep(3600)
+        try:
+            while True:
+                await asyncio.sleep(3600)
+        finally:
+            if self.execution_task is not None:
+                self.execution_task.cancel()
+
+                await asyncio.gather(
+                    self.execution_task,
+                    return_exceptions=True,
+                )
+
+            await self.pool.stop()

@@ -1,5 +1,8 @@
 import subprocess
 
+from app.agents.device_agent.device_model import Device
+
+
 def scan_fastboot():
     devices = []
 
@@ -13,10 +16,12 @@ def scan_fastboot():
             if line.strip():
                 serial = line.split()[0]
 
-                devices.append({
-                    "serial": serial,
-                    "mode": "FASTBOOT"
-                })
+                devices.append(
+                    Device(
+                        serial=serial,
+                        mode="FASTBOOT",
+                    )
+                )
 
     except Exception as e:
         print("Fastboot Error:", e)

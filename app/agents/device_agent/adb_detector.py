@@ -1,5 +1,8 @@
 import subprocess
 
+from app.agents.device_agent.device_model import Device
+
+
 def scan_adb():
     devices = []
 
@@ -13,10 +16,12 @@ def scan_adb():
             if "\tdevice" in line:
                 serial = line.split()[0]
 
-                devices.append({
-                    "serial": serial,
-                    "mode": "ADB"
-                })
+                devices.append(
+                    Device(
+                        serial=serial,
+                        mode="ADB",
+                    )
+                )
 
     except Exception as e:
         print("ADB Error:", e)

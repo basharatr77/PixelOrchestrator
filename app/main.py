@@ -1,13 +1,12 @@
-from app.agents.device_agent.detector import start_detector
-from app.agents.orchestrator.core import main as orchestrator_main
-import threading
+import asyncio
+
+from app.core.bus_runtime import BusRuntime
+
+
+async def main():
+    runtime = BusRuntime()
+    await runtime.run()
+
 
 if __name__ == "__main__":
-    print("🚀 PixelOrchestrator Booting...")
-
-    # run detector in background thread
-    t = threading.Thread(target=start_detector, daemon=True)
-    t.start()
-
-    # run orchestrator in main thread
-    orchestrator_main()
+    asyncio.run(main())

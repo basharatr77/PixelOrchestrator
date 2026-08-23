@@ -23,6 +23,8 @@ class BusRuntime:
             executor=self.task_executor,
         )
 
+        self.execution_task = None
+
         self.lifecycle_consumer = LifecycleConsumer(
             task_queue=self.task_queue,
             registry_updater=update_registry,
@@ -47,10 +49,21 @@ class BusRuntime:
 
         return result
 
+    async def execution_loop(self):
+        while True:
+            if self.task_queue.tasks:
+                self.execute_once()
+
+            await asyncio.sleep(0.01)
+
     async def run(self):
         self.setup()
 
         await self.pool.start()
+
+        self.execution_task = asyncio.create_task(
+            self.execution_loop()
+        )
 
         while True:
             await asyncio.sleep(3600)

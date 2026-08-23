@@ -12,6 +12,9 @@ class WorkerPool:
         self.tasks = []
 
     async def start(self):
+        if self.tasks:
+            return
+
         print(f"🚀 Starting {self.worker_count} workers")
 
         for i in range(self.worker_count):
@@ -22,10 +25,22 @@ class WorkerPool:
         while True:
             offset, event = await self.bus.queue.get()
 
-            print(f"[Worker-{wid}] Processing {event.type}")
-
-            await self.bus.dispatch(offset, event)
+            try:
+                print(f"[Worker-{wid}] Processing {event.type}")
+                await self.bus.dispatch(offset, event)
+            finally:
+                self.bus.queue.task_done()
 
     async def stop(self):
-        for t in self.tasks:
-            t.cancel()
+        if not self.tasks:
+            return
+
+        for task in self.tasks:
+            task.cancel()
+
+        await asyncio.gather(
+            *self.tasks,
+            return_exceptions=True,
+        )
+
+        self.tasks.clear()

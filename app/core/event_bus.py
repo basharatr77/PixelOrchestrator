@@ -38,16 +38,16 @@ class StreamBus:
             if offset <= last_offset:
                 continue
 
-            for handler in handlers:
-                try:
+            try:
+                for handler in handlers:
                     if asyncio.iscoroutinefunction(handler):
                         await handler(event, offset, group_id)
                     else:
                         handler(event, offset, group_id)
 
-                    self.consumer_store.commit(
-                        group_id, etype, offset
-                    )
+                self.consumer_store.commit(
+                    group_id, etype, offset
+                )
 
-                except Exception as e:
-                    print("Handler error:", e)
+            except Exception as e:
+                print("Handler error:", e)

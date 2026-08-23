@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+﻿from dataclasses import asdict, dataclass
+
 
 @dataclass
 class Device:
@@ -7,3 +8,6 @@ class Device:
     brand: str = ""
     model: str = ""
     android_version: str = ""
+
+    def to_dict(self):
+        return asdict(self)

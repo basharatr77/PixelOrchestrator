@@ -4,6 +4,7 @@ from app.agents.orchestrator.lifecycle_consumer import LifecycleConsumer
 from app.agents.orchestrator.task_queue import TaskQueue
 from app.agents.orchestrator.task_executor import TaskExecutor
 from app.agents.orchestrator.execution_worker import ExecutionWorker
+from app.core.events import Event
 from app.core.event_bus import StreamBus
 from app.core.registry import update_registry
 from app.core.worker_pool import WorkerPool
@@ -34,7 +35,17 @@ class BusRuntime:
         if task is not None:
             self.task_queue.add_task(task)
 
-        return self.execution_worker.run_once()
+        result = self.execution_worker.run_once()
+
+        if result is not None:
+            self.bus.publish_now(
+                Event(
+                    type="TASK_EXECUTED",
+                    payload=result,
+                )
+            )
+
+        return result
 
     async def run(self):
         self.setup()

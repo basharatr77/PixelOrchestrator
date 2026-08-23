@@ -20,8 +20,12 @@ class StreamBus:
         offset = self.log.append(event)
         await self.queue.put((offset, event))
 
-    async def dispatch(self, offset, event):
+    def publish_now(self, event):
+        offset = self.log.append(event)
+        self.queue.put_nowait((offset, event))
+        return offset
 
+    async def dispatch(self, offset, event):
         for (group_id, etype), handlers in self.handlers.items():
 
             if etype != event.type:

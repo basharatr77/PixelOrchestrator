@@ -2,14 +2,16 @@ import time
 
 from app.agents.device_agent.adb_detector import scan_adb
 from app.agents.device_agent.fastboot_detector import scan_fastboot
+from app.core.events import Event
 
 
 def scan_devices():
     return scan_adb() + scan_fastboot()
 
 
-def detect_lifecycle(known_devices):
-    devices = scan_devices()
+def detect_lifecycle(known_devices, devices=None):
+    if devices is None:
+        devices = scan_devices()
 
     current_devices = {
         device.serial: device
@@ -62,6 +64,34 @@ def detect_lifecycle(known_devices):
             })
 
     return events
+
+
+async def publish_lifecycle_events(bus, lifecycle_events):
+    for lifecycle in lifecycle_events:
+        event = Event(
+            lifecycle["type"],
+            lifecycle["data"],
+        )
+        await bus.publish(event)
+
+
+async def run_detector_cycle(bus, known_devices):
+    devices = scan_devices()
+
+    lifecycle_events = detect_lifecycle(
+        known_devices,
+        devices,
+    )
+
+    await publish_lifecycle_events(
+        bus,
+        lifecycle_events,
+    )
+
+    return {
+        device.serial: device.mode
+        for device in devices
+    }
 
 def start_detector():
     print("Device Discovery Service Started")

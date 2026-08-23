@@ -27,7 +27,12 @@ class WorkerPool:
 
             try:
                 print(f"[Worker-{wid}] Processing {event.type}")
-                await self.bus.dispatch(offset, event)
+
+                try:
+                    await self.bus.dispatch(offset, event)
+                except Exception as e:
+                    print(f"[Worker-{wid}] Dispatch error:", e)
+
             finally:
                 self.bus.queue.task_done()
 

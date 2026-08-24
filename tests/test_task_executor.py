@@ -1,18 +1,44 @@
 from app.agents.orchestrator.task_executor import TaskExecutor
 
 
-def test_safe_probe_is_executed_as_dry_run():
-    executor = TaskExecutor()
+class FakeTransport:
+    def execute(self, command):
+        assert command == "getprop ro.product.model"
+
+        return {
+            "returncode": 0,
+            "stdout": "Pixel 8\n",
+            "stderr": "",
+        }
+
+
+class FakeTransportResolver:
+    @staticmethod
+    def resolve(device):
+        assert device.serial == "PIXEL_8"
+        assert device.mode == "ADB"
+
+        return FakeTransport()
+
+
+def test_safe_probe_executes_read_only_probe():
+    executor = TaskExecutor(
+        transport_resolver=FakeTransportResolver,
+    )
 
     result = executor.execute({
         "action": "safe_probe",
         "serial": "PIXEL_8",
+        "mode": "ADB",
     })
 
     assert result == {
         "success": True,
         "action": "safe_probe",
         "serial": "PIXEL_8",
+        "returncode": 0,
+        "stdout": "Pixel 8\n",
+        "stderr": "",
     }
 
 

@@ -4,19 +4,32 @@ from app.core.adb_transport import ADBTransport
 from app.core.fastboot_transport import FastbootTransport
 
 
+class FakeTransport:
+    def __init__(self, serial):
+        self.serial = serial
+        self.executed_commands = []
+
+    def execute(self, command):
+        self.executed_commands.append(command)
+
+        return {
+            "returncode": 0,
+            "stdout": "probe-ok\n",
+            "stderr": "",
+        }
+
+
 class FakeTransportResolver:
+    transports = {}
+
     @staticmethod
     def resolve(device):
-        if device.mode == "ADB":
-            return ADBTransport(device.serial)
-
-        if device.mode == "FASTBOOT":
-            return FastbootTransport(device.serial)
-
-        raise ValueError("unsupported mode")
+        transport = FakeTransport(device.serial)
+        FakeTransportResolver.transports[device.serial] = transport
+        return transport
 
 
-def test_task_executor_resolves_transport_for_adb_device():
+def test_task_executor_execute_resolves_transport():
     executor = TaskExecutor(
         transport_resolver=FakeTransportResolver,
     )
@@ -27,24 +40,17 @@ def test_task_executor_resolves_transport_for_adb_device():
         "mode": "ADB",
     }
 
-    result = executor.resolve_transport(task)
+    result = executor.execute(task)
 
-    assert isinstance(result, ADBTransport)
-    assert result.serial == "A52"
+    transport = FakeTransportResolver.transports["A52"]
 
-
-def test_task_executor_resolves_transport_for_fastboot_device():
-    executor = TaskExecutor(
-        transport_resolver=FakeTransportResolver,
-    )
-
-    task = {
-        "action": "diagnostic_scan",
-        "serial": "RF8T206R8EP",
-        "mode": "FASTBOOT",
+    assert transport.serial == "A52"
+    assert transport.executed_commands == ["getprop ro.product.model"]
+    assert result == {
+        "success": True,
+        "action": "safe_probe",
+        "serial": "A52",
+        "returncode": 0,
+        "stdout": "probe-ok\n",
+        "stderr": "",
     }
-
-    result = executor.resolve_transport(task)
-
-    assert isinstance(result, FastbootTransport)
-    assert result.serial == "RF8T206R8EP"

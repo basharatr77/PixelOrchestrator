@@ -12,14 +12,14 @@ from app.core.worker_pool import WorkerPool
 
 
 class BusRuntime:
-    def __init__(self):
+    def __init__(self, task_executor=None):
         create_registry_table()
 
         self.bus = StreamBus()
         self.pool = WorkerPool(self.bus, worker_count=3)
         self.task_queue = TaskQueue()
 
-        self.task_executor = TaskExecutor()
+        self.task_executor = task_executor if task_executor is not None else TaskExecutor()
 
         self.execution_worker = ExecutionWorker(
             task_queue=self.task_queue,

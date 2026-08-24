@@ -2,12 +2,41 @@ import asyncio
 
 from app.agents.device_agent import detector
 from app.agents.device_agent.device_model import Device
+from app.agents.orchestrator.task_executor import TaskExecutor
 from app.core.bus_runtime import BusRuntime
+
+
+class FakeTransport:
+    def execute(self, command):
+        assert command == "getprop ro.product.model"
+
+        return {
+            "returncode": 0,
+            "stdout": "Pixel 8\n",
+            "stderr": "",
+        }
+
+
+class FakeTransportResolver:
+    @staticmethod
+    def resolve(device):
+        assert device.serial == "PIXEL_8"
+        assert device.mode == "ADB"
+
+        return FakeTransport()
+
+
+def make_runtime():
+    return BusRuntime(
+        task_executor=TaskExecutor(
+            transport_resolver=FakeTransportResolver,
+        )
+    )
 
 
 def test_detector_to_bus_runtime_executes_lifecycle_task(monkeypatch):
     async def run():
-        runtime = BusRuntime()
+        runtime = make_runtime()
 
         registry = {}
 
@@ -25,6 +54,8 @@ def test_detector_to_bus_runtime_executes_lifecycle_task(monkeypatch):
         )
 
         runtime.setup()
+
+        start_offset = runtime.bus.log.latest_offset()
 
         await runtime.pool.start()
 
@@ -45,7 +76,7 @@ def test_detector_to_bus_runtime_executes_lifecycle_task(monkeypatch):
 
         for _ in range(100):
             events = runtime.bus.log.read_from(
-                offset=0,
+                offset=start_offset,
                 limit=100,
             )
 
@@ -65,17 +96,21 @@ def test_detector_to_bus_runtime_executes_lifecycle_task(monkeypatch):
             "PIXEL_8": "ADB",
         }
 
+        assert runtime.task_queue.tasks == []
+
         assert task_events
 
         assert task_events[-1]["payload"] == {
             "success": True,
             "action": "safe_probe",
             "serial": "PIXEL_8",
+            "returncode": 0,
+            "stdout": "Pixel 8\n",
+            "stderr": "",
         }
 
-        assert runtime.task_queue.tasks == []
-
         runtime.execution_task.cancel()
+
         await asyncio.gather(
             runtime.execution_task,
             return_exceptions=True,

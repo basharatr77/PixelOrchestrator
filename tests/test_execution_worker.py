@@ -3,13 +3,31 @@ from app.agents.orchestrator.task_queue import TaskQueue
 from app.agents.orchestrator.execution_worker import ExecutionWorker
 
 
+class FakeTransport:
+    def execute(self, command):
+        return {
+            "returncode": 0,
+            "stdout": "probe-ok\n",
+            "stderr": "",
+        }
+
+
+class FakeTransportResolver:
+    @staticmethod
+    def resolve(device):
+        return FakeTransport()
+
+
 def test_execution_worker_executes_queued_task():
     queue = TaskQueue()
-    executor = TaskExecutor()
+    executor = TaskExecutor(
+        transport_resolver=FakeTransportResolver,
+    )
 
     queue.add_task({
         "action": "safe_probe",
         "serial": "PIXEL_8",
+        "mode": "ADB",
     })
 
     worker = ExecutionWorker(
@@ -23,6 +41,9 @@ def test_execution_worker_executes_queued_task():
         "success": True,
         "action": "safe_probe",
         "serial": "PIXEL_8",
+        "returncode": 0,
+        "stdout": "probe-ok\n",
+        "stderr": "",
     }
 
     assert queue.tasks == []

@@ -40,6 +40,15 @@ class EventLog:
 
             return cur.lastrowid
 
+    def latest_offset(self):
+        cur = self.conn.cursor()
+        cur.execute("""
+            SELECT COALESCE(MAX(offset), 0)
+            FROM event_log
+        """)
+
+        return cur.fetchone()[0]
+
     def read_from(self, offset=0, limit=100):
         cur = self.conn.cursor()
         cur.execute("""

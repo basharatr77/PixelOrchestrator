@@ -19,6 +19,7 @@ class StreamBus:
     async def publish(self, event):
         offset = self.log.append(event)
         await self.queue.put((offset, event))
+        return offset
 
     def publish_now(self, event):
         offset = self.log.append(event)

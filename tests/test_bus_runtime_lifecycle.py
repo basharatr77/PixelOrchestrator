@@ -11,8 +11,9 @@ def test_bus_runtime_dispatches_lifecycle_event(monkeypatch):
 
         registry = {}
 
-        def update_registry(device, status):
+        def update_registry(device, status, offset):
             registry[device] = status
+            return True
 
         runtime.lifecycle_consumer.registry_updater = update_registry
 

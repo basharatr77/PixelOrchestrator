@@ -40,8 +40,9 @@ def test_detector_to_bus_runtime_executes_lifecycle_task(monkeypatch):
 
         registry = {}
 
-        def update_registry(device, status):
+        def update_registry(device, status, offset):
             registry[device] = status
+            return True
 
         runtime.lifecycle_consumer.registry_updater = update_registry
 

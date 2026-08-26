@@ -39,8 +39,9 @@ def test_bus_runtime_automatically_executes_lifecycle_task():
 
         registry = {}
 
-        def update_registry(device, status):
+        def update_registry(device, status, offset):
             registry[device] = status
+            return True
 
         runtime.lifecycle_consumer.registry_updater = update_registry
 

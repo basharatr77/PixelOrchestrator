@@ -1,4 +1,4 @@
-﻿from app.agents.orchestrator.ai_engine import decide
+from app.agents.orchestrator.ai_engine import decide
 
 
 class LifecycleConsumer:
@@ -36,35 +36,40 @@ class LifecycleConsumer:
         if event_type == "DEVICE_CONNECTED":
             mode = payload["mode"]
 
-            self.registry_updater(
+            accepted = self.registry_updater(
                 serial,
                 mode,
+                offset,
             )
 
-            self.task_queue.add_task(
-                decide({
-                    "serial": serial,
-                    "mode": mode,
-                })
-            )
+            if accepted:
+                self.task_queue.add_task(
+                    decide({
+                        "serial": serial,
+                        "mode": mode,
+                    })
+                )
 
         elif event_type == "DEVICE_MODE_CHANGED":
             mode = payload["mode"]
 
-            self.registry_updater(
+            accepted = self.registry_updater(
                 serial,
                 mode,
+                offset,
             )
 
-            self.task_queue.add_task(
-                decide({
-                    "serial": serial,
-                    "mode": mode,
-                })
-            )
+            if accepted:
+                self.task_queue.add_task(
+                    decide({
+                        "serial": serial,
+                        "mode": mode,
+                    })
+                )
 
         elif event_type == "DEVICE_DISCONNECTED":
             self.registry_updater(
                 serial,
                 "disconnected",
+                offset,
             )

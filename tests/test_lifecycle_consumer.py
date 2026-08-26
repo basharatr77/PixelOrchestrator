@@ -10,7 +10,7 @@ def test_connected_event_updates_registry_and_creates_task(tmp_path):
     db_path = tmp_path / "devices.db"
     queue = TaskQueue()
 
-    def update_registry(device, status):
+    def update_registry(device, status, offset):
         conn = sqlite3.connect(db_path)
         conn.execute(
             "CREATE TABLE IF NOT EXISTS device_registry "
@@ -24,6 +24,7 @@ def test_connected_event_updates_registry_and_creates_task(tmp_path):
         )
         conn.commit()
         conn.close()
+        return True
 
     consumer = LifecycleConsumer(
         task_queue=queue,
@@ -62,7 +63,7 @@ def test_mode_changed_updates_registry_and_creates_task(tmp_path):
     db_path = tmp_path / "devices.db"
     queue = TaskQueue()
 
-    def update_registry(device, status):
+    def update_registry(device, status, offset):
         conn = sqlite3.connect(db_path)
         conn.execute(
             "CREATE TABLE IF NOT EXISTS device_registry "
@@ -76,6 +77,7 @@ def test_mode_changed_updates_registry_and_creates_task(tmp_path):
         )
         conn.commit()
         conn.close()
+        return True
 
     consumer = LifecycleConsumer(
         task_queue=queue,
@@ -112,7 +114,7 @@ def test_disconnected_event_updates_registry_without_task(tmp_path):
     db_path = tmp_path / "devices.db"
     queue = TaskQueue()
 
-    def update_registry(device, status):
+    def update_registry(device, status, offset):
         conn = sqlite3.connect(db_path)
         conn.execute(
             "CREATE TABLE IF NOT EXISTS device_registry "
@@ -126,6 +128,7 @@ def test_disconnected_event_updates_registry_without_task(tmp_path):
         )
         conn.commit()
         conn.close()
+        return True
 
     consumer = LifecycleConsumer(
         task_queue=queue,
@@ -157,7 +160,7 @@ def test_consumer_registers_with_stream_bus():
 
     consumer = LifecycleConsumer(
         task_queue=queue,
-        registry_updater=lambda device, status: None,
+        registry_updater=lambda device, status, offset: True,
     )
 
     consumer.subscribe(bus)

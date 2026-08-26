@@ -21,8 +21,9 @@ def test_device_agent_to_orchestrator_end_to_end(monkeypatch):
         queue = TaskQueue()
         registry = {}
 
-        def update_registry(device, status):
+        def update_registry(device, status, offset):
             registry[device] = status
+            return True
 
         consumer = LifecycleConsumer(
             task_queue=queue,

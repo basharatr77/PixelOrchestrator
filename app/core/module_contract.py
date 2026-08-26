@@ -113,13 +113,31 @@ class ModuleContract:
         if not manifest.version or not manifest.version.strip():
             raise ValueError("Module manifest version cannot be empty.")
 
+        capability_ids = set()
+
         for capability in manifest.capabilities:
             if not capability.id or not capability.id.strip():
                 raise ValueError("Capability ID cannot be empty.")
 
+            if capability.id in capability_ids:
+                raise ValueError(
+                    f"Duplicate capability ID: {capability.id}"
+                )
+
+            capability_ids.add(capability.id)
+
+        action_ids = set()
+
         for action in manifest.actions:
             if not action.id or not action.id.strip():
                 raise ValueError("Action ID cannot be empty.")
+
+            if action.id in action_ids:
+                raise ValueError(
+                    f"Duplicate action ID: {action.id}"
+                )
+
+            action_ids.add(action.id)
 
             if (
                 action.capability_id is not None
@@ -127,6 +145,14 @@ class ModuleContract:
             ):
                 raise ValueError(
                     "Action capability ID cannot be empty when provided."
+                )
+
+            if (
+                action.capability_id is not None
+                and action.capability_id not in capability_ids
+            ):
+                raise ValueError(
+                    f"Unknown capability ID: {action.capability_id}"
                 )
 
     def detect(self) -> list[Device]:

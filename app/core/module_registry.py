@@ -16,11 +16,12 @@ class ModuleRegistry:
         self._modules: dict[str, ModuleContract] = {}
 
     def register(self, module: ModuleContract) -> None:
-        """Register a module using its manifest ID."""
-        module_id = module.manifest.id
+        """Validate and register a module using its manifest ID."""
+        if not isinstance(module, ModuleContract):
+            raise TypeError("Module must implement ModuleContract.")
 
-        if not module_id:
-            raise ValueError("Module manifest ID cannot be empty.")
+        module.validate_manifest()
+        module_id = module.manifest.id
 
         if module_id in self._modules:
             raise ValueError(

@@ -1,4 +1,4 @@
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.agents.device_agent import detector
 
 
@@ -7,7 +7,13 @@ def test_mode_transition_does_not_disconnect_device(monkeypatch):
         detector,
         "scan_devices",
         lambda: [
-            Device(serial="PIXEL_8", mode="FASTBOOT")
+            Device(
+                device_id="fastboot:PIXEL_8",
+                module_type=ModuleType.FASTBOOT,
+                state=DeviceState.FASTBOOT,
+                serial="PIXEL_8",
+                transport="fastboot",
+            )
         ],
     )
 

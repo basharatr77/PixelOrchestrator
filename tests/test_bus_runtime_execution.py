@@ -17,7 +17,7 @@ class FakeTransportResolver:
     @staticmethod
     def resolve(device):
         assert device.serial == "PIXEL_8"
-        assert device.mode == "ADB"
+        assert device.state.value.upper() == "ADB"
 
         return FakeTransport()
 

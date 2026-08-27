@@ -1,8 +1,10 @@
-﻿import pytest
+import pytest
 
 from app.core.module_contract import (
     Action,
     Capability,
+    Device,
+    DeviceState,
     ModuleContract,
     ModuleManifest,
     ModuleType,
@@ -122,3 +124,61 @@ def test_unknown_capability_reference_is_rejected():
                 ),
             )
         )
+
+
+def test_canonical_device_identity_and_defaults():
+    device = Device(
+        device_id="adb:PIXEL_8",
+        module_type=ModuleType.ADB,
+    )
+
+    assert device.device_id == "adb:PIXEL_8"
+    assert device.module_type is ModuleType.ADB
+    assert device.state is DeviceState.UNKNOWN
+    assert device.model is None
+    assert device.serial is None
+    assert device.transport is None
+    assert device.properties == {}
+
+
+def test_canonical_device_accepts_runtime_identity():
+    device = Device(
+        device_id="adb:PIXEL_8",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Pixel 8",
+        serial="PIXEL_8",
+        transport="adb",
+        properties={
+            "brand": "Google",
+            "android_version": "14",
+        },
+    )
+
+    assert device.device_id == "adb:PIXEL_8"
+    assert device.module_type is ModuleType.ADB
+    assert device.state is DeviceState.ADB
+    assert device.model == "Pixel 8"
+    assert device.serial == "PIXEL_8"
+    assert device.transport == "adb"
+    assert device.properties == {
+        "brand": "Google",
+        "android_version": "14",
+    }
+
+
+def test_canonical_device_properties_are_independent():
+    first = Device(
+        device_id="adb:ONE",
+        module_type=ModuleType.ADB,
+    )
+
+    second = Device(
+        device_id="adb:TWO",
+        module_type=ModuleType.ADB,
+    )
+
+    first.properties["brand"] = "Google"
+
+    assert first.properties == {"brand": "Google"}
+    assert second.properties == {}

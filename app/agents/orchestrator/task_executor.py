@@ -8,7 +8,11 @@ class TaskExecutor:
         self.transport_resolver = transport_resolver
 
     def resolve_transport(self, task):
-        from app.agents.device_agent.device_model import Device
+        from app.core.module_contract import (
+            Device,
+            DeviceState,
+            ModuleType,
+        )
 
         mode = task.get("mode")
 
@@ -20,9 +24,27 @@ class TaskExecutor:
             elif action == "diagnostic_scan":
                 mode = "FASTBOOT"
 
+        mode = mode.upper() if mode else None
+
+        if mode == "ADB":
+            module_type = ModuleType.ADB
+            device_state = DeviceState.ADB
+        elif mode == "FASTBOOT":
+            module_type = ModuleType.FASTBOOT
+            device_state = DeviceState.FASTBOOT
+        else:
+            raise ValueError(
+                f"Unsupported transport mode: {mode}"
+            )
+
+        serial = task["serial"]
+
         device = Device(
-            serial=task["serial"],
-            mode=mode,
+            device_id=f"{mode.lower()}:{serial}",
+            module_type=module_type,
+            state=device_state,
+            serial=serial,
+            transport=mode.lower(),
         )
 
         return self.transport_resolver.resolve(device)

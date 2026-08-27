@@ -5,6 +5,27 @@ from app.agents.device_agent.fastboot_detector import scan_fastboot
 from app.core.events import Event
 
 
+def _device_brand(device):
+    """Return device brand when available."""
+    properties = getattr(device, "properties", None)
+    if isinstance(properties, dict):
+        return properties.get("brand", "")
+    return getattr(device, "brand", "") or ""
+
+
+def _device_android_version(device):
+    """Return Android version when available."""
+    properties = getattr(device, "properties", None)
+    if isinstance(properties, dict):
+        return properties.get("android_version", "")
+    return getattr(device, "android_version", "") or ""
+
+
+def _device_mode(device):
+    """Return the lifecycle-compatible uppercase device state."""
+    return device.state.value.upper()
+
+
 def scan_devices():
     return scan_adb() + scan_fastboot()
 
@@ -35,7 +56,13 @@ def detect_lifecycle(known_devices, devices=None):
         if serial not in known_serials:
             events.append({
                 "type": "DEVICE_CONNECTED",
-                "data": device.to_dict(),
+                "data": {
+                    "serial": device.serial,
+                    "mode": _device_mode(device),
+                    "brand": _device_brand(device),
+                    "model": device.model or "",
+                    "android_version": _device_android_version(device),
+                },
             })
             continue
 
@@ -43,13 +70,13 @@ def detect_lifecycle(known_devices, devices=None):
         if not legacy_serials:
             previous_mode = known_devices[serial]
 
-            if previous_mode != device.mode:
+            if previous_mode != _device_mode(device):
                 events.append({
                     "type": "DEVICE_MODE_CHANGED",
                     "data": {
                         "serial": serial,
                         "previous_mode": previous_mode,
-                        "mode": device.mode,
+                        "mode": _device_mode(device),
                     },
                 })
 
@@ -89,7 +116,7 @@ async def run_detector_cycle(bus, known_devices):
     )
 
     return {
-        device.serial: device.mode
+        device.serial: _device_mode(device)
         for device in devices
     }
 
@@ -101,20 +128,29 @@ def start_detector():
     while True:
         devices = scan_devices()
         current = {
-            device.serial: device.mode
+            device.serial: _device_mode(device)
             for device in devices
         }
 
         for device in devices:
             if device.serial not in known:
-                print("CONNECTED:", device.to_dict())
-            elif known[device.serial] != device.mode:
+                print(
+                    "CONNECTED:",
+                    {
+                        "serial": device.serial,
+                        "mode": _device_mode(device),
+                        "brand": _device_brand(device),
+                        "model": device.model or "",
+                        "android_version": _device_android_version(device),
+                    },
+                )
+            elif known[device.serial] != _device_mode(device):
                 print(
                     "MODE CHANGED:",
                     device.serial,
                     known[device.serial],
                     "->",
-                    device.mode,
+                    _device_mode(device),
                 )
 
         for serial in known:

@@ -1,6 +1,6 @@
 import pytest
 
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.core.adb_transport import ADBTransport
 from app.core.fastboot_transport import FastbootTransport
 from app.core.transport_resolver import TransportResolver
@@ -8,11 +8,15 @@ from app.core.transport_resolver import TransportResolver
 
 def test_resolver_returns_adb_transport():
     device = Device(
+        device_id="adb:A52",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
         serial="A52",
-        mode="ADB",
-        brand="samsung",
         model="SM-A525F",
-        android_version="14",
+        properties={
+            "brand": "samsung",
+            "android_version": "14",
+        },
     )
 
     transport = TransportResolver.resolve(device)
@@ -23,8 +27,10 @@ def test_resolver_returns_adb_transport():
 
 def test_resolver_returns_fastboot_transport():
     device = Device(
+        device_id="fastboot:RF8T206R8EP",
+        module_type=ModuleType.FASTBOOT,
+        state=DeviceState.FASTBOOT,
         serial="RF8T206R8EP",
-        mode="FASTBOOT",
     )
 
     transport = TransportResolver.resolve(device)

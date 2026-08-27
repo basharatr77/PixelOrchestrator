@@ -1,7 +1,7 @@
 ﻿import asyncio
 
 from app.agents.device_agent import detector
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.agents.orchestrator.lifecycle_consumer import LifecycleConsumer
 from app.agents.orchestrator.task_queue import TaskQueue
 from app.core.event_bus import StreamBus
@@ -12,7 +12,13 @@ def test_device_agent_to_orchestrator_end_to_end(monkeypatch):
         detector,
         "scan_devices",
         lambda: [
-            Device(serial="PIXEL_8", mode="ADB")
+            Device(
+                device_id="adb:PIXEL_8",
+                module_type=ModuleType.ADB,
+                state=DeviceState.ADB,
+                serial="PIXEL_8",
+                transport="adb",
+            )
         ],
     )
 

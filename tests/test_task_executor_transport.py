@@ -1,4 +1,4 @@
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.agents.orchestrator.task_executor import TaskExecutor
 from app.core.adb_transport import ADBTransport
 from app.core.fastboot_transport import FastbootTransport

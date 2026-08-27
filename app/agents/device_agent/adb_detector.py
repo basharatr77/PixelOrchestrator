@@ -1,6 +1,10 @@
 import subprocess
 
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import (
+    Device,
+    DeviceState,
+    ModuleType,
+)
 
 
 def getprop(serial, prop):
@@ -40,22 +44,33 @@ def scan_adb():
 
             serial = line.split()[0]
 
+            brand = getprop(
+                serial,
+                "ro.product.manufacturer",
+            )
+
+            model = getprop(
+                serial,
+                "ro.product.model",
+            )
+
+            android_version = getprop(
+                serial,
+                "ro.build.version.release",
+            )
+
             devices.append(
                 Device(
+                    device_id=f"adb:{serial}",
+                    module_type=ModuleType.ADB,
+                    state=DeviceState.ADB,
                     serial=serial,
-                    mode="ADB",
-                    brand=getprop(
-                        serial,
-                        "ro.product.manufacturer",
-                    ),
-                    model=getprop(
-                        serial,
-                        "ro.product.model",
-                    ),
-                    android_version=getprop(
-                        serial,
-                        "ro.build.version.release",
-                    ),
+                    transport="adb",
+                    model=model,
+                    properties={
+                        "brand": brand,
+                        "android_version": android_version,
+                    },
                 )
             )
 

@@ -1,7 +1,7 @@
 ﻿import asyncio
 
 from app.agents.device_agent import detector
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.core.event_bus import StreamBus
 
 
@@ -10,7 +10,13 @@ def test_device_mode_changed_lifecycle_reaches_subscriber(monkeypatch):
         detector,
         "scan_devices",
         lambda: [
-            Device(serial="PIXEL_8", mode="FASTBOOT")
+            Device(
+                device_id="fastboot:PIXEL_8",
+                module_type=ModuleType.FASTBOOT,
+                state=DeviceState.FASTBOOT,
+                serial="PIXEL_8",
+                transport="fastboot",
+            )
         ],
     )
 

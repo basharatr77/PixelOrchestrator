@@ -1,14 +1,26 @@
 from app.agents.device_agent import detector
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 
 
 def test_detector_uses_canonical_detectors(monkeypatch):
     adb_devices = [
-        Device(serial="PIXEL_8", mode="ADB")
+        Device(
+                device_id="adb:PIXEL_8",
+                module_type=ModuleType.ADB,
+                state=DeviceState.ADB,
+                serial="PIXEL_8",
+                transport="adb",
+            )
     ]
 
     fastboot_devices = [
-        Device(serial="PIXEL_7", mode="FASTBOOT")
+        Device(
+                device_id="fastboot:PIXEL_7",
+                module_type=ModuleType.FASTBOOT,
+                state=DeviceState.FASTBOOT,
+                serial="PIXEL_7",
+                transport="fastboot",
+            )
     ]
 
     monkeypatch.setattr(

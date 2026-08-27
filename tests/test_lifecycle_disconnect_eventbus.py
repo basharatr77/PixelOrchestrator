@@ -1,7 +1,7 @@
 ﻿import asyncio
 
 from app.agents.device_agent import detector
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.core.event_bus import StreamBus
 
 

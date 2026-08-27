@@ -1,6 +1,6 @@
 ﻿import asyncio
 
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.agents.device_agent import detector
 from app.core.event_bus import StreamBus
 from app.core.events import Event
@@ -11,7 +11,13 @@ def test_device_connected_lifecycle_publishes_event(monkeypatch):
         detector,
         "scan_devices",
         lambda: [
-            Device(serial="PIXEL_8", mode="ADB")
+            Device(
+                device_id="adb:PIXEL_8",
+                module_type=ModuleType.ADB,
+                state=DeviceState.ADB,
+                serial="PIXEL_8",
+                transport="adb",
+            )
         ],
     )
 

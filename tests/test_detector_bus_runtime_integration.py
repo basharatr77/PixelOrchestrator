@@ -1,7 +1,7 @@
 import asyncio
 
 from app.agents.device_agent import detector
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.agents.orchestrator.task_executor import TaskExecutor
 from app.core.bus_runtime import BusRuntime
 
@@ -21,7 +21,7 @@ class FakeTransportResolver:
     @staticmethod
     def resolve(device):
         assert device.serial == "PIXEL_8"
-        assert device.mode == "ADB"
+        assert device.state.value.upper() == "ADB"
 
         return FakeTransport()
 
@@ -50,7 +50,13 @@ def test_detector_to_bus_runtime_executes_lifecycle_task(monkeypatch):
             detector,
             "scan_devices",
             lambda: [
-                Device(serial="PIXEL_8", mode="ADB")
+                Device(
+                    device_id="adb:PIXEL_8",
+                    module_type=ModuleType.ADB,
+                    state=DeviceState.ADB,
+                    serial="PIXEL_8",
+                    transport="adb",
+                )
             ],
         )
 

@@ -1,7 +1,7 @@
 ﻿import asyncio
 
 from app.agents.device_agent import detector
-from app.agents.device_agent.device_model import Device
+from app.core.module_contract import Device, DeviceState, ModuleType
 from app.core.event_bus import StreamBus
 
 
@@ -10,7 +10,13 @@ def test_lifecycle_events_are_published_to_eventbus(monkeypatch):
         detector,
         "scan_devices",
         lambda: [
-            Device(serial="PIXEL_8", mode="ADB")
+            Device(
+                device_id="adb:PIXEL_8",
+                module_type=ModuleType.ADB,
+                state=DeviceState.ADB,
+                serial="PIXEL_8",
+                transport="adb",
+            )
         ],
     )
 

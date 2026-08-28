@@ -10,3 +10,8 @@ logs/
 
 # runtime event storage
 events.jsonl
+
+# pytest runtime artifacts
+.pytest_cache/
+.pytest-tmp/
+pytest-*.txt

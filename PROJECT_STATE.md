@@ -1,27 +1,35 @@
-﻿# PixelOrchestrator — Project State
+# PixelOrchestrator — Project State
 
-> This file is the authoritative continuation checkpoint for active development.
-> Update it after every completed architectural phase and meaningful checkpoint.
+> Authoritative continuation checkpoint for active development.
+> The repository is the source of truth.
 
 ---
 
-## START HERE
+## CURRENT CHECKPOINT
 
-### Current Phase
+### Phase
 
-Phase 35 — Canonical Device Identity & Transport State
+Phase 36-B — Canonical Device Registry
 
 ### Status
 
 COMPLETE
 
-### Current Commit
+### Commit
 
-3d30994 — Canonicalize device identity and transport state
+79ae185 — Phase 36-B: establish canonical device registry
 
 ### Test Baseline
 
-102 passed in 6.10s
+110 passed
+
+Command:
+
+    python -m pytest -q
+
+Result:
+
+    110 passed
 
 ### Compile Check
 
@@ -41,199 +49,102 @@ Command:
 
 ### Working Tree
 
-Clean at the time Phase 35 was committed.
+Clean after Phase 36-B commit.
 
 ---
 
-# Phase 35 — Canonical Device Identity & Transport State
+# Phase 36-B — Canonical Device Registry
 
 ## Objective
 
-Replace the legacy device model and legacy `device.mode` representation with the canonical device contract defined in:
-
-    app/core/module_contract.py
+Establish a clean canonical device registry around the existing
+`app.core.module_contract.Device` contract without introducing another
+Device model or mixing registry ownership with unrelated database code.
 
 ## Completed Changes
 
-### Canonical Device Contract
+### Canonical Device Registry
 
-`Device`, `DeviceState`, and `ModuleType` are now used as the canonical device identity/state contract.
+Added:
 
-### Legacy Device Model
+    app/core/device_registry.py
 
-Removed:
+`DeviceRegistry` stores canonical `Device` objects keyed by stable
+`device_id`.
 
-    app/agents/device_agent/device_model.py
+Supported operations:
 
-### Legacy Device Mode
+- register
+- get
+- contains
+- update
+- remove
+- snapshot
+- clear
 
-Removed consumer dependence on:
+Duplicate registration is rejected.
 
-    device.mode
+Unknown-device updates are rejected.
 
-Device lifecycle state now uses:
+Registry snapshots do not expose the internal registry mapping.
 
-    device.state
+### Registry Persistence Boundary
 
-Transport information uses:
+The legacy registry implementation was removed from:
 
-    device.transport
+    app/db/database.py
 
-Module classification uses:
+`app/core/registry.py` remains the event/lifecycle persistence adapter used
+by `BusRuntime`.
 
-    device.module_type
-
-Stable device identity uses:
-
-    device.device_id
-
-### ADB Detector
-
-Updated:
-
-    app/agents/device_agent/adb_detector.py
-
-ADB devices now create canonical `Device` objects.
-
-### Fastboot Detector
-
-Updated:
-
-    app/agents/device_agent/fastboot_detector.py
-
-Fastboot devices now create canonical `Device` objects.
-
-### Device Lifecycle Detector
-
-Updated:
-
-    app/agents/device_agent/detector.py
-
-Lifecycle events now derive mode/state and metadata from the canonical device contract.
-
-### Task Executor
-
-Updated:
-
-    app/agents/orchestrator/task_executor.py
-
-Task transport resolution now constructs canonical devices using `ModuleType` and `DeviceState`.
-
-### Transport Resolver
-
-Updated:
-
-    app/core/transport_resolver.py
-
-Transport selection now derives from canonical `DeviceState`.
+The in-memory `DeviceRegistry` is intentionally independent from SQLite,
+event-bus implementation details, and vendor-specific logic.
 
 ### Tests
 
-Updated detector, lifecycle, event bus, task executor, transport resolver, and module contract tests.
+Added:
 
----
+    tests/test_device_registry.py
 
-# Phase 35 Verification
+Registry behavior is covered for:
 
-## Legacy Reference Scan
+- registration
+- lookup
+- duplicate prevention
+- update
+- removal
+- missing-device removal
+- snapshots
+- snapshot isolation
+- clear
 
-The repository no longer contains active imports/references to:
+## Verification
 
-    app.agents.device_agent.device_model
+Test suite:
 
-or:
+    110 passed
 
-    device.mode
+Compile:
 
-Remaining matches involving `device.model` are legitimate canonical model metadata references.
+    PASS
 
-## Legacy File Check
+Diff check:
 
-    Test-Path .\app\agents\device_agent\device_model.py
+    PASS
 
-Result:
+Git working tree:
 
-    False
+    CLEAN
 
-## Compilation
+## Architecture Baseline
 
-PASS
+The canonical device contract remains:
 
-## Test Suite
+    app/core/module_contract.py
 
-PASS
-
-    102 passed in 6.10s
-
-## Git Diff Check
-
-PASS
-
-## Commit
-
-    3d30994 Canonicalize device identity and transport state
-
----
-
-# Current Architecture Baseline
-
-The canonical device flow is now:
+Device flow:
 
     Detector
-        |
-        v
-    Canonical Device
-        |
-        +-- device_id
-        +-- module_type
-        +-- state
-        +-- serial
-        +-- transport
-        +-- model
-        +-- properties
-        |
-        v
-    Lifecycle / Event Bus
-        |
-        v
-    Orchestrator
-        |
-        v
-    Transport Resolver
-        |
-        v
-    ADB / Fastboot Transport
-
-The repository should continue building on this canonical contract.
-
----
-
-# Known Limitations
-
-1. The current device detection layer primarily covers ADB and Fastboot.
-2. Additional transport/device modes still need to be integrated systematically.
-3. Device registry persistence and synchronization are not yet the final production architecture.
-4. AI service/provider integration is still incomplete.
-5. GUI integration and device-management UX remain future phases.
-6. Distributed orchestration, worker management, and advanced workflow capabilities remain future work.
-
----
-
-# NEXT PHASE
-
-## Phase 36 — Device Detection & Registry
-
-Status:
-
-    NOT STARTED
-
-Primary objective:
-
-    Build a clean device registry around the canonical Device contract.
-
-Expected direction:
-
-    Detectors
         |
         v
     Canonical Device
@@ -247,16 +158,60 @@ Expected direction:
         v
     Orchestrator
 
+No duplicate Device model was introduced.
+
+Legacy:
+
+    app/agents/device_agent/device_model.py
+
+remains removed.
+
+Legacy:
+
+    device.mode
+
+remains prohibited.
+
+---
+
+# Known Limitations
+
+1. ADB and Fastboot remain the primary detection transports.
+2. The new DeviceRegistry is currently an in-memory canonical registry.
+3. Lifecycle integration with DeviceRegistry is not yet complete.
+4. Registry persistence and event synchronization remain separate concerns.
+5. Additional lifecycle states and transition hardening remain future work.
+6. GUI device-management integration remains future work.
+7. AI provider integration remains incomplete.
+
+---
+
+# NEXT PHASE
+
+## Phase 37 — Device State / Lifecycle Hardening
+
+Status:
+
+    NEXT
+
+Objective:
+
+Formalize device lifecycle transitions and ensure lifecycle events,
+state synchronization, and invalid-transition handling are deterministic.
+
+### Exact First Action
+
 Before modifying code:
 
-1. Inspect the existing registry/device tracking implementation.
-2. Search for duplicate device registries or device maps.
-3. Identify the canonical registry location.
-4. Inspect all consumers.
-5. Define the Phase 36 boundary.
-6. Add/update tests before declaring the phase complete.
+1. Inspect `DeviceState` in `app/core/module_contract.py`.
+2. Inspect current lifecycle detection in
+   `app/agents/device_agent/detector.py`.
+3. Inspect lifecycle event consumers.
+4. Search all `DeviceState` and lifecycle event references.
+5. Map currently supported and unsupported transitions.
+6. Add tests before changing implementation.
 
-Do not introduce another Device model.
+Do not mix GUI work into Phase 37.
 
 ---
 
@@ -264,8 +219,8 @@ Do not introduce another Device model.
 
 When continuing in a new chat:
 
-1. Read this file.
-2. Read the relevant phase in `PHASE_PLAN.md`.
+1. Read `PROJECT_STATE.md`.
+2. Read the relevant section of `PHASE_PLAN.md`.
 3. Read `PROJECT_INSTRUCTIONS.md`.
 4. Run:
 
@@ -277,27 +232,7 @@ When continuing in a new chat:
 
 6. Verify the recorded test baseline if needed.
 7. Continue from `NEXT PHASE`.
-8. Do not repeat completed Phase 35 work unless repository evidence shows regression.
-
----
-
-# Checkpoint Update Template
-
-At the completion of every phase, update this file with:
-
-- Phase
-- Status
-- Commit
-- Test result
-- Compile result
-- Diff result
-- Architecture changes
-- Files/components affected
-- Known limitations
-- Next phase
-- Exact next action
-
-The final phase commit must be recorded here.
+8. Do not repeat completed phases without repository evidence of regression.
 
 ---
 
@@ -322,4 +257,24 @@ Verification:
     102 passed
     compileall PASS
     git diff --check PASS
-    legacy device_model.py removed
+
+## Phase 36-B
+
+Status:
+
+    COMPLETE
+
+Commit:
+
+    79ae185
+
+Description:
+
+    Establish canonical device registry
+
+Verification:
+
+    110 passed
+    compileall PASS
+    git diff --check PASS
+    working tree clean

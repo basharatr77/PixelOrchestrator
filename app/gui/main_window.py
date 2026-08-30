@@ -104,18 +104,65 @@ class MainWindow(QMainWindow):
         workspace_layout.addLayout(header)
 
         # Dynamic module/action workspace.
-        module_scroll = QScrollArea()
-        module_scroll.setWidgetResizable(True)
-        module_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self.module_scroll = QScrollArea()
+        self.module_scroll.setWidgetResizable(True)
+        self.module_scroll.setFrameShape(QFrame.Shape.NoFrame)
 
-        module_container = QWidget()
-        module_layout = QVBoxLayout(module_container)
-        module_layout.setContentsMargins(0, 0, 0, 0)
-        module_layout.setSpacing(12)
+        self.module_container = QWidget()
+        self.module_layout = QVBoxLayout(self.module_container)
+        self.module_layout.setContentsMargins(0, 0, 0, 0)
+        self.module_layout.setSpacing(12)
+
+        self.module_scroll.setWidget(self.module_container)
+        workspace_layout.addWidget(self.module_scroll, 1)
+
+        self.refresh_module_action_ui()
+
+        ai_panel = QFrame()
+        ai_panel.setObjectName("ai_panel")
+
+        ai_layout = QVBoxLayout(ai_panel)
+        ai_layout.setContentsMargins(24, 24, 24, 24)
+
+        welcome = QLabel(
+            "AI Assistant\n\n"
+            "Ready to analyze devices, logs and service operations."
+        )
+        welcome.setObjectName("welcome")
+        welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        ai_layout.addStretch()
+        ai_layout.addWidget(welcome)
+        ai_layout.addStretch()
+
+        workspace_layout.addWidget(ai_panel, 1)
+
+        status = QLabel(
+            "ADB ● READY    FASTBOOT ● READY    "
+            "DEVICES: 0    AI ● ONLINE    SYSTEM READY"
+        )
+        status.setObjectName("status")
+
+        workspace_layout.addWidget(status)
+
+        main_layout.addWidget(sidebar)
+        main_layout.addWidget(workspace)
+
+        self.apply_style()
+
+    def refresh_module_action_ui(self):
+        """Rebuild the dynamic module/action workspace from the adapter."""
+
+        while self.module_layout.count():
+            item = self.module_layout.takeAt(0)
+            widget = item.widget()
+
+            if widget is not None:
+                widget.deleteLater()
 
         module_title = QLabel("MODULE ACTIONS")
         module_title.setObjectName("module_title")
-        module_layout.addWidget(module_title)
+        self.module_layout.addWidget(module_title)
 
         self.module_action_buttons = {}
 
@@ -157,43 +204,9 @@ class MainWindow(QMainWindow):
                 module_box.addWidget(button)
                 self.module_action_buttons[module_id][action_id] = button
 
-            module_layout.addWidget(module_frame)
+            self.module_layout.addWidget(module_frame)
 
-        module_layout.addStretch()
-        module_scroll.setWidget(module_container)
-        workspace_layout.addWidget(module_scroll, 1)
-
-        ai_panel = QFrame()
-        ai_panel.setObjectName("ai_panel")
-
-        ai_layout = QVBoxLayout(ai_panel)
-        ai_layout.setContentsMargins(24, 24, 24, 24)
-
-        welcome = QLabel(
-            "AI Assistant\n\n"
-            "Ready to analyze devices, logs and service operations."
-        )
-        welcome.setObjectName("welcome")
-        welcome.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        ai_layout.addStretch()
-        ai_layout.addWidget(welcome)
-        ai_layout.addStretch()
-
-        workspace_layout.addWidget(ai_panel, 1)
-
-        status = QLabel(
-            "ADB ● READY    FASTBOOT ● READY    "
-            "DEVICES: 0    AI ● ONLINE    SYSTEM READY"
-        )
-        status.setObjectName("status")
-
-        workspace_layout.addWidget(status)
-
-        main_layout.addWidget(sidebar)
-        main_layout.addWidget(workspace)
-
-        self.apply_style()
+        self.module_layout.addStretch()
 
     def execute_module_action(self, module_id, action_id):
         """Execute a dynamically rendered module action."""

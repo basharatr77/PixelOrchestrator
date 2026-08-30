@@ -6,6 +6,7 @@ from app.agents.orchestrator.task_queue import TaskQueue
 from app.agents.orchestrator.task_executor import TaskExecutor
 from app.agents.orchestrator.execution_worker import ExecutionWorker
 from app.core.event_bus import StreamBus
+from app.core.device_registry import DeviceRegistry
 from app.core.events import Event
 from app.core.registry import create_registry_table, update_registry
 from app.core.worker_pool import WorkerPool
@@ -18,6 +19,7 @@ class BusRuntime:
         self.bus = StreamBus()
         self.pool = WorkerPool(self.bus, worker_count=3)
         self.task_queue = TaskQueue()
+        self.device_registry = DeviceRegistry()
 
         self.task_executor = task_executor if task_executor is not None else TaskExecutor()
 

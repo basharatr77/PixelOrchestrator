@@ -1,4 +1,4 @@
-﻿from pathlib import Path
+from pathlib import Path
 import os
 import subprocess
 import sys
@@ -6,7 +6,7 @@ import sys
 import app.gui.qt_bootstrap
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QMessageBox )
+from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QMessageBox, QScrollArea )
 
 from app.gui.ai.service import AIService
 from app.gui.module_adapter import GUIModuleAdapter
@@ -103,6 +103,66 @@ class MainWindow(QMainWindow):
 
         workspace_layout.addLayout(header)
 
+        # Dynamic module/action workspace.
+        module_scroll = QScrollArea()
+        module_scroll.setWidgetResizable(True)
+        module_scroll.setFrameShape(QFrame.Shape.NoFrame)
+
+        module_container = QWidget()
+        module_layout = QVBoxLayout(module_container)
+        module_layout.setContentsMargins(0, 0, 0, 0)
+        module_layout.setSpacing(12)
+
+        module_title = QLabel("MODULE ACTIONS")
+        module_title.setObjectName("module_title")
+        module_layout.addWidget(module_title)
+
+        self.module_action_buttons = {}
+
+        for module in self.module_adapter.get_modules():
+            module_id = module["id"]
+
+            module_frame = QFrame()
+            module_frame.setObjectName("module_frame")
+
+            module_box = QVBoxLayout(module_frame)
+            module_box.setContentsMargins(16, 14, 16, 14)
+            module_box.setSpacing(8)
+
+            module_label = QLabel(
+                f"{module['name']}    {module['type']}    v{module['version']}"
+            )
+            module_label.setObjectName("module_label")
+            module_box.addWidget(module_label)
+
+            self.module_action_buttons[module_id] = {}
+
+            for action in self.module_adapter.get_action_buttons(module_id):
+                action_id = action["id"]
+
+                button = QPushButton(action["name"])
+                button.setEnabled(bool(action["enabled"]))
+                button.setToolTip(
+                    action.get("description")
+                    or action.get("capability_id", "")
+                )
+
+                button.clicked.connect(
+                    lambda checked=False,
+                    mid=module_id,
+                    aid=action_id:
+                    self.execute_module_action(mid, aid)
+                )
+
+                module_box.addWidget(button)
+                self.module_action_buttons[module_id][action_id] = button
+
+            module_layout.addWidget(module_frame)
+
+        module_layout.addStretch()
+        module_scroll.setWidget(module_container)
+        workspace_layout.addWidget(module_scroll, 1)
+
         ai_panel = QFrame()
         ai_panel.setObjectName("ai_panel")
 
@@ -134,6 +194,36 @@ class MainWindow(QMainWindow):
         main_layout.addWidget(workspace)
 
         self.apply_style()
+
+    def execute_module_action(self, module_id, action_id):
+        """Execute a dynamically rendered module action."""
+        try:
+            result = self.module_adapter.execute_action(
+                module_id,
+                action_id,
+            )
+
+            message = getattr(result, "message", None) or str(result)
+
+            if getattr(result, "success", True):
+                QMessageBox.information(
+                    self,
+                    "Module Action",
+                    message,
+                )
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Module Action",
+                    message,
+                )
+
+        except Exception as exc:
+            QMessageBox.critical(
+                self,
+                "Module Action Error",
+                str(exc),
+            )
 
     def open_ai_assistant(self):
         """Open the AI Assistant interaction."""
@@ -220,7 +310,22 @@ class MainWindow(QMainWindow):
                 font-weight: 600;
             }
 
-            QPushButton {
+            QLabel#module_title {
+    font-size: 16px;
+    font-weight: 700;
+    padding: 4px 0;
+}
+
+QFrame#module_frame {
+    padding: 4px;
+}
+
+QLabel#module_label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+QPushButton {
                 background: #1C2028;
                 border: none;
                 border-radius: 7px;

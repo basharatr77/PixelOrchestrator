@@ -1,4 +1,4 @@
-# PixelOrchestrator — Project State
+﻿# PixelOrchestrator â€” Project State
 
 > Authoritative continuation checkpoint for active development.
 > The repository is the source of truth.
@@ -9,7 +9,7 @@
 
 ### Phase
 
-Phase 37 — Device State / Lifecycle Hardening
+Phase 37 â€” Device State / Lifecycle Hardening
 
 ### Status
 
@@ -17,7 +17,7 @@ COMPLETE
 
 ### Commit
 
-31e8613 — Integrate device state machine into lifecycle runtime
+31e8613 â€” Integrate device state machine into lifecycle runtime
 
 ### Test Baseline
 
@@ -45,7 +45,7 @@ Clean after Phase 37 commit.
 
 ---
 
-# Phase 37 — Device State / Lifecycle Hardening
+# Phase 37 â€” Device State / Lifecycle Hardening
 
 ## Objective
 
@@ -111,12 +111,12 @@ Added:
 
 Validated:
 
-- UNKNOWN → ADB
-- DISCONNECTED → ADB
-- ADB → FASTBOOT
-- FASTBOOT → FASTBOOTD
-- RECOVERY → SIDELOAD
-- ADB → DISCONNECTED
+- UNKNOWN â†’ ADB
+- DISCONNECTED â†’ ADB
+- ADB â†’ FASTBOOT
+- FASTBOOT â†’ FASTBOOTD
+- RECOVERY â†’ SIDELOAD
+- ADB â†’ DISCONNECTED
 - invalid transition rejection
 - failed-transition state preservation
 
@@ -182,7 +182,50 @@ No second Device model was introduced.
 
 # NEXT PHASE
 
-## Phase 38 — Unified Transport Layer Hardening
+## Phase 38 - Unified Transport Layer Hardening
+
+Status:
+
+    COMPLETE
+
+Objective:
+
+Make ADB/Fastboot and future transports conform to one stable
+transport abstraction.
+
+Completed validation:
+
+- Transport abstract contract verified.
+- ADB transport verified.
+- Fastboot transport verified.
+- Transport factory verified.
+- Transport resolver verified.
+- Unsupported transport rejection verified.
+- Invalid serial rejection verified.
+- Unsupported device state rejection verified.
+- Full test suite passed.
+
+Test Baseline:
+
+    118 passed in 7.63s
+
+Validation:
+
+    python -m pytest -q
+
+Result:
+
+    118 passed in 7.63s
+
+Working Tree:
+
+    clean before checkpoint update
+
+---
+
+# NEXT PHASE
+
+## Phase 39 - Device Capability System
 
 Status:
 
@@ -190,83 +233,21 @@ Status:
 
 Objective:
 
-Make ADB/Fastboot and future transports conform to one stable
-transport abstraction.
+Represent what each device/module can actually do.
 
-### Exact First Actions
+Scope:
 
-Before modifying code:
+- Capability discovery
+- Capability registry
+- Module capabilities
+- Device capabilities
+- Capability validation
+- Unsupported-operation handling
 
-1. Inspect the current transport interface/contract.
-2. Inspect ADB transport implementation.
-3. Inspect Fastboot transport implementation.
-4. Inspect transport resolver and factory.
-5. Search all production transport callers.
-6. Identify duplicated command/error handling.
-7. Add/confirm tests before changing implementation.
+Examples:
 
-Do not mix GUI work into Phase 38.
-
----
-
-# Resume Procedure
-
-When continuing in a new chat:
-
-1. Read `PROJECT_STATE.md`.
-2. Read the relevant section of `PHASE_PLAN.md`.
-3. Read `PROJECT_INSTRUCTIONS.md`.
-4. Run:
-
-    git status --short
-
-5. Run:
-
-    git log -1 --oneline
-
-6. Verify the recorded test baseline if needed.
-7. Continue from `NEXT PHASE`.
-8. Do not repeat completed phases without repository evidence of regression.
-
----
-
-# Phase 35
-
-Status:
-
-    COMPLETE
-
-Commit:
-
-    3d30994
-
-Description:
-
-    Canonicalize device identity and transport state
-
-Verification:
-
-    102 passed
-    compileall PASS
-    git diff --check PASS
-
-## Phase 36-B
-
-Status:
-
-    COMPLETE
-
-Commit:
-
-    79ae185
-
-Description:
-
-    Establish canonical device registry
-
-Verification:
-
-    110 passed
-    compileall PASS
-    git diff --check PASS
-    working tree clean
+- ADB shell
+- reboot
+- bootloader
+- fastboot flash
+- diagnostics

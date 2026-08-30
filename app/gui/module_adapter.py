@@ -1,10 +1,10 @@
-﻿"""GUI Module Adapter V1 for PixelOrchestrator.
+"""GUI Module Adapter V1 for PixelOrchestrator.
 
 Converts registered module metadata into GUI-friendly structures.
 The GUI does not need vendor-specific knowledge.
 """
 
-from app.core.module_contract import Action, Capability
+from app.core.module_contract import Action, ActionResult, Capability
 from app.core.module_loader import ModuleLoader
 from app.core.module_registry import ModuleRegistry
 
@@ -78,3 +78,27 @@ class GUIModuleAdapter:
             }
             for action in actions
         ]
+
+    def execute_action(
+        self,
+        module_id: str,
+        action_id: str,
+        device=None,
+        **kwargs,
+    ) -> ActionResult:
+        """Execute an action through the registered module."""
+
+        module = self.registry.get(module_id)
+
+        if module is None:
+            return ActionResult(
+                success=False,
+                message=f"Module not found: {module_id}",
+                error_code="MODULE_NOT_FOUND",
+            )
+
+        return module.execute(
+            action_id,
+            device=device,
+            **kwargs,
+        )

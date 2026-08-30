@@ -211,6 +211,42 @@ class MainWindow(QMainWindow):
     def execute_module_action(self, module_id, action_id):
         """Execute a dynamically rendered module action."""
         try:
+            module = self.module_adapter.registry.get(module_id)
+
+            if module is None:
+                raise ValueError(f"Module not found: {module_id}")
+
+            action = next(
+                (
+                    item
+                    for item in module.get_actions()
+                    if item.id == action_id
+                ),
+                None,
+            )
+
+            if action is None:
+                raise ValueError(
+                    f"Action not found: {module_id}:{action_id}"
+                )
+
+            if getattr(action, "dangerous", False):
+                confirmation = QMessageBox.question(
+                    self,
+                    "Confirm Dangerous Action",
+                    (
+                        f"Are you sure you want to execute "
+                        f"'{action.name}'?\n\n"
+                        "This action is marked as dangerous."
+                    ),
+                    QMessageBox.StandardButton.Yes
+                    | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+
+                if confirmation != QMessageBox.StandardButton.Yes:
+                    return
+
             result = self.module_adapter.execute_action(
                 module_id,
                 action_id,

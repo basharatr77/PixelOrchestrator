@@ -1,4 +1,4 @@
-﻿# PixelOrchestrator — Phase Plan
+# PixelOrchestrator — Phase Plan
 
 > Master architectural roadmap.
 > PROJECT_STATE.md contains the exact current checkpoint.
@@ -33,9 +33,9 @@ The architecture should remain:
 |---|---|---|
 | 1–34 | Earlier architecture and foundation work | COMPLETE |
 | 35 | Canonical Device Identity & Transport State | COMPLETE |
-| 36 | Device Detection & Registry | NEXT |
-| 37 | Device State / Lifecycle Hardening | PLANNED |
-| 38 | Unified Transport Layer Hardening | PLANNED |
+| 36 | Device Detection & Registry | COMPLETE |
+| 37 | Device State / Lifecycle Hardening | COMPLETE |
+| 38 | Unified Transport Layer Hardening | NEXT |
 | 39 | Device Capability System | PLANNED |
 | 40 | Workflow / Task Execution Layer | PLANNED |
 | 41 | Persistent Event & Replay Infrastructure | PLANNED |
@@ -137,33 +137,43 @@ Rules:
 
 # PHASE 37 — Device State / Lifecycle Hardening
 
+Status:
+
+    COMPLETE
+
+Commit:
+
+    31e8613
+
 Objective:
 
-Formalize device lifecycle transitions.
+Formalize device lifecycle transitions and integrate canonical state
+synchronization into the lifecycle runtime.
 
-Scope:
+Key results:
 
-- DISCONNECTED
-- ADB
-- RECOVERY
-- SIDELOAD
-- FASTBOOT
-- FASTBOOTD
-- EDL
-- UNKNOWN
+- Added `DeviceStateMachine`
+- Added lifecycle transition validation
+- Added invalid-transition protection
+- Integrated `DeviceRegistry` into `LifecycleConsumer`
+- Integrated canonical `Device` creation into lifecycle handling
+- Integrated state transitions with lifecycle events
+- Preserved task generation and BusRuntime execution behavior
+- Added dedicated state-machine tests
 
-Focus:
+Verification:
 
-- Valid transitions
-- Invalid transition protection
-- Mode changes
-- Connect/disconnect events
-- State synchronization
-- Lifecycle event correctness
+    118 passed
+    targeted lifecycle/state tests: 12 passed
+    bus runtime integration tests: 4 passed
+    compileall PASS
+    git diff --check PASS
+    working tree clean
 
 ---
 
 # PHASE 38 — Unified Transport Layer Hardening
+
 
 Objective:
 

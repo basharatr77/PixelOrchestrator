@@ -9,7 +9,7 @@
 
 ### Phase
 
-Phase 36-B — Canonical Device Registry
+Phase 37 — Device State / Lifecycle Hardening
 
 ### Status
 
@@ -17,11 +17,11 @@ COMPLETE
 
 ### Commit
 
-79ae185 — Phase 36-B: establish canonical device registry
+31e8613 — Integrate device state machine into lifecycle runtime
 
 ### Test Baseline
 
-110 passed
+118 passed
 
 Command:
 
@@ -29,158 +29,152 @@ Command:
 
 Result:
 
-    110 passed
+    118 passed in 6.32s
 
 ### Compile Check
 
 PASS
 
-Command:
-
-    python -m compileall -q .\app .\tests
-
 ### Diff Check
 
 PASS
 
-Command:
-
-    git diff --check
-
 ### Working Tree
 
-Clean after Phase 36-B commit.
+Clean after Phase 37 commit.
 
 ---
 
-# Phase 36-B — Canonical Device Registry
+# Phase 37 — Device State / Lifecycle Hardening
 
 ## Objective
 
-Establish a clean canonical device registry around the existing
-`app.core.module_contract.Device` contract without introducing another
-Device model or mixing registry ownership with unrelated database code.
+Formalize canonical device lifecycle transitions and integrate
+state synchronization into the lifecycle runtime.
 
 ## Completed Changes
 
-### Canonical Device Registry
+### Device State Machine
 
 Added:
 
-    app/core/device_registry.py
+    app/core/device_state.py
 
-`DeviceRegistry` stores canonical `Device` objects keyed by stable
-`device_id`.
+`DeviceStateMachine` validates and applies canonical `DeviceState`
+transitions.
 
-Supported operations:
+Covered lifecycle states include:
 
-- register
-- get
-- contains
-- update
-- remove
-- snapshot
-- clear
+- UNKNOWN
+- DISCONNECTED
+- ADB
+- RECOVERY
+- SIDELOAD
+- FASTBOOT
+- FASTBOOTD
+- EDL
 
-Duplicate registration is rejected.
+Invalid transitions are rejected with `ValueError`.
 
-Unknown-device updates are rejected.
+Failed transitions preserve the existing device state.
 
-Registry snapshots do not expose the internal registry mapping.
+### Lifecycle Consumer Integration
 
-### Registry Persistence Boundary
+Updated:
 
-The legacy registry implementation was removed from:
+    app/agents/orchestrator/lifecycle_consumer.py
 
-    app/db/database.py
+The lifecycle consumer now:
 
-`app/core/registry.py` remains the event/lifecycle persistence adapter used
-by `BusRuntime`.
+- accepts the canonical `DeviceRegistry`
+- creates canonical `Device` objects
+- derives `DeviceState` from lifecycle mode
+- registers devices in the canonical registry
+- applies `DeviceStateMachine` transitions
+- handles disconnect state transitions
+- preserves existing lifecycle task generation
 
-The in-memory `DeviceRegistry` is intentionally independent from SQLite,
-event-bus implementation details, and vendor-specific logic.
+### Bus Runtime Integration
 
-### Tests
+Updated:
+
+    app/core/bus_runtime.py
+
+`BusRuntime` now owns a canonical `DeviceRegistry` and passes it
+to `LifecycleConsumer`.
+
+### Regression Coverage
 
 Added:
 
-    tests/test_device_registry.py
+    tests/test_device_state.py
 
-Registry behavior is covered for:
+Validated:
 
-- registration
-- lookup
-- duplicate prevention
-- update
-- removal
-- missing-device removal
-- snapshots
-- snapshot isolation
-- clear
+- UNKNOWN → ADB
+- DISCONNECTED → ADB
+- ADB → FASTBOOT
+- FASTBOOT → FASTBOOTD
+- RECOVERY → SIDELOAD
+- ADB → DISCONNECTED
+- invalid transition rejection
+- failed-transition state preservation
 
 ## Verification
 
-Test suite:
+Targeted lifecycle/state tests:
 
-    110 passed
+    12 passed
 
-Compile:
+Bus runtime integration tests:
 
-    PASS
+    4 passed
 
-Diff check:
+Full regression:
 
-    PASS
+    118 passed in 6.32s
 
-Git working tree:
+Working tree:
 
     CLEAN
 
-## Architecture Baseline
+## Architecture Result
 
-The canonical device contract remains:
-
-    app/core/module_contract.py
-
-Device flow:
+Lifecycle flow is now:
 
     Detector
         |
         v
-    Canonical Device
+    Lifecycle Event
         |
         v
-    Device Registry
+    LifecycleConsumer
+        |
+        +--> DeviceRegistry
+        |
+        +--> DeviceStateMachine
         |
         v
-    Lifecycle Events
+    TaskQueue
         |
         v
-    Orchestrator
+    BusRuntime / TaskExecutor
 
-No duplicate Device model was introduced.
+The canonical `Device` contract remains:
 
-Legacy:
+    app/core/module_contract.py
 
-    app/agents/device_agent/device_model.py
-
-remains removed.
-
-Legacy:
-
-    device.mode
-
-remains prohibited.
+No second Device model was introduced.
 
 ---
 
 # Known Limitations
 
 1. ADB and Fastboot remain the primary detection transports.
-2. The new DeviceRegistry is currently an in-memory canonical registry.
-3. Lifecycle integration with DeviceRegistry is not yet complete.
-4. Registry persistence and event synchronization remain separate concerns.
-5. Additional lifecycle states and transition hardening remain future work.
+2. DeviceRegistry remains an in-memory canonical registry.
+3. Registry persistence remains a separate concern.
+4. Transport abstraction hardening remains future work.
+5. Device capability modeling remains future work.
 6. GUI device-management integration remains future work.
 7. AI provider integration remains incomplete.
 
@@ -188,7 +182,7 @@ remains prohibited.
 
 # NEXT PHASE
 
-## Phase 37 — Device State / Lifecycle Hardening
+## Phase 38 — Unified Transport Layer Hardening
 
 Status:
 
@@ -196,22 +190,22 @@ Status:
 
 Objective:
 
-Formalize device lifecycle transitions and ensure lifecycle events,
-state synchronization, and invalid-transition handling are deterministic.
+Make ADB/Fastboot and future transports conform to one stable
+transport abstraction.
 
-### Exact First Action
+### Exact First Actions
 
 Before modifying code:
 
-1. Inspect `DeviceState` in `app/core/module_contract.py`.
-2. Inspect current lifecycle detection in
-   `app/agents/device_agent/detector.py`.
-3. Inspect lifecycle event consumers.
-4. Search all `DeviceState` and lifecycle event references.
-5. Map currently supported and unsupported transitions.
-6. Add tests before changing implementation.
+1. Inspect the current transport interface/contract.
+2. Inspect ADB transport implementation.
+3. Inspect Fastboot transport implementation.
+4. Inspect transport resolver and factory.
+5. Search all production transport callers.
+6. Identify duplicated command/error handling.
+7. Add/confirm tests before changing implementation.
 
-Do not mix GUI work into Phase 37.
+Do not mix GUI work into Phase 38.
 
 ---
 
@@ -236,9 +230,7 @@ When continuing in a new chat:
 
 ---
 
-# Historical Checkpoints
-
-## Phase 35
+# Phase 35
 
 Status:
 

@@ -15,7 +15,7 @@ class ModuleLoader:
     """Discover and register PixelOrchestrator modules."""
 
     def __init__(self, registry: ModuleRegistry | None = None) -> None:
-        self.registry = registry or ModuleRegistry()
+        self.registry = registry if registry is not None else ModuleRegistry()
 
     def load_module(self, module_path: str, class_name: str) -> ModuleContract:
         """Import a module class, instantiate it, and register it."""

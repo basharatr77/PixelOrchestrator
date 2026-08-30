@@ -35,6 +35,7 @@ class BusRuntime:
         self.lifecycle_consumer = LifecycleConsumer(
             task_queue=self.task_queue,
             registry_updater=update_registry,
+            device_registry=self.device_registry,
         )
 
     def setup(self):

@@ -1,4 +1,4 @@
-from app.core.module_contract import (
+﻿from app.core.module_contract import (
     Action,
     ActionResult,
     Capability,
@@ -81,3 +81,32 @@ def test_adapter_returns_failure_for_unknown_module_action():
     assert isinstance(result, ActionResult)
     assert result.success is False
     assert result.error_code == "MODULE_NOT_FOUND"
+
+
+def test_dynamic_gui_button_click_invokes_correct_module_action():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+
+    captured = []
+
+    def capture(module_id, action_id):
+        captured.append((module_id, action_id))
+
+    window.execute_module_action = capture
+
+    button = window.module_action_buttons["common"]["refresh_devices"]
+
+    assert button.isEnabled() is True
+    assert button.receivers(button.clicked) == 1
+
+    button.click()
+    app.processEvents()
+
+    assert captured == [("common", "refresh_devices")]
+
+    window.close()

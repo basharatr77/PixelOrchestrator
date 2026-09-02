@@ -35,9 +35,9 @@ The architecture should remain:
 | 35 | Canonical Device Identity & Transport State | COMPLETE |
 | 36 | Device Detection & Registry | COMPLETE |
 | 37 | Device State / Lifecycle Hardening | COMPLETE |
-| 38 | Unified Transport Layer Hardening | NEXT |
-| 39 | Device Capability System | PLANNED |
-| 40 | Workflow / Task Execution Layer | PLANNED |
+| 38 | Unified Transport Layer Hardening | COMPLETE |
+| 39 | Device Capability System | COMPLETE |
+| 40 | Workflow / Task Execution Layer | NEXT |
 | 41 | Persistent Event & Replay Infrastructure | PLANNED |
 | 42 | Device Farm / Multi-Device Orchestration | PLANNED |
 | 43 | Worker Pool & Distributed Execution | PLANNED |

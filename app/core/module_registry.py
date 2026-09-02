@@ -38,16 +38,38 @@ class ModuleRegistry:
                 f"Module '{module_id}' is already registered."
             )
 
-        self._modules[module_id] = module
+        registered_capabilities = []
 
-        for capability in module.get_capabilities():
-            if not self.capability_registry.has(capability.id):
-                self.capability_registry.register(capability)
+        try:
+            for capability in module.get_capabilities():
+                if not self.capability_registry.has(capability.id):
+                    self.capability_registry.register(capability)
+                    registered_capabilities.append(capability.id)
 
-            self._capability_owners.setdefault(
-                capability.id,
-                set(),
-            ).add(module_id)
+                self._capability_owners.setdefault(
+                    capability.id,
+                    set(),
+                ).add(module_id)
+
+            self._modules[module_id] = module
+
+        except Exception:
+            for capability in module.get_capabilities():
+                owners = self._capability_owners.get(capability.id)
+
+                if owners is not None:
+                    owners.discard(module_id)
+
+                    if not owners:
+                        self._capability_owners.pop(
+                            capability.id,
+                            None,
+                        )
+
+            for capability_id in registered_capabilities:
+                self.capability_registry.unregister(capability_id)
+
+            raise
 
     def unregister(self, module_id: str) -> bool:
         """Remove a registered module and clean up orphaned capabilities."""

@@ -1,4 +1,4 @@
-﻿# PixelOrchestrator â€” Project State
+# PixelOrchestrator â€” Project State
 
 > Authoritative continuation checkpoint for active development.
 > The repository is the source of truth.
@@ -9,7 +9,7 @@
 
 ### Phase
 
-Phase 37 â€” Device State / Lifecycle Hardening
+Phase 39 ??? Device Capability System
 
 ### Status
 
@@ -17,11 +17,11 @@ COMPLETE
 
 ### Commit
 
-31e8613 â€” Integrate device state machine into lifecycle runtime
+PHASE39-CLOSURE-COMMIT ??? Device capability system completion
 
 ### Test Baseline
 
-118 passed
+129 passed
 
 Command:
 
@@ -29,22 +29,40 @@ Command:
 
 Result:
 
-    118 passed in 6.32s
+    129 passed in 9.58s
 
 ### Compile Check
 
 PASS
 
+Command:
+
+    python -m compileall -q .\app .\tests
+
 ### Diff Check
 
 PASS
 
+Command:
+
+    git diff --check
+
+### Architecture / Reference Audit
+
+PASS
+
+Capability references were verified across canonical capability,
+module, GUI, built-in module, and test layers. No obsolete or
+alternate capability abstraction was identified.
+
 ### Working Tree
 
-Clean after Phase 37 commit.
+Phase 39 closure is being prepared. Unrelated pre-existing working
+tree changes are intentionally excluded from the Phase 39 commit.
 
----
+### Next Phase
 
+Phase 40 ??? Workflow / Task Execution Layer
 # Phase 37 â€” Device State / Lifecycle Hardening
 
 ## Objective
@@ -223,31 +241,129 @@ Working Tree:
 
 ---
 
-# NEXT PHASE
 
-## Phase 39 - Device Capability System
+---
 
-Status:
+# Phase 39 ??? Device Capability System
 
-    NEXT
-
-Objective:
+## Objective
 
 Represent what each device/module can actually do.
 
-Scope:
+## Completed Changes
 
-- Capability discovery
-- Capability registry
-- Module capabilities
-- Device capabilities
-- Capability validation
-- Unsupported-operation handling
+### Capability Contract
 
-Examples:
+Implemented canonical capability representation through:
 
-- ADB shell
-- reboot
-- bootloader
-- fastboot flash
-- diagnostics
+    app/core/module_contract.py
+
+Capabilities are represented with stable capability IDs and are
+validated as part of module contracts.
+
+### Capability Registry
+
+Added:
+
+    app/core/capability_registry.py
+
+The registry provides:
+
+- capability registration
+- capability lookup
+- presence checks
+- enumeration
+- unregister
+- clear
+- length tracking
+- duplicate protection
+- invalid capability rejection
+
+### Module Capability Ownership
+
+Updated:
+
+    app/core/module_registry.py
+
+Modules now expose capabilities through their contracts.
+
+Capability ownership is tracked so that:
+
+- multiple modules may share one capability
+- removing one owner preserves a shared capability
+- removing the final owner removes the capability
+- absent-module unregister returns False
+- failed registration rolls back newly registered capabilities
+- failed registration removes partial ownership state
+
+### Built-in Module Capabilities
+
+Built-in modules expose their supported capabilities through the
+canonical module contract.
+
+### Capability / Action Integrity
+
+Validated that actions requiring capabilities are correctly tied to
+their declared capability requirements.
+
+Unsupported actions return the structured UNKNOWN_ACTION result
+instead of silently succeeding.
+
+### Device Capability Enforcement
+
+Validated required-capability enforcement at device/action level,
+while preserving actions that are explicitly optional.
+
+### Regression Coverage
+
+Phase 39 checkpoint validation covered:
+
+- capability registration and lookup
+- capability presence and enumeration
+- capability unregister and cleanup
+- shared capability ownership
+- final-owner cleanup
+- exception-safe registration rollback
+- action-to-capability integrity
+- device capability requirement enforcement
+- optional capability actions
+- unknown action handling
+- capability/action enabled state
+- final Phase 39 integration
+
+Final regression baseline:
+
+    129 passed
+
+Compile check:
+
+    PASS
+
+Diff check:
+
+    PASS
+
+Architecture/reference audit:
+
+    PASS
+
+## Key Decisions
+
+- Capability IDs are stable identifiers.
+- Action IDs remain module-local rather than globally unique.
+- Shared capabilities use ownership tracking inside ModuleRegistry.
+- Capability registration is exception-safe and rolls back partial state.
+- Unsupported operations use structured failure results.
+- Capability modeling is part of the canonical module/device contract.
+
+## Closure
+
+Phase 39 implementation and integration validation are complete.
+
+Next phase:
+
+    Phase 40 ??? Workflow / Task Execution Layer
+
+Objective:
+
+    Turn individual operations into reliable workflows.

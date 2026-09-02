@@ -367,3 +367,81 @@ Next phase:
 Objective:
 
     Turn individual operations into reliable workflows.
+
+---
+
+# Phase 40-A — Task Contract
+
+Status:
+
+    COMPLETE
+
+Implementation:
+
+    app/core/task.py
+
+Tests:
+
+    tests/test_task.py
+
+Task contract provides:
+
+- globally unique UUID task IDs
+- device_id
+- module_id
+- action_id
+- action parameters
+- TaskStatus lifecycle
+- execution attempt tracking
+- ActionResult integration
+- creation/start/completion timestamps
+- defensive parameter copying
+- lifecycle transition validation
+- cancellation support
+
+Task lifecycle:
+
+    PENDING
+        |
+        v
+    RUNNING ---> COMPLETED
+        |
+        +-------> FAILED
+        |
+        +-------> CANCELLED
+
+Key decisions:
+
+- Task is an execution unit, not an Action.
+- Action IDs remain module-local.
+- Task identity therefore includes module_id + action_id.
+- Capability validation remains outside the Task contract.
+- Queueing, execution, retry policy, workflow/DAG handling,
+  and event publishing remain outside the Task contract.
+- Retry-specific state is deferred to Phase 40-F.
+
+Verification:
+
+    Targeted Task tests: 14 passed
+
+    Full regression:
+    143 passed in 10.27s
+
+    Compile:
+    PASS
+
+    Diff check:
+    PASS
+
+Commit:
+
+    0a3522b
+
+Commit message:
+
+    Implement Phase 40-A task contract
+
+Next:
+
+    Phase 40-B — Task Queue
+

@@ -500,3 +500,47 @@ Do not advance phases merely because code exists.
 Advance only when the phase's architectural objective is verified.
 
 The repository is the source of truth.
+
+---
+
+# Phase 40-A — Task Contract
+
+Status:
+
+    COMPLETE
+
+Commit:
+
+    0a3522b
+
+Objective:
+
+Define a canonical execution unit for the Phase 40 workflow layer.
+
+Implemented:
+
+- Task contract
+- TaskStatus lifecycle
+- UUID task identity
+- device/module/action targeting
+- parameters
+- ActionResult integration
+- attempts
+- lifecycle timestamps
+- cancellation
+- lifecycle validation
+- defensive parameter copying
+
+Verification:
+
+    14 Task contract tests passed
+    143 full regression tests passed
+    compileall PASS
+    git diff --check PASS
+
+Next checkpoint:
+
+    Phase 40-B — Task Queue
+
+---
+

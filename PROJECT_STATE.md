@@ -17,7 +17,7 @@ COMPLETE
 
 ### Commit
 
-PHASE39-CLOSURE-COMMIT ??? Device capability system completion
+1b6d91a ??? Complete Phase 39 device capability system
 
 ### Test Baseline
 

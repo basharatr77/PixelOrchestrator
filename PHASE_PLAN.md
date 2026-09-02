@@ -544,3 +544,54 @@ Next checkpoint:
 
 ---
 
+
+---
+
+# Phase 40-B-A — Task Queue Checkpoint
+
+Status:
+
+    COMPLETE
+
+Commit:
+
+    0e12c95
+
+Objective:
+
+Implement the FIFO task queue required by the Phase 40 orchestration layer.
+
+Implemented:
+
+- FIFO TaskQueue using deque
+- add_task()
+- pop_task()
+- peek_task()
+- size()
+- is_empty()
+- clear()
+- empty-queue behavior
+- canonical Phase 40 Task compatibility
+- legacy caller compatibility
+- list-compatible snapshot via tasks property
+
+Verification:
+
+    7 Task Queue tests passed
+    9 execution/lifecycle compatibility tests passed
+    150 full regression tests passed
+    compileall PASS
+    git diff --check PASS
+
+Decision:
+
+    The Phase 40-B Task Queue contract is fully implemented.
+    No additional B-B queue behavior is required at this checkpoint.
+    TaskExecutor/ExecutionWorker migration to the canonical Task contract
+    remains outside the completed queue scope.
+
+Next checkpoint:
+
+    Phase 40-C — Task Execution Layer
+
+---

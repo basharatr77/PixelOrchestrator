@@ -392,3 +392,27 @@ Next phase:
     Phase 36 — Device Detection & Registry
 
 The first action of Phase 36 is inspection and architecture mapping, not immediate modification.
+
+---
+
+# Phase 40 Continuity Update
+
+Phase 40-A Task Contract is complete at commit 1a2b713.
+
+Phase 40-B Task Queue is complete at commit 0e12c95.
+
+The Phase 40-B queue contract is considered complete without an additional B-B code change. The queue supports FIFO behavior, inspection, sizing, clearing, empty-state handling, canonical Task objects, and compatibility with existing legacy consumers.
+
+Next implementation checkpoint:
+
+    Phase 40-C — Task Execution Layer
+
+When continuing Phase 40, inspect the canonical Task contract and existing legacy TaskExecutor/ExecutionWorker boundaries before modifying execution behavior. Preserve the existing 150-test regression baseline and do not stage unrelated working-tree changes.
+
+Repository continuity remains based on:
+
+    PROJECT_STATE.md
+    PHASE_PLAN.md
+    PROJECT_INSTRUCTIONS.md
+
+---

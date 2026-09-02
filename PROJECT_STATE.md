@@ -445,3 +445,36 @@ Next:
 
     Phase 40-B — Task Queue
 
+
+---
+
+# Phase 40-B-A — Task Queue Checkpoint
+
+Status:
+
+    COMPLETE
+
+Commit:
+
+    0e12c95
+
+Verification:
+
+    7 Task Queue tests passed
+    9 execution/lifecycle compatibility tests passed
+    150 full regression tests passed
+    compileall PASS
+    git diff --check PASS
+
+Decision:
+
+    TaskQueue now provides the complete Phase 40-B queue contract.
+    Existing legacy queue consumers remain compatible.
+    No artificial B-B implementation is required.
+    Canonical Task execution migration is deferred to Phase 40-C.
+
+Next:
+
+    Phase 40-C — Task Execution Layer
+
+---

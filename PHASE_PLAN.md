@@ -891,3 +891,124 @@ Next checkpoint:
 - Do not stage unrelated working-tree changes.
 
 ---
+
+## Phase 40-G-B - Progress Event Publication Boundary
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `7ebf3c0` - `Implement Phase 40-G-B progress event publication boundary`
+
+Implemented:
+
+- Added an optional progress callback to the canonical TaskExecutor.
+- TaskExecutor reports attempt-boundary progress.
+- BusRuntime owns TASK_PROGRESS event construction and publication.
+- TASK_EXECUTED, retry, cancellation, and legacy dictionary-task behavior remain unchanged.
+- Progress remains per execution attempt.
+
+Verification:
+
+- G-B targeted tests: 2 passed
+- Focused Phase 40 regression: 38 passed
+- Full regression: 200 passed in 10.68s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- BOM audit after cleanup: PASS
+
+Affected files:
+
+    app/agents/orchestrator/task_executor.py
+    app/core/bus_runtime.py
+    tests/test_task_progress_publication.py
+
+Next checkpoint:
+
+- Phase 40-G-C - Workflow Progress Aggregation.
+
+---
+
+## Phase 40-G-C - Workflow Progress
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `4b7eae7` - `Implement Phase 40-G-C workflow progress`
+
+Implemented:
+
+- Added derived `Workflow.progress()` returning 0 through 100.
+- Progress is based on completed tasks divided by total tasks.
+- Empty workflows return 0.
+- Failed and cancelled tasks are not counted as completed.
+- Workflow does not own EventBus publication.
+
+Verification:
+
+- G-C targeted tests: 5 passed
+- Targeted Phase 40 regression: 59 passed
+- Full regression: 205 passed in 16.55s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- BOM audit after cleanup: PASS
+
+Affected files:
+
+    app/core/workflow.py
+    tests/test_workflow_progress.py
+
+Next checkpoint:
+
+- Phase 40-G-D-A - Workflow Progress Publication Boundary.
+
+---
+
+## Phase 40-G-D-A - Workflow Progress Publication Boundary
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `481e70b` - `Implement Phase 40-G-D workflow progress publication`
+
+Implemented:
+
+- Added explicit BusRuntime workflow progress publication.
+- BusRuntime publishes `WORKFLOW_PROGRESS`.
+- Payload contains `workflow_id`, `progress`, and `message`.
+- Workflow remains free of EventBus ownership.
+- Task-level TASK_PROGRESS remains separate from workflow-level progress.
+- TASK_EXECUTED, retry, and cancellation semantics remain unchanged.
+
+Verification:
+
+- G-D-A targeted tests: 3 passed in 0.88s
+- Focused Phase 40 regression: 43 passed in 4.35s
+- Full regression: 208 passed in 11.65s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- Architecture/reference audit: PASS
+- BOM audit: PASS
+
+Affected files:
+
+    app/core/bus_runtime.py
+    tests/test_workflow_progress_publication.py
+
+G-D-A commit scope: only app/core/bus_runtime.py and
+    tests/test_workflow_progress_publication.py
+
+Known limitations:
+
+- Workflow progress publication is currently an explicit BusRuntime boundary API.
+- No automatic workflow orchestration loop was introduced.
+- No UI workflow-progress consumer was introduced.
+- No persistent workflow-progress state was introduced.
+
+Next checkpoint:
+
+- Inspect the remaining Phase 40 failure-handling boundaries before selecting the next implementation checkpoint.
+
+---

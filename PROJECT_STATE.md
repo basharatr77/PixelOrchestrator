@@ -875,3 +875,144 @@ Continuity rule:
 
     Preserve unrelated working-tree changes as unstaged and do not restart
     completed Phase 40 checkpoints without evidence.
+
+## Phase 40-G-B - Progress Event Publication Boundary
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `7ebf3c0` - `Implement Phase 40-G-B progress event publication boundary`
+
+Implemented:
+
+- Added an optional progress callback to the canonical TaskExecutor.
+- TaskExecutor reports progress at execution-attempt boundaries.
+- Successful attempts report progress 0 then 100.
+- Retryable failed attempts report progress 0 then 100 before retry.
+- Terminal failed attempts report progress 0 then 100 before final failure.
+- BusRuntime owns TASK_PROGRESS event construction and publication.
+- TASK_EXECUTED behavior remains unchanged.
+- Retry semantics remain unchanged.
+- Cancellation semantics remain unchanged.
+- Legacy dictionary-task behavior remains unchanged.
+- Progress is per execution attempt, not cumulative across retries.
+- Task, Workflow, and RetryPolicy do not own EventBus publication.
+
+Verification:
+
+- G-B targeted tests: 2 passed
+- Focused Phase 40 regression: 38 passed
+- Full regression: 200 passed in 10.68s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- BOM audit after cleanup: PASS
+
+Affected files:
+
+    app/agents/orchestrator/task_executor.py
+    app/core/bus_runtime.py
+    tests/test_task_progress_publication.py
+
+Next:
+
+    Phase 40-G-C - Workflow Progress Aggregation.
+
+---
+
+## Phase 40-G-C - Workflow Progress
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `4b7eae7` - `Implement Phase 40-G-C workflow progress`
+
+Implemented:
+
+- Added derived `Workflow.progress()` returning an integer from 0 through 100.
+- Workflow progress is calculated from completed tasks.
+- Completed tasks are the numerator.
+- Total workflow tasks are the denominator.
+- PENDING, RUNNING, FAILED, and CANCELLED tasks are not counted as completed.
+- Empty workflows return 0.
+- Workflow does not own EventBus publication.
+- Workflow progress does not alter Task lifecycle semantics.
+- RetryPolicy remains unchanged.
+- TASK_PROGRESS event publication remains an orchestration-boundary concern.
+
+Verification:
+
+- G-C targeted tests: 5 passed
+- Targeted Phase 40 regression: 59 passed
+- Full regression: 205 passed in 16.55s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- BOM audit after cleanup: PASS
+
+Affected files:
+
+    app/core/workflow.py
+    tests/test_workflow_progress.py
+
+Next:
+
+    Phase 40-G-D-A - Workflow Progress Publication Boundary.
+
+---
+
+## Phase 40-G-D-A - Workflow Progress Publication Boundary
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `481e70b` - `Implement Phase 40-G-D workflow progress publication`
+
+Implemented:
+
+- Added a BusRuntime workflow progress publication boundary.
+- BusRuntime publishes `WORKFLOW_PROGRESS`.
+- Workflow progress is derived from `Workflow.progress()`.
+- Published payload contains `workflow_id`, `progress`, and `message`.
+- Workflow remains free of EventBus ownership.
+- Task-level `TASK_PROGRESS` remains separate from workflow-level progress.
+- TaskExecutor remains responsible only for task-level progress callbacks.
+- Existing TASK_EXECUTED behavior remains unchanged.
+- Existing retry and cancellation semantics remain unchanged.
+- No unrelated working-tree changes were included in the implementation commit.
+
+Verification:
+
+- G-D-A targeted tests: 3 passed in 0.88s
+- Focused Phase 40 regression: 43 passed in 4.35s
+- Full regression: 208 passed in 11.65s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- Architecture/reference audit: PASS
+- BOM audit: PASS
+
+Affected files:
+
+    app/core/bus_runtime.py
+    tests/test_workflow_progress_publication.py
+
+G-D-A commit scope: only app/core/bus_runtime.py and
+    tests/test_workflow_progress_publication.py
+
+Known limitations:
+
+- Workflow progress publication is currently an explicit BusRuntime boundary API.
+- No automatic workflow orchestration loop was introduced.
+- No UI workflow-progress consumer was introduced.
+- No persistent workflow-progress state was introduced.
+
+Next:
+
+    Inspect the remaining Phase 40 failure-handling boundaries before
+    selecting the next implementation checkpoint.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not restart
+    completed Phase 40 checkpoints without evidence.

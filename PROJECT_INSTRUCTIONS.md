@@ -416,3 +416,46 @@ Repository continuity remains based on:
     PROJECT_INSTRUCTIONS.md
 
 ---
+
+---
+
+# Phase 40-C-B ? Canonical Execution Path Checkpoint
+
+Status:
+
+    COMPLETE
+
+Commit:
+
+    1bbc156
+
+Current execution architecture:
+
+    Canonical Task -> TaskQueue -> ExecutionWorker -> TaskExecutor
+    -> ModuleRegistry / DeviceRegistry -> ActionResult
+    -> BusRuntime TASK_EXECUTED event boundary
+
+Key decisions:
+
+- TaskExecutor now supports the canonical Task contract.
+- ExecutionWorker forwards canonical Task objects without owning execution policy.
+- BusRuntime can enqueue and execute canonical Tasks.
+- ActionResult remains the execution result object.
+- TASK_EXECUTED event payloads are converted to JSON-safe dictionaries
+  before publication.
+- Legacy task execution compatibility remains intact.
+- Existing unrelated working-tree changes must remain unstaged.
+
+Verification:
+
+    Full regression: 160 passed in 10.33s
+    Targeted regression: 13 passed in 0.95s
+    Compile: PASS
+    Diff check: PASS
+
+Next:
+
+    Continue Phase 40 workflow execution design.
+    Inspect the remaining workflow, DAG dependency, retry,
+    cancellation, progress-event, and failure-handling boundaries
+    before implementing the next checkpoint.

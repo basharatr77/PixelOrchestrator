@@ -37,7 +37,7 @@ The architecture should remain:
 | 37 | Device State / Lifecycle Hardening | COMPLETE |
 | 38 | Unified Transport Layer Hardening | COMPLETE |
 | 39 | Device Capability System | COMPLETE |
-| 40 | Workflow / Task Execution Layer | NEXT |
+| 40 | Workflow / Task Execution Layer | IN PROGRESS |
 | 41 | Persistent Event & Replay Infrastructure | PLANNED |
 | 42 | Device Farm / Multi-Device Orchestration | PLANNED |
 | 43 | Worker Pool & Distributed Execution | PLANNED |
@@ -595,3 +595,55 @@ Next checkpoint:
     Phase 40-C — Task Execution Layer
 
 ---
+
+---
+
+# Phase 40-C-B ? Canonical Execution Path Checkpoint
+
+Status:
+
+    COMPLETE
+
+Commit:
+
+    1bbc156
+
+Objective:
+
+    Migrate the execution path to the canonical Task contract while
+    preserving existing execution compatibility.
+
+Implemented:
+
+- ExecutionWorker forwards canonical Task objects.
+- TaskExecutor executes canonical Tasks through ModuleRegistry and
+  DeviceRegistry.
+- BusRuntime accepts canonical Tasks through the execution queue.
+- ActionResult remains the execution result object.
+- TASK_EXECUTED event payloads are serialized to JSON-safe dictionaries.
+- Legacy task execution behavior remains compatible.
+
+Verification:
+
+    Targeted execution/lifecycle regression:
+    13 passed in 0.95s
+
+    Full regression:
+    160 passed in 10.33s
+
+    Compile:
+    PASS
+
+    Diff check:
+    PASS
+
+Decision:
+
+    Canonical Task execution is now integrated through the queue,
+    worker, executor, and BusRuntime event boundary.
+
+Next:
+
+    Continue Phase 40 workflow execution design, with the next
+    checkpoint determined from the remaining workflow/DAG/retry/
+    cancellation/progress requirements.

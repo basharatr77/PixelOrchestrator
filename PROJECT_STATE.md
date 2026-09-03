@@ -9,7 +9,7 @@
 
 ### Phase
 
-Phase 39 ??? Device Capability System
+Phase 40-C-B ? Canonical Execution Path
 
 ### Status
 
@@ -17,11 +17,11 @@ COMPLETE
 
 ### Commit
 
-1b6d91a ??? Complete Phase 39 device capability system
+1bbc156 ? Implement Phase 40-C-B canonical execution path
 
 ### Test Baseline
 
-129 passed
+160 passed
 
 Command:
 
@@ -29,38 +29,50 @@ Command:
 
 Result:
 
-    129 passed in 9.58s
+    160 passed in 10.33s
+
+### Targeted Regression
+
+13 passed
+
+Command:
+
+    python -m pytest .\tests\test_execution_worker.py .\tests\test_bus_runtime_execution.py .\tests\test_bus_runtime_task_event.py .\tests\test_bus_runtime_auto_execution.py .\tests\test_lifecycle_consumer.py -q
+
+Result:
+
+    13 passed in 0.95s
 
 ### Compile Check
 
 PASS
 
-Command:
-
-    python -m compileall -q .\app .\tests
-
 ### Diff Check
 
 PASS
 
-Command:
+### Architecture Result
 
-    git diff --check
+Canonical Task execution is now forwarded through ExecutionWorker
+and BusRuntime.
 
-### Architecture / Reference Audit
+ActionResult is preserved as the execution result object while
+TASK_EXECUTED event payloads are serialized to a JSON-safe dictionary
+at the event boundary.
 
-PASS
-
-Capability references were verified across canonical capability,
-module, GUI, built-in module, and test layers. No obsolete or
-alternate capability abstraction was identified.
+Legacy execution compatibility remains intact.
 
 ### Working Tree
 
-Phase 39 closure is being prepared. Unrelated pre-existing working
-tree changes are intentionally excluded from the Phase 39 commit.
+Unrelated pre-existing working tree changes remain intentionally
+unstaged and excluded from the Phase 40-C-B commit.
 
 ### Next Phase
+
+Phase 40 ? Workflow / Task Execution Layer
+Next checkpoint: determine the next execution/workflow boundary
+after canonical Task migration.
+
 
 Phase 40 ??? Workflow / Task Execution Layer
 # Phase 37 â€” Device State / Lifecycle Hardening

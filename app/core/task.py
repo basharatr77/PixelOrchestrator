@@ -106,6 +106,21 @@ class Task:
         self.status = TaskStatus.COMPLETED
         self.completed_at = time.time()
 
+    def retry(self, result: ActionResult) -> None:
+        """Return a failed execution attempt to pending for another attempt."""
+
+        if self.status is not TaskStatus.RUNNING:
+            raise ValueError(
+                f"Task cannot retry from status '{self.status.value}'."
+            )
+
+        if not isinstance(result, ActionResult):
+            raise TypeError("Task retry result must be an ActionResult.")
+
+        self.result = result
+        self.status = TaskStatus.PENDING
+        self.completed_at = None
+
     def fail(self, result: ActionResult) -> None:
         """Mark a running task as failed."""
 

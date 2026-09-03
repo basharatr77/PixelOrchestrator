@@ -3,6 +3,7 @@
 from app.core.device_registry import DeviceRegistry
 from app.core.module_registry import ModuleRegistry
 from app.core.task import Task
+from app.core.retry_policy import RetryPolicy
 
 
 class TaskExecutor:
@@ -13,6 +14,7 @@ class TaskExecutor:
         transport_resolver=None,
         module_registry=None,
         device_registry=None,
+        retry_policy=None,
     ):
         if transport_resolver is None:
             from app.core.transport_resolver import TransportResolver
@@ -29,6 +31,11 @@ class TaskExecutor:
             device_registry
             if device_registry is not None
             else DeviceRegistry()
+        )
+        self.retry_policy = (
+            retry_policy
+            if retry_policy is not None
+            else RetryPolicy()
         )
 
     def resolve_transport(self, task):
@@ -76,83 +83,87 @@ class TaskExecutor:
     def _execute_canonical(self, task):
         from app.core.module_contract import ActionResult
 
-        task.start()
+        module = self.module_registry.get(task.module_id)
 
-        try:
-            module = self.module_registry.get(task.module_id)
-
-            if module is None:
-                result = ActionResult(
-                    success=False,
-                    message=f"Module '{task.module_id}' was not found.",
-                    error_code="MODULE_NOT_FOUND",
-                )
-                task.fail(result)
-                return result
-
-            action = next(
-                (
-                    item
-                    for item in module.get_actions()
-                    if item.id == task.action_id
-                ),
-                None,
+        if module is None:
+            task.start()
+            result = ActionResult(
+                success=False,
+                message=f"Module '{task.module_id}' was not found.",
+                error_code="MODULE_NOT_FOUND",
             )
+            task.fail(result)
+            return result
 
-            if action is None:
+        action = next(
+            (
+                item
+                for item in module.get_actions()
+                if item.id == task.action_id
+            ),
+            None,
+        )
+
+        if action is None:
+            task.start()
+            result = ActionResult(
+                success=False,
+                message=(
+                    f"Action '{task.action_id}' was not found "
+                    f"in module '{task.module_id}'."
+                ),
+                error_code="ACTION_NOT_FOUND",
+            )
+            task.fail(result)
+            return result
+
+        device = None
+
+        if action.requires_device:
+            device = self.device_registry.get(task.device_id)
+
+            if device is None:
+                task.start()
                 result = ActionResult(
                     success=False,
-                    message=(
-                        f"Action '{task.action_id}' was not found "
-                        f"in module '{task.module_id}'."
-                    ),
-                    error_code="ACTION_NOT_FOUND",
+                    message=f"Device '{task.device_id}' was not found.",
+                    error_code="DEVICE_NOT_FOUND",
                 )
                 task.fail(result)
                 return result
 
-            device = None
+        while True:
+            task.start()
 
-            if action.requires_device:
-                device = self.device_registry.get(task.device_id)
+            try:
+                result = module.execute(
+                    task.action_id,
+                    device=device,
+                    **task.parameters,
+                )
 
-                if device is None:
+                if not isinstance(result, ActionResult):
                     result = ActionResult(
                         success=False,
-                        message=(
-                            f"Device '{task.device_id}' was not found."
-                        ),
-                        error_code="DEVICE_NOT_FOUND",
+                        message="Module returned an invalid action result.",
+                        error_code="INVALID_ACTION_RESULT",
                     )
-                    task.fail(result)
-                    return result
 
-            result = module.execute(
-                task.action_id,
-                device=device,
-                **task.parameters,
-            )
-
-            if not isinstance(result, ActionResult):
+            except Exception as exc:
                 result = ActionResult(
                     success=False,
-                    message="Module returned an invalid action result.",
-                    error_code="INVALID_ACTION_RESULT",
+                    message=f"Task execution failed: {exc}",
+                    error_code="EXECUTION_ERROR",
                 )
 
             if result.success:
                 task.complete(result)
-            else:
-                task.fail(result)
+                return result
 
-            return result
+            if self.retry_policy.should_retry(task.attempts, result):
+                task.retry(result)
+                continue
 
-        except Exception as exc:
-            result = ActionResult(
-                success=False,
-                message=f"Task execution failed: {exc}",
-                error_code="EXECUTION_ERROR",
-            )
             task.fail(result)
             return result
 

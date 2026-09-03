@@ -84,3 +84,46 @@ def test_execution_worker_returns_none_when_queue_is_empty():
     )
 
     assert worker.run_once() is None
+from app.agents.orchestrator.execution_worker import ExecutionWorker
+from app.agents.orchestrator.task_queue import TaskQueue
+from app.core.module_contract import ActionResult
+from app.core.task import Task, TaskStatus
+
+
+class RecordingExecutor:
+    def __init__(self):
+        self.received = []
+
+    def execute(self, task):
+        self.received.append(task)
+        task.start()
+        result = ActionResult(success=True, message="worker-ok")
+        task.complete(result)
+        return result
+
+
+def test_execution_worker_forwards_canonical_task():
+    queue = TaskQueue()
+    executor = RecordingExecutor()
+
+    task = Task(
+        device_id="device:PIXEL_8",
+        module_id="fake",
+        action_id="probe",
+    )
+
+    queue.add_task(task)
+
+    worker = ExecutionWorker(
+        task_queue=queue,
+        executor=executor,
+    )
+
+    result = worker.run_once()
+
+    assert executor.received == [task]
+    assert result.success is True
+    assert result.message == "worker-ok"
+    assert task.status is TaskStatus.COMPLETED
+    assert task.attempts == 1
+    assert queue.tasks == []

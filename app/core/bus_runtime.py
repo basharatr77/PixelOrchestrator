@@ -41,6 +41,15 @@ class BusRuntime:
     def setup(self):
         self.lifecycle_consumer.subscribe(self.bus)
 
+    @staticmethod
+    def _serialize_task_result(result):
+        from dataclasses import asdict, is_dataclass
+
+        if is_dataclass(result):
+            return asdict(result)
+
+        return result
+
     def execute_once(self, task=None):
         if task is not None:
             self.task_queue.add_task(task)
@@ -51,7 +60,7 @@ class BusRuntime:
             self.bus.publish_now(
                 Event(
                     type="TASK_EXECUTED",
-                    payload=result,
+                    payload=self._serialize_task_result(result),
                 )
             )
 

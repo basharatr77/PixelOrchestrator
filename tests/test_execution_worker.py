@@ -127,3 +127,60 @@ def test_execution_worker_forwards_canonical_task():
     assert task.status is TaskStatus.COMPLETED
     assert task.attempts == 1
     assert queue.tasks == []
+
+def test_execution_worker_skips_cancelled_canonical_task():
+    from app.core.task import Task, TaskStatus
+
+    queue = TaskQueue()
+    executor = RecordingExecutor()
+
+    task = Task(
+        device_id="device:PIXEL_8",
+        module_id="fake",
+        action_id="probe",
+    )
+    task.cancel()
+
+    queue.add_task(task)
+
+    worker = ExecutionWorker(
+        task_queue=queue,
+        executor=executor,
+    )
+
+    result = worker.run_once()
+
+    assert result is None
+    assert executor.received == []
+    assert task.status is TaskStatus.CANCELLED
+    assert queue.tasks == []
+
+
+def test_execution_worker_does_not_execute_cancelled_task():
+    from app.core.task import Task, TaskStatus
+
+    class FailingExecutor:
+        def execute(self, task):
+            raise AssertionError("Cancelled task must not reach executor.")
+
+    queue = TaskQueue()
+    task = Task(
+        device_id="device:PIXEL_8",
+        module_id="fake",
+        action_id="probe",
+    )
+    task.cancel()
+
+    queue.add_task(task)
+
+    worker = ExecutionWorker(
+        task_queue=queue,
+        executor=FailingExecutor(),
+    )
+
+    result = worker.run_once()
+
+    assert result is None
+    assert task.status is TaskStatus.CANCELLED
+    assert task.attempts == 0
+    assert queue.tasks == []

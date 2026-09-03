@@ -1012,3 +1012,47 @@ Next checkpoint:
 - Inspect the remaining Phase 40 failure-handling boundaries before selecting the next implementation checkpoint.
 
 ---
+## Phase 40-H-A - Workflow Outcome Contract
+
+Status: COMPLETE
+
+Commit:
+    2c070ea Implement Phase 40-H-A workflow outcome contract
+
+Implemented:
+
+- Added derived Workflow.status() outcome semantics.
+- FAILED takes precedence over CANCELLED.
+- COMPLETED requires all tasks to be completed.
+- RUNNING requires at least one running task with no terminal failure/cancellation.
+- PENDING remains the outcome for otherwise non-terminal workflows, including blocked pending dependencies.
+- No BLOCKED workflow status was introduced.
+- Workflow remains free of EventBus ownership and publication.
+
+Verification:
+
+- RED: 7 expected failures.
+- GREEN: 7 passed.
+- Focused Phase 40 regression: 59 passed in 3.32s.
+- Full regression: 215 passed in 10.58s.
+- git diff --check: PASS.
+- BOM audit: PASS.
+
+Affected files:
+
+    app/core/workflow.py
+    tests/test_workflow_status.py
+
+Known limitations:
+
+- Status is derived and not persisted.
+- No automatic workflow orchestration loop was added.
+- No workflow terminal event publication was added.
+- Empty-workflow status remains intentionally unspecified.
+
+Next checkpoint:
+
+- Define the next workflow failure-handling/publication boundary without
+  moving orchestration responsibilities into Workflow.
+
+---

@@ -1016,3 +1016,55 @@ Continuity rule:
 
     Preserve unrelated working-tree changes as unstaged and do not restart
     completed Phase 40 checkpoints without evidence.
+## Phase 40-H-A - Workflow Outcome Contract
+
+Status: COMPLETE
+
+Commit:
+    2c070ea Implement Phase 40-H-A workflow outcome contract
+
+Implementation:
+
+- Added derived Workflow.status() outcome contract.
+- Workflow outcome is derived from current TaskStatus values and is not stored as mutable workflow state.
+- FAILED has precedence over CANCELLED.
+- CANCELLED is reported when cancellation exists and no task has failed.
+- COMPLETED is reported when all workflow tasks are completed.
+- RUNNING is reported when at least one task is running and no terminal failure/cancellation exists.
+- PENDING is reported otherwise, including workflows containing blocked pending dependencies.
+- No BLOCKED workflow status was introduced.
+- Workflow does not own EventBus or event publication.
+- Existing Task retry, failure, cancellation, DAG readiness, and progress semantics remain unchanged.
+
+TDD verification:
+
+- RED: 7 workflow status tests failed as expected because Workflow.status() did not exist.
+- GREEN: 7 workflow status tests passed after the minimal implementation.
+- Focused Phase 40 regression: 59 passed in 3.32s.
+- Full regression: 215 passed in 10.58s.
+- Implementation diff audit: PASS.
+- git diff --check: PASS.
+- BOM audit: PASS.
+
+Affected files:
+
+    app/core/workflow.py
+    tests/test_workflow_status.py
+
+Known limitations:
+
+- Workflow status is currently a derived query only.
+- No automatic workflow execution/orchestration loop was introduced.
+- No workflow terminal event publication was introduced.
+- Empty-workflow outcome semantics remain intentionally unspecified pending an explicit contract decision.
+
+Next:
+
+    Define the next workflow failure-handling/publication boundary only after
+    preserving the separation between Workflow state derivation and runtime
+    event orchestration.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not restart
+    completed Phase 40 checkpoints without evidence.

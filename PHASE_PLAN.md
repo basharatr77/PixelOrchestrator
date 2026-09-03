@@ -1,4 +1,4 @@
-# PixelOrchestrator — Phase Plan
+# PixelOrchestrator â€” Phase Plan
 
 > Master architectural roadmap.
 > PROJECT_STATE.md contains the exact current checkpoint.
@@ -31,7 +31,7 @@ The architecture should remain:
 
 | Phase | Area | Status |
 |---|---|---|
-| 1–34 | Earlier architecture and foundation work | COMPLETE |
+| 1â€“34 | Earlier architecture and foundation work | COMPLETE |
 | 35 | Canonical Device Identity & Transport State | COMPLETE |
 | 36 | Device Detection & Registry | COMPLETE |
 | 37 | Device State / Lifecycle Hardening | COMPLETE |
@@ -51,7 +51,7 @@ The architecture should remain:
 
 ---
 
-# PHASE 35 — Canonical Device Identity & Transport State
+# PHASE 35 â€” Canonical Device Identity & Transport State
 
 Status:
 
@@ -86,7 +86,7 @@ Verification:
 
 ---
 
-# PHASE 36 — Device Detection & Registry
+# PHASE 36 â€” Device Detection & Registry
 
 Status:
 
@@ -135,7 +135,7 @@ Rules:
 
 ---
 
-# PHASE 37 — Device State / Lifecycle Hardening
+# PHASE 37 â€” Device State / Lifecycle Hardening
 
 Status:
 
@@ -172,7 +172,7 @@ Verification:
 
 ---
 
-# PHASE 38 — Unified Transport Layer Hardening
+# PHASE 38 â€” Unified Transport Layer Hardening
 
 
 Objective:
@@ -195,7 +195,7 @@ Future transports can later plug into the same architecture.
 
 ---
 
-# PHASE 39 — Device Capability System
+# PHASE 39 â€” Device Capability System
 
 Objective:
 
@@ -221,7 +221,7 @@ Examples:
 
 ---
 
-# PHASE 40 — Workflow / Task Execution Layer
+# PHASE 40 â€” Workflow / Task Execution Layer
 
 Objective:
 
@@ -241,7 +241,7 @@ Scope:
 
 ---
 
-# PHASE 41 — Persistent Event & Replay Infrastructure
+# PHASE 41 â€” Persistent Event & Replay Infrastructure
 
 Objective:
 
@@ -269,7 +269,7 @@ Target:
 
 ---
 
-# PHASE 42 — Device Farm / Multi-Device Orchestration
+# PHASE 42 â€” Device Farm / Multi-Device Orchestration
 
 Objective:
 
@@ -287,7 +287,7 @@ Scope:
 
 ---
 
-# PHASE 43 — Worker Pool & Distributed Execution
+# PHASE 43 â€” Worker Pool & Distributed Execution
 
 Objective:
 
@@ -305,7 +305,7 @@ Scope:
 
 ---
 
-# PHASE 44 — WebSocket / Remote Device Transport
+# PHASE 44 â€” WebSocket / Remote Device Transport
 
 Objective:
 
@@ -322,7 +322,7 @@ Scope:
 
 ---
 
-# PHASE 45 — Plugin Architecture
+# PHASE 45 â€” Plugin Architecture
 
 Objective:
 
@@ -347,7 +347,7 @@ Rules:
 
 ---
 
-# PHASE 46 — AI Diagnosis & Decision Engine
+# PHASE 46 â€” AI Diagnosis & Decision Engine
 
 Objective:
 
@@ -367,7 +367,7 @@ AI must not bypass deterministic safety checks.
 
 ---
 
-# PHASE 47 — Self-Healing / Auto-Repair Workflows
+# PHASE 47 â€” Self-Healing / Auto-Repair Workflows
 
 Objective:
 
@@ -400,7 +400,7 @@ Pipeline:
 
 ---
 
-# PHASE 48 — GUI Device Operations & UX
+# PHASE 48 â€” GUI Device Operations & UX
 
 Objective:
 
@@ -431,7 +431,7 @@ GUI should consume backend contracts instead of implementing device logic indepe
 
 ---
 
-# PHASE 49 — Production Hardening
+# PHASE 49 â€” Production Hardening
 
 Objective:
 
@@ -454,7 +454,7 @@ Scope:
 
 ---
 
-# PHASE 50 — Release / Packaging / Deployment
+# PHASE 50 â€” Release / Packaging / Deployment
 
 Objective:
 
@@ -503,7 +503,7 @@ The repository is the source of truth.
 
 ---
 
-# Phase 40-A — Task Contract
+# Phase 40-A â€” Task Contract
 
 Status:
 
@@ -540,14 +540,14 @@ Verification:
 
 Next checkpoint:
 
-    Phase 40-B — Task Queue
+    Phase 40-B â€” Task Queue
 
 ---
 
 
 ---
 
-# Phase 40-B-A — Task Queue Checkpoint
+# Phase 40-B-A â€” Task Queue Checkpoint
 
 Status:
 
@@ -592,7 +592,7 @@ Decision:
 
 Next checkpoint:
 
-    Phase 40-C — Task Execution Layer
+    Phase 40-C â€” Task Execution Layer
 
 ---
 
@@ -648,12 +648,12 @@ Next:
     checkpoint determined from the remaining workflow/DAG/retry/
     cancellation/progress requirements.
 
-## Phase 40-D — Workflow Definition Contract
+## Phase 40-D â€” Workflow Definition Contract
 
 Status: COMPLETE
 
 Implementation commit:
-- `2e1a16f` — `Implement Phase 40-D workflow definition contract`
+- `2e1a16f` â€” `Implement Phase 40-D workflow definition contract`
 
 Objective:
 - Introduce a canonical Workflow definition that groups canonical Tasks and declares task dependencies without owning execution behavior.
@@ -689,6 +689,44 @@ Architectural decision:
 - Retry, cancellation, progress events, and failure handling remain separate Phase 40 boundaries.
 
 Next checkpoint:
-- Phase 40-E — Workflow DAG dependency validation/execution readiness.
+- Phase 40-E â€” Workflow DAG dependency validation/execution readiness.
 - Before implementation, inspect the Workflow dependency contract for cycle detection and dependency readiness semantics.
 - Preserve the 169-test baseline and do not stage unrelated working-tree changes.
+
+## Phase 40-E â€” DAG Dependency Validation / Execution Readiness
+
+Status: COMPLETE
+
+Implementation commit:
+- `23c7749` â€” `Implement Phase 40-E DAG readiness`
+
+Objective:
+- Validate Workflow dependency graphs as DAGs and determine which canonical Tasks are execution-ready without introducing workflow execution itself.
+
+Implementation:
+- Added cycle detection through dependency-graph traversal.
+- Added `validate_dag()` to reject dependency cycles.
+- Added `ready_tasks()` to identify pending Tasks whose dependencies are all COMPLETED.
+- Dependency-free pending Tasks are immediately ready.
+- Tasks with PENDING, RUNNING, FAILED, or CANCELLED dependencies are not ready.
+- Ready Tasks preserve Workflow declaration order.
+- No execution engine, retry policy, cancellation policy, progress reporting, or failure orchestration was added.
+
+Verification:
+- Phase 40-E Workflow tests: 16 passed
+- Full regression: 176 passed
+- `compileall`: PASS
+- `git diff --check`: PASS
+- Staged implementation scope: only `app/core/workflow.py` and `tests/test_workflow.py`
+
+Architectural decision:
+- `Workflow` owns dependency graph validation and execution-readiness calculation.
+- `Task` continues to own individual execution lifecycle.
+- `TaskQueue`, `ExecutionWorker`, and `TaskExecutor` continue to own execution mechanics.
+- Workflow execution remains a future boundary.
+- Retry, cancellation, progress events, and failure handling remain separate Phase 40 boundaries.
+
+Next checkpoint:
+- Phase 40-F â€” Retry Policy / Retry Execution Semantics.
+- Before implementation, inspect existing TaskExecutor and Task lifecycle boundaries for retry-safe behavior.
+- Preserve the 176-test baseline and do not stage unrelated working-tree changes.

@@ -1,4 +1,4 @@
-﻿# PixelOrchestrator — Project Instructions
+# PixelOrchestrator — Project Instructions
 
 ## 1. Primary Rule
 
@@ -488,3 +488,38 @@ Decision:
 
 Next:
 - Phase 40-E — DAG dependency validation/execution readiness.
+
+## Phase 40-E — DAG Dependency Validation / Execution Readiness
+
+Status: COMPLETE
+
+Commit: `23c7749`
+
+The Workflow contract now validates dependency graphs as DAGs and determines execution-ready canonical Tasks.
+
+Implemented:
+- `validate_dag()` cycle detection
+- `ready_tasks()` dependency readiness
+- dependency-free pending Tasks are ready
+- dependent Tasks become ready only when all dependencies are COMPLETED
+- FAILED, CANCELLED, RUNNING, or PENDING dependencies block readiness
+- ready Tasks preserve Workflow order
+
+Verification:
+- Phase 40-E Workflow tests: 16 passed
+- Full regression: 176 passed
+- compileall PASS
+- git diff --check PASS
+- implementation commit contained only the canonical Workflow and Workflow tests
+
+Decision:
+- Workflow owns DAG validation and readiness calculation.
+- Task owns execution lifecycle.
+- TaskQueue / ExecutionWorker / TaskExecutor remain execution boundaries.
+- Workflow execution is not introduced yet.
+- Retry, cancellation, progress, and failure orchestration remain separate boundaries.
+
+Next:
+- Phase 40-F — Retry Policy / Retry Execution Semantics.
+- Inspect existing TaskExecutor and Task lifecycle boundaries before implementation.
+- Preserve the 176-test baseline and do not stage unrelated working-tree changes.

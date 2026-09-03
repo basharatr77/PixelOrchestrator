@@ -1,4 +1,4 @@
-# PixelOrchestrator â€” Project State
+# PixelOrchestrator Ã¢â‚¬â€ Project State
 
 > Authoritative continuation checkpoint for active development.
 > The repository is the source of truth.
@@ -75,7 +75,7 @@ after canonical Task migration.
 
 
 Phase 40 ??? Workflow / Task Execution Layer
-# Phase 37 â€” Device State / Lifecycle Hardening
+# Phase 37 Ã¢â‚¬â€ Device State / Lifecycle Hardening
 
 ## Objective
 
@@ -141,12 +141,12 @@ Added:
 
 Validated:
 
-- UNKNOWN â†’ ADB
-- DISCONNECTED â†’ ADB
-- ADB â†’ FASTBOOT
-- FASTBOOT â†’ FASTBOOTD
-- RECOVERY â†’ SIDELOAD
-- ADB â†’ DISCONNECTED
+- UNKNOWN Ã¢â€ â€™ ADB
+- DISCONNECTED Ã¢â€ â€™ ADB
+- ADB Ã¢â€ â€™ FASTBOOT
+- FASTBOOT Ã¢â€ â€™ FASTBOOTD
+- RECOVERY Ã¢â€ â€™ SIDELOAD
+- ADB Ã¢â€ â€™ DISCONNECTED
 - invalid transition rejection
 - failed-transition state preservation
 
@@ -382,7 +382,7 @@ Objective:
 
 ---
 
-# Phase 40-A — Task Contract
+# Phase 40-A â€” Task Contract
 
 Status:
 
@@ -455,12 +455,12 @@ Commit message:
 
 Next:
 
-    Phase 40-B — Task Queue
+    Phase 40-B â€” Task Queue
 
 
 ---
 
-# Phase 40-B-A — Task Queue Checkpoint
+# Phase 40-B-A â€” Task Queue Checkpoint
 
 Status:
 
@@ -487,10 +487,10 @@ Decision:
 
 Next:
 
-    Phase 40-C — Task Execution Layer
+    Phase 40-C â€” Task Execution Layer
 
 ---
-# Phase 40-D — Workflow Definition Contract
+# Phase 40-D â€” Workflow Definition Contract
 
 Status: COMPLETE
 
@@ -527,7 +527,68 @@ Decision:
 - Queue, executor, retry, cancellation, progress, and failure handling remain outside Workflow.
 
 Next checkpoint:
-Phase 40-E — DAG dependency validation/execution readiness.
+Phase 40-E â€” DAG dependency validation/execution readiness.
 
 Continuity rule:
 Resume from this checkpoint and preserve unrelated working-tree changes as unstaged.
+
+---
+
+# Phase 40-E â€” DAG Dependency Validation / Execution Readiness
+
+Status: COMPLETE
+
+Commit:
+
+    23c7749
+
+Current architecture:
+
+    Canonical Task -> TaskQueue -> ExecutionWorker -> TaskExecutor
+    -> ModuleRegistry / DeviceRegistry -> ActionResult
+
+Workflow layer:
+
+    Workflow -> Tasks + dependency declarations
+             -> DAG validation
+             -> execution readiness
+
+Implemented:
+
+- Workflow dependency cycle detection via `validate_dag()`
+- Dependency readiness via `ready_tasks()`
+- Dependency-free PENDING Tasks are ready
+- A dependent Task becomes ready only when all dependencies are COMPLETED
+- PENDING, RUNNING, FAILED, or CANCELLED dependencies block readiness
+- Ready Tasks preserve Workflow declaration order
+
+Verification:
+
+- Phase 40-E Workflow tests: 16 passed
+- Full regression: 176 passed
+- compileall: PASS
+- git diff --check: PASS
+- implementation commit scope: only `app/core/workflow.py` and `tests/test_workflow.py`
+
+Decision:
+
+- Workflow owns DAG validation and dependency readiness calculation.
+- Task owns the individual execution lifecycle.
+- TaskQueue / ExecutionWorker / TaskExecutor remain execution boundaries.
+- Workflow does not execute Tasks.
+- Retry, cancellation, progress events, and failure orchestration remain separate Phase 40 boundaries.
+
+Next checkpoint:
+
+Phase 40-F â€” Retry Policy / Retry Execution Semantics.
+
+Before implementation:
+
+- Inspect existing TaskExecutor and Task lifecycle boundaries for retry-safe behavior.
+- Define retry semantics without introducing unrelated workflow behavior.
+- Preserve the 176-test baseline.
+- Do not stage unrelated working-tree changes.
+
+Continuity rule:
+
+Resume from this checkpoint and preserve all unrelated working-tree changes as unstaged.

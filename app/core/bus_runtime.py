@@ -106,6 +106,18 @@ class BusRuntime:
             )
         )
 
+    def publish_workflow_progress(self, workflow, message=""):
+        self.bus.publish_now(
+            Event(
+                type="WORKFLOW_PROGRESS",
+                payload={
+                    "workflow_id": workflow.id,
+                    "progress": workflow.progress(),
+                    "message": message,
+                },
+            )
+        )
+
     @staticmethod
     def _serialize_task_result(result):
         from dataclasses import asdict, is_dataclass

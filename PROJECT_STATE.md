@@ -717,3 +717,75 @@ Continuity rule:
 
     Preserve unrelated working-tree changes as unstaged and do not
     restart completed Phase 40 checkpoints without evidence.
+
+---
+
+## Phase 40-F-C — Cancellation Execution Semantics
+
+Status: COMPLETE
+
+Implementation commit:
+
+    e66d62c — Implement Phase 40 cancellation execution semantics
+
+Objective:
+
+    Ensure cancelled canonical Tasks queued for execution are consumed
+    safely by ExecutionWorker without being forwarded to the executor.
+
+Implemented:
+
+- ExecutionWorker now recognizes cancelled canonical `Task` instances.
+- A cancelled canonical Task is consumed from the TaskQueue.
+- Cancelled canonical Tasks are not forwarded to TaskExecutor.
+- A cancelled-before-execution Task remains in `CANCELLED` state.
+- A cancelled-before-execution Task retains `attempts == 0`.
+- Legacy dictionary-task execution remains unchanged.
+- Existing Task.cancel() lifecycle semantics remain unchanged.
+- No forced interruption of a currently executing synchronous module
+  was introduced.
+- Retry semantics, RetryPolicy, backoff, and scheduling remain unchanged.
+
+Canonical cancellation boundary:
+
+    Task
+      -> TaskQueue
+      -> ExecutionWorker
+           -> CANCELLED: consume and stop
+           -> otherwise: Executor
+
+Verification:
+
+- ExecutionWorker cancellation tests: 6 passed
+- Focused Phase 40 integration tests: 63 passed
+- Full regression: 191 passed in 7.34s
+- `compileall`: PASS
+- `git diff --check`: PASS
+
+Architectural decisions:
+
+- ExecutionWorker owns the boundary that prevents queued cancelled
+  canonical Tasks from entering execution.
+- Task.cancel() remains the source of cancellation state.
+- TaskExecutor is not responsible for silently accepting a cancelled
+  queued Task.
+- Legacy dictionary-task compatibility remains preserved.
+- Running synchronous execution is not forcibly interrupted by this
+  checkpoint.
+
+Known limitations:
+
+- No forced interruption of an already executing synchronous module.
+- No cancellation-aware retry backoff or scheduling.
+- No progress-event model.
+- No workflow-level cancellation orchestration.
+
+Next:
+
+    Inspect the remaining Phase 40 progress-event and failure-handling
+    boundaries before selecting the next implementation checkpoint.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not
+    restart completed Phase 40 checkpoints without evidence.

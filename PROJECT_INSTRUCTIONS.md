@@ -589,3 +589,48 @@ Repository continuity remains based on:
     PROJECT_STATE.md
     PHASE_PLAN.md
     PROJECT_INSTRUCTIONS.md
+
+---
+
+## Phase 40-F-C — Cancellation Execution Semantics
+
+Status: COMPLETE
+
+Commit:
+
+    e66d62c
+
+Phase 40-F-C establishes the canonical cancellation execution boundary.
+
+ExecutionWorker consumes cancelled canonical Tasks from TaskQueue without
+forwarding them to TaskExecutor. Cancelled-before-execution Tasks remain
+CANCELLED with attempts == 0.
+
+Verification:
+
+- ExecutionWorker cancellation tests: 6 passed
+- Focused Phase 40 regression: 63 passed
+- Full regression: 191 passed in 7.34s
+- compileall: PASS
+- git diff --check: PASS
+
+Decisions:
+
+- Task.cancel() remains the canonical cancellation state transition.
+- ExecutionWorker prevents queued cancelled canonical Tasks from entering
+  execution.
+- Legacy dictionary-task execution remains unchanged.
+- Already-running synchronous module execution is not forcibly interrupted.
+- Retry semantics remain separate from cancellation semantics.
+- No progress-event or workflow-level cancellation model was introduced.
+
+Next:
+
+    Inspect the remaining Phase 40 progress-event and failure-handling
+    boundaries before implementing the next checkpoint.
+
+Repository continuity remains based on:
+
+    PROJECT_STATE.md
+    PHASE_PLAN.md
+    PROJECT_INSTRUCTIONS.md

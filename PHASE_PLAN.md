@@ -817,3 +817,36 @@ Next checkpoint:
   before selecting the next implementation boundary.
 
 ---
+
+## Phase 40-F-C — Cancellation Execution Semantics
+
+Status: COMPLETE
+
+Commit:
+
+    e66d62c
+
+Phase 40-F-C establishes the canonical cancellation execution boundary.
+
+ExecutionWorker now consumes cancelled canonical Tasks from the queue
+without forwarding them to TaskExecutor. A Task cancelled before worker
+execution remains CANCELLED and retains attempts == 0.
+
+Verification:
+
+- ExecutionWorker cancellation tests: 6 passed
+- Focused Phase 40 integration: 63 passed
+- Full regression: 191 passed in 7.34s
+- compileall: PASS
+- git diff --check: PASS
+
+The legacy dictionary-task execution path remains unchanged. No forced
+interruption of already-running synchronous module execution was introduced.
+Retry semantics remain unchanged.
+
+Next checkpoint:
+
+- Inspect the remaining Phase 40 progress-event and failure-handling
+  boundaries before selecting the next implementation checkpoint.
+
+---

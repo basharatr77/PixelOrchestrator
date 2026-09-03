@@ -119,6 +119,26 @@ class Workflow:
 
         return int(completed * 100 / len(self.tasks))
 
+    def status(self) -> str:
+        """Return the derived workflow outcome from current task states."""
+
+        if any(task.status is TaskStatus.FAILED for task in self.tasks):
+            return "failed"
+
+        if any(task.status is TaskStatus.CANCELLED for task in self.tasks):
+            return "cancelled"
+
+        if self.tasks and all(
+            task.status is TaskStatus.COMPLETED
+            for task in self.tasks
+        ):
+            return "completed"
+
+        if any(task.status is TaskStatus.RUNNING for task in self.tasks):
+            return "running"
+
+        return "pending"
+
     def ready_tasks(self) -> list[Task]:
         """Return pending tasks whose dependencies are all completed."""
 

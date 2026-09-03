@@ -545,3 +545,47 @@ Decisions:
 - `Task.attempts` remains the authoritative cumulative attempt counter.
 - Task lifecycle and TaskExecutor retry execution were not changed in 40-F-A.
 - No retry backoff, cancellation, progress, or workflow execution was introduced.
+
+---
+
+## Phase 40-F-B � Retry Execution Semantics
+
+Status: COMPLETE
+
+Commit:
+
+    2278a16
+
+Phase 40-F-B integrates the canonical RetryPolicy with TaskExecutor.
+
+The canonical Task lifecycle now supports intermediate retry transitions
+through `Task.retry()`, returning a failed execution from RUNNING to PENDING
+while preserving cumulative attempt tracking. TaskExecutor retries failed
+module executions while RetryPolicy permits another attempt, completes
+successful executions, and terminally fails only the final unsuccessful
+attempt.
+
+Execution exceptions are converted into `EXECUTION_ERROR` ActionResults
+and participate in retry evaluation. Deterministic module/action/device
+preflight failures remain terminal and are not retried.
+
+Verification:
+
+- Focused regression: 41 passed
+- Full regression: 189 passed in 8.15s
+- compileall: PASS
+- git diff --check: PASS
+
+The legacy dictionary-task execution path remains unchanged. No RETRYING
+TaskStatus, retry backoff, or scheduling was introduced.
+
+Next:
+
+    Inspect the remaining Phase 40 cancellation/progress/failure boundaries
+    before implementing the next checkpoint.
+
+Repository continuity remains based on:
+
+    PROJECT_STATE.md
+    PHASE_PLAN.md
+    PROJECT_INSTRUCTIONS.md

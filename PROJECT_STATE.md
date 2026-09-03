@@ -632,3 +632,88 @@ Resume from this checkpoint and preserve all unrelated working-tree changes as u
 Continuity rule:
 
 Resume from this checkpoint and preserve all unrelated working-tree changes as unstaged.
+
+---
+
+## Phase 40-F-B � Retry Execution Semantics
+
+Status: COMPLETE
+
+Implementation commit:
+
+    2278a16 � Implement Phase 40-F-B retry execution semantics
+
+Objective:
+
+    Integrate the canonical RetryPolicy with TaskExecutor while preserving
+    correct Task lifecycle transitions and cumulative attempt tracking.
+
+Implementation:
+
+- Added `Task.retry()` to return an intermediate failed execution from
+  `RUNNING` to `PENDING`.
+- `Task.retry()` preserves the authoritative cumulative `attempts` counter.
+- `Task.retry()` preserves `started_at` and clears `completed_at`.
+- Integrated `RetryPolicy` into the canonical `TaskExecutor`.
+- `RetryPolicy.max_attempts` represents total execution attempts, including
+  the initial attempt.
+- Failed execution results are retried while attempts remain.
+- Successful execution results complete the Task immediately.
+- Only the final unsuccessful attempt transitions the Task to `FAILED`.
+- Execution exceptions are converted to `EXECUTION_ERROR` ActionResults
+  and participate in retry policy evaluation.
+- Deterministic preflight failures (`MODULE_NOT_FOUND`,
+  `ACTION_NOT_FOUND`, `DEVICE_NOT_FOUND`) remain terminal and are not
+  retried.
+- The legacy dictionary-task execution path remains unchanged.
+- No `RETRYING` TaskStatus was introduced.
+- No retry backoff or scheduling was introduced.
+- Workflow execution, cancellation during retry, progress events, and
+  broader failure orchestration remain outside this checkpoint.
+
+Canonical execution architecture:
+
+    Task
+      -> TaskExecutor
+      -> RetryPolicy
+      -> ModuleRegistry / DeviceRegistry
+      -> ActionResult
+      -> Task lifecycle
+
+Verification:
+
+- Focused Task/RetryPolicy/TaskExecutor/ExecutionWorker/BusRuntime tests:
+  41 passed in 0.90s
+- Full regression:
+  189 passed in 8.15s
+- `compileall`: PASS
+- `git diff --check`: PASS
+
+Architectural decisions:
+
+- `RetryPolicy` owns retry-decision semantics.
+- `Task.attempts` remains the authoritative cumulative attempt counter.
+- `Task` owns attempt lifecycle state through `start()`, `retry()`,
+  `complete()`, and `fail()`.
+- `TaskExecutor` owns application of the retry policy around actual
+  canonical module execution.
+- Intermediate failures are not terminal when retry attempts remain.
+- Preflight resolution failures remain deterministic terminal failures.
+
+Known limitations:
+
+- No retry backoff or scheduling.
+- No cancellation-aware retry behavior.
+- No progress-event model.
+- No workflow-level execution orchestration.
+
+Next:
+
+    Continue Phase 40 with the next remaining execution boundary
+    after Retry Execution Semantics. Inspect the Phase 40 roadmap and
+    existing cancellation/progress/failure boundaries before implementation.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not
+    restart completed Phase 40 checkpoints without evidence.

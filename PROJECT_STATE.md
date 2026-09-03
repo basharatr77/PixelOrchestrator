@@ -490,3 +490,44 @@ Next:
     Phase 40-C — Task Execution Layer
 
 ---
+# Phase 40-D — Workflow Definition Contract
+
+Status: COMPLETE
+
+Commit: `2e1a16f`
+
+Current architecture:
+`Canonical Task -> TaskQueue -> ExecutionWorker -> TaskExecutor -> ModuleRegistry / DeviceRegistry -> ActionResult`
+
+Workflow layer:
+`Workflow -> Tasks + dependency declarations`
+
+A Workflow groups canonical Tasks and describes their dependency relationships. It does not execute tasks.
+
+Implemented:
+- Workflow ID
+- canonical Task collection
+- defensive task-list copy
+- dependency mapping
+- duplicate Task ID validation
+- unknown dependency validation
+- self-dependency validation
+- Task/dependency type validation
+
+Verification:
+- Workflow: 9 passed
+- Phase 40 targeted regression: 41 passed
+- Full regression baseline: 169 passed
+- compileall: PASS
+- git diff --check: PASS
+
+Decision:
+- Task owns execution lifecycle.
+- Workflow owns grouping and dependency structure only.
+- Queue, executor, retry, cancellation, progress, and failure handling remain outside Workflow.
+
+Next checkpoint:
+Phase 40-E — DAG dependency validation/execution readiness.
+
+Continuity rule:
+Resume from this checkpoint and preserve unrelated working-tree changes as unstaged.

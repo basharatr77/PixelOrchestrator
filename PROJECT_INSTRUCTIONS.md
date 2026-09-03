@@ -459,3 +459,32 @@ Next:
     Inspect the remaining workflow, DAG dependency, retry,
     cancellation, progress-event, and failure-handling boundaries
     before implementing the next checkpoint.
+
+## Phase 40-D — Workflow Definition Contract
+
+Status: COMPLETE
+
+Commit: `2e1a16f`
+
+The canonical Workflow contract was introduced in `app/core/workflow.py` with tests in `tests/test_workflow.py`.
+
+Architecture:
+`Workflow -> Tasks + dependency declarations`
+
+Workflow groups canonical `Task` objects and describes dependency relationships. It does not execute tasks and does not own queueing, retry, cancellation, progress, or failure handling.
+
+Verification:
+- 9 Workflow tests passed
+- 41 Phase 40 targeted tests passed
+- 169 full regression tests passed
+- compileall PASS
+- git diff --check PASS
+- staged implementation scope contained only the Workflow contract and its tests
+
+Decision:
+- Task remains the execution unit.
+- Workflow owns grouping and dependency structure.
+- DAG cycle/readiness semantics are deferred to the next Phase 40 boundary.
+
+Next:
+- Phase 40-E — DAG dependency validation/execution readiness.

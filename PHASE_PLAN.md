@@ -647,3 +647,48 @@ Next:
     Continue Phase 40 workflow execution design, with the next
     checkpoint determined from the remaining workflow/DAG/retry/
     cancellation/progress requirements.
+
+## Phase 40-D — Workflow Definition Contract
+
+Status: COMPLETE
+
+Implementation commit:
+- `2e1a16f` — `Implement Phase 40-D workflow definition contract`
+
+Objective:
+- Introduce a canonical Workflow definition that groups canonical Tasks and declares task dependencies without owning execution behavior.
+
+Implementation:
+- Added `app/core/workflow.py`
+- Added `tests/test_workflow.py`
+- Workflow provides:
+  - globally unique workflow ID
+  - canonical `Task` collection
+  - defensive task-list copy
+  - task dependency mapping by Task ID
+  - duplicate Task ID rejection
+  - unknown dependency rejection
+  - self-dependency rejection
+  - Task type validation
+  - dependency type validation
+- Workflow intentionally does not own queueing, execution, retry policy, cancellation, progress reporting, or failure handling.
+
+Verification:
+- Workflow targeted tests: 9 passed
+- Phase 40 targeted regression: 41 passed
+- Full regression: 169 passed
+- `compileall`: PASS
+- `git diff --check`: PASS
+- Final staged scope: only `app/core/workflow.py` and `tests/test_workflow.py`
+- BOM audit: PASS
+
+Architectural decision:
+- `Task` remains the individual execution unit and owns execution lifecycle.
+- `Workflow` groups Tasks and owns dependency structure only.
+- Execution remains in TaskQueue / ExecutionWorker / TaskExecutor.
+- Retry, cancellation, progress events, and failure handling remain separate Phase 40 boundaries.
+
+Next checkpoint:
+- Phase 40-E — Workflow DAG dependency validation/execution readiness.
+- Before implementation, inspect the Workflow dependency contract for cycle detection and dependency readiness semantics.
+- Preserve the 169-test baseline and do not stage unrelated working-tree changes.

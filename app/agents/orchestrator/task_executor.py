@@ -15,6 +15,7 @@ class TaskExecutor:
         module_registry=None,
         device_registry=None,
         retry_policy=None,
+        progress_callback=None,
     ):
         if transport_resolver is None:
             from app.core.transport_resolver import TransportResolver
@@ -37,6 +38,7 @@ class TaskExecutor:
             if retry_policy is not None
             else RetryPolicy()
         )
+        self.progress_callback = progress_callback
 
     def resolve_transport(self, task):
         from app.core.module_contract import (
@@ -79,6 +81,14 @@ class TaskExecutor:
         )
 
         return self.transport_resolver.resolve(device)
+
+    def _report_progress(self, task, progress, message=""):
+        if self.progress_callback is not None:
+            self.progress_callback(
+                task,
+                progress,
+                message,
+            )
 
     def _execute_canonical(self, task):
         from app.core.module_contract import ActionResult
@@ -135,6 +145,12 @@ class TaskExecutor:
         while True:
             task.start()
 
+            self._report_progress(
+                task,
+                0,
+                f"Attempt {task.attempts} started.",
+            )
+
             try:
                 result = module.execute(
                     task.action_id,
@@ -157,13 +173,28 @@ class TaskExecutor:
                 )
 
             if result.success:
+                self._report_progress(
+                    task,
+                    100,
+                    "Task attempt completed.",
+                )
                 task.complete(result)
                 return result
 
             if self.retry_policy.should_retry(task.attempts, result):
+                self._report_progress(
+                    task,
+                    100,
+                    "Task attempt failed; retrying.",
+                )
                 task.retry(result)
                 continue
 
+            self._report_progress(
+                task,
+                100,
+                "Task attempt failed.",
+            )
             task.fail(result)
             return result
 

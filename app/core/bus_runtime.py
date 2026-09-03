@@ -8,7 +8,7 @@ from app.agents.orchestrator.execution_worker import ExecutionWorker
 from app.core.event_bus import StreamBus
 from app.core.device_registry import DeviceRegistry
 from app.core.events import Event
-from app.core.registry import create_registry_table, update_registry
+from app.core.registry import create_registry_table, update_registry, read_registry
 from app.core.worker_pool import WorkerPool
 
 
@@ -21,7 +21,15 @@ class BusRuntime:
         self.task_queue = TaskQueue()
         self.device_registry = DeviceRegistry()
 
-        self.task_executor = task_executor if task_executor is not None else TaskExecutor()
+        self._rehydrate_registry()
+
+        self.task_executor = (
+            task_executor
+            if task_executor is not None
+            else TaskExecutor(
+                progress_callback=self._publish_task_progress,
+            )
+        )
 
         self.execution_worker = ExecutionWorker(
             task_queue=self.task_queue,
@@ -38,8 +46,65 @@ class BusRuntime:
             device_registry=self.device_registry,
         )
 
+    @staticmethod
+    def _rehydration_contract(status):
+        from app.core.module_contract import DeviceState, ModuleType
+
+        mapping = {
+            "ADB": (DeviceState.ADB, ModuleType.ADB),
+            "FASTBOOT": (DeviceState.FASTBOOT, ModuleType.FASTBOOT),
+            "FASTBOOTD": (DeviceState.FASTBOOTD, ModuleType.FASTBOOT),
+            "RECOVERY": (DeviceState.RECOVERY, ModuleType.COMMON),
+            "SIDELOAD": (DeviceState.SIDELOAD, ModuleType.COMMON),
+            "EDL": (DeviceState.EDL, ModuleType.QUALCOMM),
+            "BROM": (DeviceState.BROM, ModuleType.MEDIATEK),
+            "PRELOADER": (DeviceState.PRELOADER, ModuleType.MEDIATEK),
+            "DOWNLOAD": (DeviceState.DOWNLOAD, ModuleType.SAMSUNG),
+            "disconnected": (
+                DeviceState.DISCONNECTED,
+                ModuleType.COMMON,
+            ),
+        }
+
+        if status not in mapping:
+            raise ValueError(
+                f"Unsupported persisted device status: {status!r}"
+            )
+
+        return mapping[status]
+
+    def _rehydrate_registry(self):
+        from app.core.module_contract import Device
+
+        for serial, status, _offset in read_registry():
+            state, module_type = self._rehydration_contract(status)
+
+            device = Device(
+                device_id=f"device:{serial}",
+                module_type=module_type,
+                state=state,
+                model=None,
+                serial=serial,
+                transport=None,
+                properties={},
+            )
+
+            self.device_registry.register(device)
+
     def setup(self):
         self.lifecycle_consumer.subscribe(self.bus)
+
+    def _publish_task_progress(self, task, progress, message=""):
+        self.bus.publish_now(
+            Event(
+                type="TASK_PROGRESS",
+                payload={
+                    "task_id": task.id,
+                    "progress": progress,
+                    "message": message,
+                },
+            )
+        )
 
     @staticmethod
     def _serialize_task_result(result):

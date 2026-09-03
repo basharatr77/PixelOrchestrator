@@ -850,3 +850,44 @@ Next checkpoint:
   boundaries before selecting the next implementation checkpoint.
 
 ---
+
+---
+
+## Phase 40-G-A — Progress Event Contract
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `9fb360b` — `Implement Phase 40-G-A progress event contract`
+
+Implemented:
+
+- Added canonical `TASK_PROGRESS` event validation.
+- Required non-empty `task_id`.
+- Required integer `progress` from 0 through 100 inclusive.
+- Boolean and invalid progress values are rejected.
+- Optional `message` must be a string.
+- Existing event types and `TASK_EXECUTED` remain unchanged.
+- Progress events do not alter Task lifecycle/status.
+- Progress is per execution attempt, not cumulative retry percentage.
+- Task, TaskExecutor, Workflow, and RetryPolicy do not own progress publication.
+
+Verification:
+
+- G-A targeted tests: 7 passed
+- Canonical task event regression: 3 passed
+- Full regression: 198 passed in 11.72s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- BOM audit: PASS
+
+Next checkpoint:
+
+- Phase 40-G-B — Progress Event Publication Boundary.
+- Inspect the canonical TaskExecutor/ExecutionWorker/BusRuntime boundary.
+- Define the smallest safe mechanism for publishing `TASK_PROGRESS`.
+- Preserve `TASK_EXECUTED`, retry, cancellation, and legacy dictionary-task behavior.
+- Do not stage unrelated working-tree changes.
+
+---

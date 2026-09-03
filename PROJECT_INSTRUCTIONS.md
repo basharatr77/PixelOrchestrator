@@ -634,3 +634,60 @@ Repository continuity remains based on:
     PROJECT_STATE.md
     PHASE_PLAN.md
     PROJECT_INSTRUCTIONS.md
+
+---
+
+## Phase 40-G-A — Progress Event Contract
+
+Status: COMPLETE
+
+Commit:
+
+    9fb360b
+
+Phase 40-G-A establishes the canonical TASK_PROGRESS event contract.
+
+The Event model now validates TASK_PROGRESS payloads with a required
+non-empty task_id, an integer progress value from 0 through 100, and an
+optional string message. Existing event types remain unchanged.
+
+TASK_PROGRESS does not alter Task lifecycle/status. Progress is defined
+per execution attempt rather than as cumulative retry percentage.
+Task, TaskExecutor, Workflow, and RetryPolicy do not own progress
+publication.
+
+Verification:
+
+- G-A targeted tests: 7 passed
+- Canonical task event regression: 3 passed
+- Full regression: 198 passed in 11.72s
+- compileall: PASS
+- git diff --check: PASS
+- BOM audit: PASS
+
+Architectural decisions:
+
+- Event validates TASK_PROGRESS at construction time.
+- TASK_EXECUTED remains unchanged.
+- 100% progress does not replace or imply TASK_EXECUTED.
+- Progress publication remains an execution/orchestration concern.
+- Legacy event names remain untouched.
+- No RETRYING status, retry backoff, scheduling, or workflow-level
+  progress orchestration was introduced.
+
+Next:
+
+    Phase 40-G-B — Progress Event Publication Boundary.
+
+    Inspect the canonical TaskExecutor/ExecutionWorker/BusRuntime
+    boundary and define the smallest safe mechanism for publishing
+    TASK_PROGRESS while preserving retry, cancellation, TASK_EXECUTED,
+    and legacy dictionary-task behavior.
+
+Repository continuity remains based on:
+
+    PROJECT_STATE.md
+    PHASE_PLAN.md
+    PROJECT_INSTRUCTIONS.md
+
+---

@@ -789,3 +789,89 @@ Continuity rule:
 
     Preserve unrelated working-tree changes as unstaged and do not
     restart completed Phase 40 checkpoints without evidence.
+
+---
+
+## Phase 40-G-A — Progress Event Contract
+
+Status: COMPLETE
+
+Implementation commit:
+
+    9fb360b — Implement Phase 40-G-A progress event contract
+
+Objective:
+
+    Establish the canonical TASK_PROGRESS event contract without making
+    Task, TaskExecutor, Workflow, or RetryPolicy responsible for event
+    publication.
+
+Implemented:
+
+- Added TASK_PROGRESS event validation to `app/core/events.py`.
+- `task_id` is required and must be a non-empty string.
+- `progress` is required and must be an integer from 0 through 100 inclusive.
+- Boolean progress values are rejected.
+- `message` is optional and, when present, must be a string.
+- Existing event types retain their previous behavior.
+- TASK_EXECUTED remains unchanged.
+- TASK_PROGRESS does not modify Task lifecycle/status.
+- Progress is defined per execution attempt, not as cumulative retry percentage.
+- Task does not publish progress events.
+- TaskExecutor does not automatically publish every progress event.
+- Future execution/orchestration boundaries own progress publication.
+
+Canonical progress event payload:
+
+    {
+        "task_id": "<global task id>",
+        "progress": 0..100,
+        "message": "<optional human-readable status>"
+    }
+
+Architectural decisions:
+
+- `Event` validates the TASK_PROGRESS contract at construction time.
+- Progress publication remains outside Task lifecycle ownership.
+- RetryPolicy does not own progress semantics.
+- Workflow does not own progress-event implementation.
+- 100% progress does not replace or imply TASK_EXECUTED.
+- No RETRYING status, backoff, scheduling, or workflow-level progress
+  orchestration was introduced.
+- Legacy event names in `core/event_types.py` remain untouched.
+
+Verification:
+
+- G-A targeted tests: 7 passed
+- Canonical task event regression: 3 passed
+- Full regression: 198 passed in 11.72s
+- `compileall`: PASS
+- `git diff --check`: PASS
+- BOM audit after cleanup: PASS
+
+Affected files:
+
+    app/core/events.py
+    tests/test_task_progress_event.py
+
+Known limitations:
+
+- No execution worker progress publication yet.
+- No workflow-level progress aggregation.
+- No progress persistence contract beyond the existing Event system.
+- No UI progress consumer.
+- No retry/backoff progress model.
+
+Next:
+
+    Phase 40-G-B — Progress Event Publication Boundary.
+
+    Inspect the canonical TaskExecutor/ExecutionWorker/BusRuntime boundary
+    and define the smallest safe mechanism for publishing TASK_PROGRESS
+    events while preserving TASK_EXECUTED, retry, cancellation, and legacy
+    dictionary-task behavior.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not restart
+    completed Phase 40 checkpoints without evidence.

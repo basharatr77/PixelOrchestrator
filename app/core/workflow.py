@@ -8,7 +8,7 @@ progress reporting, and failure handling remain outside this contract.
 from dataclasses import dataclass, field
 import uuid
 
-from app.core.task import Task
+from app.core.task import Task, TaskStatus
 
 
 @dataclass
@@ -72,3 +72,56 @@ class Workflow:
 
         self.tasks = list(self.tasks)
         self.dependencies = normalized
+
+    def validate_dag(self) -> bool:
+        """Validate that workflow dependencies form an acyclic graph."""
+
+        task_ids = {task.id for task in self.tasks}
+        visiting = set()
+        visited = set()
+
+        def visit(task_id):
+            if task_id in visiting:
+                raise ValueError(
+                    f"Workflow contains a dependency cycle involving task '{task_id}'."
+                )
+
+            if task_id in visited:
+                return
+
+            visiting.add(task_id)
+
+            for dependency_id in self.dependencies.get(task_id, set()):
+                if dependency_id not in task_ids:
+                    raise ValueError(
+                        f"Dependency references unknown task '{dependency_id}'."
+                    )
+                visit(dependency_id)
+
+            visiting.remove(task_id)
+            visited.add(task_id)
+
+        for task_id in task_ids:
+            visit(task_id)
+
+        return True
+
+    def ready_tasks(self) -> list[Task]:
+        """Return pending tasks whose dependencies are all completed."""
+
+        ready = []
+
+        for task in self.tasks:
+            if task.status is not TaskStatus.PENDING:
+                continue
+
+            dependency_ids = self.dependencies.get(task.id, set())
+
+            if all(
+                dependency_task.status is TaskStatus.COMPLETED
+                for dependency_task in self.tasks
+                if dependency_task.id in dependency_ids
+            ):
+                ready.append(task)
+
+        return ready

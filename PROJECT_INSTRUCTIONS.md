@@ -520,6 +520,28 @@ Decision:
 - Retry, cancellation, progress, and failure orchestration remain separate boundaries.
 
 Next:
-- Phase 40-F — Retry Policy / Retry Execution Semantics.
-- Inspect existing TaskExecutor and Task lifecycle boundaries before implementation.
-- Preserve the 176-test baseline and do not stage unrelated working-tree changes.
+- Phase 40-F-B — Retry Execution Semantics.
+- Define and test TaskExecutor retry behavior while preserving canonical Task lifecycle correctness.
+- Preserve the 184-test baseline and do not stage unrelated working-tree changes.
+
+## Phase 40-F-A — Retry Policy Contract
+
+Status: COMPLETE
+
+Implementation commit:
+- `bf52f7f` — `Implement Phase 40-F-A retry policy contract`
+
+Verification:
+- RetryPolicy tests: 8 passed
+- Full regression: 184 passed
+- Compile: PASS
+- Diff check: PASS
+- BOM audit: PASS
+
+Decisions:
+- `RetryPolicy.max_attempts` means total attempts, including the initial attempt.
+- Successful results are never retried.
+- Failed results may retry while attempts remain.
+- `Task.attempts` remains the authoritative cumulative attempt counter.
+- Task lifecycle and TaskExecutor retry execution were not changed in 40-F-A.
+- No retry backoff, cancellation, progress, or workflow execution was introduced.

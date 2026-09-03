@@ -580,14 +580,54 @@ Decision:
 
 Next checkpoint:
 
-Phase 40-F â€” Retry Policy / Retry Execution Semantics.
+Phase 40-F-B — Retry Execution Semantics.
 
 Before implementation:
 
-- Inspect existing TaskExecutor and Task lifecycle boundaries for retry-safe behavior.
-- Define retry semantics without introducing unrelated workflow behavior.
-- Preserve the 176-test baseline.
+- Define how TaskExecutor applies RetryPolicy.
+- Preserve correct Task lifecycle transitions and attempt counting.
+- Add focused execution tests before production changes.
+- Preserve the 184-test baseline.
 - Do not stage unrelated working-tree changes.
+
+Phase 40-F-A — Retry Policy Contract
+
+Status: COMPLETE
+
+Implementation commit:
+
+    bf52f7f — Implement Phase 40-F-A retry policy contract
+
+Current state:
+
+- `app/core/retry_policy.py` defines the canonical RetryPolicy contract.
+- `RetryPolicy.max_attempts` represents total execution attempts, including the initial attempt.
+- Failed ActionResult values may be retried while attempts remain.
+- Successful ActionResult values are never retried.
+- `Task.attempts` remains the authoritative cumulative attempt counter.
+- Task lifecycle behavior remains unchanged.
+- TaskExecutor retry execution semantics remain deferred to Phase 40-F-B.
+- No retry backoff, cancellation during retry, progress events, or workflow execution was introduced.
+
+Verification:
+
+    RetryPolicy targeted tests: 8 passed
+
+    Full regression:
+    184 passed in 6.66s
+
+    Compile:
+    PASS
+
+    Diff check:
+    PASS
+
+    BOM audit:
+    PASS
+
+Continuity rule:
+
+Resume from this checkpoint and preserve all unrelated working-tree changes as unstaged.
 
 Continuity rule:
 

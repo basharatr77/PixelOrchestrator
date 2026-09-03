@@ -727,6 +727,44 @@ Architectural decision:
 - Retry, cancellation, progress events, and failure handling remain separate Phase 40 boundaries.
 
 Next checkpoint:
-- Phase 40-F â€” Retry Policy / Retry Execution Semantics.
-- Before implementation, inspect existing TaskExecutor and Task lifecycle boundaries for retry-safe behavior.
-- Preserve the 176-test baseline and do not stage unrelated working-tree changes.
+- Phase 40-F-A — Retry Policy Contract.
+- Before implementation, define how RetryPolicy integrates with TaskExecutor retry execution semantics.
+- Preserve the 184-test baseline and do not stage unrelated working-tree changes.
+
+## Phase 40-F-A — Retry Policy Contract
+
+Status: COMPLETE
+
+Implementation commit:
+- `bf52f7f` — `Implement Phase 40-F-A retry policy contract`
+
+Objective:
+- Introduce an explicit RetryPolicy contract without changing TaskExecutor retry execution.
+
+Implementation:
+- Added `app/core/retry_policy.py`.
+- Added `tests/test_retry_policy.py`.
+- `RetryPolicy.max_attempts` represents total execution attempts, including the initial attempt.
+- Failed `ActionResult` values may be retried while attempts remain.
+- Successful results are never retried.
+- Retry backoff, cancellation, progress events, and workflow execution remain outside this checkpoint.
+
+Verification:
+- RetryPolicy targeted tests: 8 passed
+- Full regression: 184 passed
+- `compileall`: PASS
+- `git diff --check`: PASS
+- BOM audit: PASS
+
+Architectural decision:
+- `RetryPolicy` owns retry-decision semantics.
+- `Task.attempts` remains the authoritative cumulative attempt counter.
+- Task lifecycle remains unchanged in 40-F-A.
+- TaskExecutor retry execution semantics remain the next boundary.
+- No `RETRYING` TaskStatus was introduced.
+- No backoff or retry scheduling was introduced.
+
+Next checkpoint:
+- Phase 40-F-B — Retry Execution Semantics.
+- Define and test TaskExecutor retry behavior while preserving canonical Task lifecycle correctness.
+- Preserve the 184-test baseline and do not stage unrelated working-tree changes.

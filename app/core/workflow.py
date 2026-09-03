@@ -106,6 +106,19 @@ class Workflow:
 
         return True
 
+    def progress(self) -> int:
+        """Return derived workflow completion progress from 0 through 100."""
+
+        if not self.tasks:
+            return 0
+
+        completed = sum(
+            task.status is TaskStatus.COMPLETED
+            for task in self.tasks
+        )
+
+        return int(completed * 100 / len(self.tasks))
+
     def ready_tasks(self) -> list[Task]:
         """Return pending tasks whose dependencies are all completed."""
 

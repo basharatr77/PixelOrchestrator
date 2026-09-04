@@ -1056,3 +1056,93 @@ Next checkpoint:
   moving orchestration responsibilities into Workflow.
 
 ---
+
+## Phase 40-H-B - Workflow Failure Handling / Terminal State
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `21b993b` - `H-B Add workflow terminal state handling`
+
+Implemented:
+
+- Added derived `Workflow.is_terminal()`.
+- completed, failed, and cancelled are terminal outcomes.
+- pending and running are non-terminal.
+- FAILED retains precedence over CANCELLED.
+- Workflow remains free of EventBus ownership and execution orchestration.
+- Failed dependencies remain unavailable to dependent tasks.
+
+Verification:
+
+- Workflow failure-handling tests: 4 passed.
+- Workflow terminal tests: 6 passed.
+- Focused Phase 40 regression: 99 passed in 5.80s.
+- Full regression: 225 passed in 19.58s.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- BOM audit: PASS.
+
+Affected files:
+
+    app/core/workflow.py
+    tests/test_workflow_failure_handling.py
+    tests/test_workflow_terminal.py
+
+Known limitations:
+
+- Terminal state remains derived.
+- No workflow terminal event publication was added.
+
+Next checkpoint:
+
+- Phase 40-H-C - Workflow Terminal Outcome Publication Boundary.
+
+---
+
+## Phase 40-H-C - Workflow Terminal Outcome Publication Boundary
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `db0bba5` - `Implement workflow terminal outcome publication`
+
+Implemented:
+
+- Added explicit `BusRuntime.publish_workflow_terminal_outcome(workflow)`.
+- `WORKFLOW_COMPLETED`, `WORKFLOW_FAILED`, and `WORKFLOW_CANCELLED`
+  are published for the corresponding terminal workflow outcomes.
+- Non-terminal workflows publish no terminal outcome.
+- Payload contains `workflow_id` and derived `status`.
+- Workflow remains free of EventBus ownership.
+- Existing task-level and workflow-progress semantics remain unchanged.
+
+Verification:
+
+- Valid RED: expected missing `BusRuntime.publish_workflow_terminal_outcome`.
+- GREEN: 4 passed in 0.55s.
+- Focused Phase 40 regression: 99 passed in 6.79s.
+- Full regression: 229 passed in 11.32s.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- BOM audit: PASS.
+- Exact staged scope: PASS.
+
+Affected files:
+
+    app/core/bus_runtime.py
+    tests/test_workflow_terminal_publication.py
+
+Known limitations:
+
+- Terminal outcome publication is an explicit BusRuntime boundary API.
+- No automatic workflow orchestration loop was introduced.
+- No separate persisted workflow terminal state was introduced.
+
+Next checkpoint:
+
+- Audit the next Phase 40 workflow execution/integration boundary.
+
+---

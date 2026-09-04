@@ -1068,3 +1068,109 @@ Continuity rule:
 
     Preserve unrelated working-tree changes as unstaged and do not restart
     completed Phase 40 checkpoints without evidence.
+
+## Phase 40-H-B - Workflow Failure Handling / Terminal State
+
+Status: COMPLETE
+
+Commit:
+    21b993b H-B Add workflow terminal state handling
+
+Implemented:
+
+- Added Workflow.is_terminal() as a pure derived terminal-state query.
+- completed, failed, and cancelled workflows are terminal.
+- pending and running workflows are non-terminal.
+- Workflow failure handling remains derived from TaskStatus.
+- FAILED retains precedence over CANCELLED.
+- Failed dependencies continue to prevent dependent tasks from becoming ready.
+- No redundant workflow-level failure result was introduced.
+- Workflow remains free of EventBus ownership, execution orchestration,
+  retry orchestration, and task mutation side effects.
+
+Verification:
+
+- Workflow failure-handling tests: 4 passed.
+- Workflow terminal-state tests: 6 passed.
+- Focused Phase 40 regression: 99 passed in 5.80s.
+- Full regression: 225 passed in 19.58s.
+- compileall: PASS.
+- git diff --check: PASS.
+- BOM audit: PASS.
+
+Affected files:
+
+    app/core/workflow.py
+    tests/test_workflow_failure_handling.py
+    tests/test_workflow_terminal.py
+
+Known limitations:
+
+- Workflow terminal state is currently a derived query only.
+- No workflow terminal event publication was introduced in H-B.
+
+Next:
+
+    Phase 40-H-C - Workflow Terminal Outcome Publication Boundary.
+
+---
+
+## Phase 40-H-C - Workflow Terminal Outcome Publication Boundary
+
+Status: COMPLETE
+
+Commit:
+    db0bba5 Implement workflow terminal outcome publication
+
+Implemented:
+
+- Added BusRuntime.publish_workflow_terminal_outcome(workflow).
+- Terminal workflow outcomes are published at the BusRuntime orchestration
+  and event boundary.
+- COMPLETED publishes WORKFLOW_COMPLETED.
+- FAILED publishes WORKFLOW_FAILED.
+- CANCELLED publishes WORKFLOW_CANCELLED.
+- Pending and running workflows publish no terminal outcome.
+- Terminal event payload contains workflow_id and derived status.
+- Workflow remains free of EventBus ownership and publication logic.
+- Existing WORKFLOW_PROGRESS semantics remain separate.
+- Task lifecycle, retry, cancellation, and TASK_EXECUTED semantics remain unchanged.
+
+TDD verification:
+
+- Initial test setup RED exposed an incorrect StreamBus.subscribe() usage.
+- After aligning the test with the canonical three-argument StreamBus
+  subscription contract, valid RED was established:
+  BusRuntime.publish_workflow_terminal_outcome did not exist.
+- GREEN: 4 passed in 0.55s.
+- Focused Phase 40 regression: 99 passed in 6.79s.
+- Full regression: 229 passed in 11.32s.
+- compileall: PASS.
+- git diff --check: PASS.
+- BOM audit: PASS.
+- Exact H-C staged scope: PASS.
+- Commit scope: only app/core/bus_runtime.py and
+  tests/test_workflow_terminal_publication.py.
+
+Affected files:
+
+    app/core/bus_runtime.py
+    tests/test_workflow_terminal_publication.py
+
+Known limitations:
+
+- Terminal outcome publication is currently an explicit BusRuntime boundary API.
+- No automatic workflow execution/orchestration loop was introduced.
+- No UI consumer for workflow terminal events was introduced.
+- No workflow terminal state is persisted separately from task-derived state.
+
+Next:
+
+    Continue Phase 40 workflow orchestration only after auditing the next
+    execution/integration boundary while preserving Workflow as a derived
+    state model and BusRuntime as the event publication boundary.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not restart
+    completed Phase 40 checkpoints without evidence.

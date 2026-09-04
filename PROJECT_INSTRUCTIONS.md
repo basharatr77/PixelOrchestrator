@@ -809,3 +809,65 @@ Continuity rule:
     restart completed Phase 40 checkpoints without evidence.
 
 ---
+---
+
+## Phase 40-I-A / I-B - Workflow Scheduling Boundary and BusRuntime Integration
+
+Status: COMPLETE
+
+Implementation commits:
+
+    d11241a
+    12d730d
+
+Phase 40-I-A established the canonical WorkflowExecutor scheduling boundary.
+WorkflowExecutor derives ready Tasks from Workflow.ready_tasks() and enqueues
+them into the existing TaskQueue without executing tasks or owning retry,
+event publication, cancellation, or workflow lifecycle state.
+
+Phase 40-I-B integrated workflow scheduling with BusRuntime. BusRuntime now
+owns WorkflowExecutor over the existing TaskQueue and exposes the explicit
+enqueue_workflow_ready_tasks(workflow) scheduling boundary.
+
+Verification:
+
+- Targeted workflow scheduling/runtime integration tests: 5 passed in 0.44s.
+- Full regression: 234 passed in 8.84s.
+- compileall: PASS.
+- git diff --check: PASS.
+- BOM audit: PASS.
+- Exact Phase 40-I implementation scope: clean.
+- Unrelated working-tree changes remain unstaged.
+
+Affected files:
+
+    app/agents/orchestrator/workflow_executor.py
+    app/core/bus_runtime.py
+    tests/test_workflow_executor.py
+    tests/test_workflow_runtime_integration.py
+
+Decisions:
+
+- Workflow remains a definition and derived-state model.
+- WorkflowExecutor is a scheduling boundary only.
+- Existing TaskQueue is reused; no second queue was introduced.
+- BusRuntime remains the orchestration/event integration boundary.
+- No automatic workflow execution loop was introduced.
+
+Known limitations:
+
+- Workflow scheduling is currently explicit.
+- Automatic dependency-driven workflow execution remains a future
+  orchestration boundary.
+- No new workflow persistence or UI integration was introduced.
+
+Next:
+
+    Audit the next Phase 40 workflow execution/orchestration boundary before
+    introducing automatic workflow execution.
+
+Repository continuity remains based on:
+
+    PROJECT_STATE.md
+    PHASE_PLAN.md
+    PROJECT_INSTRUCTIONS.md

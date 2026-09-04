@@ -1146,3 +1146,58 @@ Next checkpoint:
 - Audit the next Phase 40 workflow execution/integration boundary.
 
 ---
+---
+
+## Phase 40-I-A / I-B - Workflow Scheduling Boundary and BusRuntime Integration
+
+Status: COMPLETE
+
+Implementation commits:
+
+- `d11241a` - `Implement Phase 40-I-A workflow scheduling boundary`
+- `12d730d` - `Integrate workflow scheduling with BusRuntime`
+
+Implemented:
+
+- Added WorkflowExecutor as the canonical workflow scheduling boundary.
+- Ready canonical Tasks are derived from `Workflow.ready_tasks()` and enqueued
+  into the existing TaskQueue.
+- WorkflowExecutor remains a scheduling boundary only; it does not execute
+  tasks, own retry policy, publish events, or own workflow lifecycle state.
+- BusRuntime now owns WorkflowExecutor and connects it to the existing
+  TaskQueue.
+- Added `BusRuntime.enqueue_workflow_ready_tasks(workflow)` as the explicit
+  runtime scheduling integration boundary.
+- Existing TaskExecutor, ExecutionWorker, Task lifecycle, retry, cancellation,
+  progress, and workflow terminal publication semantics remain unchanged.
+
+Verification:
+
+- Targeted workflow scheduling/runtime integration tests: 5 passed in 0.44s.
+- Full regression: 234 passed in 8.84s.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- BOM audit: PASS.
+- Exact Phase 40-I implementation scope: clean.
+- Unrelated working-tree changes remain unstaged.
+
+Affected files:
+
+    app/agents/orchestrator/workflow_executor.py
+    app/core/bus_runtime.py
+    tests/test_workflow_executor.py
+    tests/test_workflow_runtime_integration.py
+
+Known limitations:
+
+- Workflow scheduling is currently an explicit boundary API.
+- No automatic workflow execution/orchestration loop was introduced.
+- Workflow remains a definition and derived-state model.
+- WorkflowExecutor does not own execution, retry, event publication, or
+  cancellation orchestration.
+
+Next checkpoint:
+
+- Audit the next Phase 40 workflow execution/orchestration boundary.
+
+---

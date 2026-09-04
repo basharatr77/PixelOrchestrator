@@ -118,6 +118,28 @@ class BusRuntime:
             )
         )
 
+    def publish_workflow_terminal_outcome(self, workflow):
+        status = workflow.status()
+
+        event_type = {
+            "completed": "WORKFLOW_COMPLETED",
+            "failed": "WORKFLOW_FAILED",
+            "cancelled": "WORKFLOW_CANCELLED",
+        }.get(status)
+
+        if event_type is None:
+            return
+
+        self.bus.publish_now(
+            Event(
+                type=event_type,
+                payload={
+                    "workflow_id": workflow.id,
+                    "status": status,
+                },
+            )
+        )
+
     @staticmethod
     def _serialize_task_result(result):
         from dataclasses import asdict, is_dataclass

@@ -45,6 +45,14 @@ class WorkflowExecutor:
 
         return enqueued
 
+    def terminal_workflows(self):
+        """Return tracked workflows that currently have terminal outcomes."""
+        return [
+            workflow
+            for workflow in self._workflows.values()
+            if workflow.is_terminal()
+        ]
+
     def on_task_executed(self, task):
         """Advance tracked workflows after a canonical Task execution."""
         if not isinstance(task, Task):

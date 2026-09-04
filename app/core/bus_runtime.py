@@ -171,6 +171,9 @@ class BusRuntime:
 
             self.workflow_executor.on_task_executed(queued_task)
 
+            for workflow in self.workflow_executor.terminal_workflows():
+                self.publish_workflow_terminal_outcome(workflow)
+
         return result
 
     async def execution_loop(self):

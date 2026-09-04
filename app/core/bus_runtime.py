@@ -5,6 +5,7 @@ from app.agents.orchestrator.lifecycle_consumer import LifecycleConsumer
 from app.agents.orchestrator.task_queue import TaskQueue
 from app.agents.orchestrator.task_executor import TaskExecutor
 from app.agents.orchestrator.execution_worker import ExecutionWorker
+from app.agents.orchestrator.workflow_executor import WorkflowExecutor
 from app.core.event_bus import StreamBus
 from app.core.device_registry import DeviceRegistry
 from app.core.events import Event
@@ -19,6 +20,7 @@ class BusRuntime:
         self.bus = StreamBus()
         self.pool = WorkerPool(self.bus, worker_count=3)
         self.task_queue = TaskQueue()
+        self.workflow_executor = WorkflowExecutor(task_queue=self.task_queue)
         self.device_registry = DeviceRegistry()
 
         self._rehydrate_registry()
@@ -105,6 +107,9 @@ class BusRuntime:
                 },
             )
         )
+
+    def enqueue_workflow_ready_tasks(self, workflow):
+        return self.workflow_executor.enqueue_ready_tasks(workflow)
 
     def publish_workflow_progress(self, workflow, message=""):
         self.bus.publish_now(

@@ -871,3 +871,65 @@ Repository continuity remains based on:
     PROJECT_STATE.md
     PHASE_PLAN.md
     PROJECT_INSTRUCTIONS.md
+---
+
+## Phase 40-I-C - Workflow Execution Orchestration
+
+Status: COMPLETE
+
+Implementation commit:
+
+    ed0e894
+
+Phase 40-I-C extended WorkflowExecutor from an explicit scheduling helper into
+the canonical workflow orchestration boundary. It now tracks registered
+workflows, prevents duplicate canonical Task scheduling, re-evaluates tracked
+workflows through advance(), and exposes on_task_executed() for advancement
+after Task execution.
+
+BusRuntime.execute_once() now invokes workflow advancement after publishing
+the existing TASK_EXECUTED event. The existing BusRuntime.execution_loop and
+TaskQueue are reused; no second workflow execution loop or queue was created.
+
+Verification:
+
+- Targeted Phase 40-I-C tests: 8 passed in 0.77s.
+- Full regression: 237 passed in 9.09s.
+- compileall: PASS.
+- git diff --check: PASS.
+- BOM audit: PASS.
+- Implementation commit: ed0e894.
+- Unrelated working-tree changes remain unstaged.
+
+Affected files:
+
+    app/agents/orchestrator/workflow_executor.py
+    app/core/bus_runtime.py
+    tests/test_workflow_execution_orchestration.py
+
+Decisions:
+
+- Workflow remains a definition and derived-state model.
+- WorkflowExecutor is the workflow orchestration boundary.
+- Existing TaskQueue remains the single canonical queue.
+- Existing BusRuntime.execution_loop remains the single automatic execution
+  loop.
+- Legacy dictionary-task behavior remains untouched.
+
+Known limitations:
+
+- Workflow tracking is currently in-memory.
+- Workflow persistence is not introduced here.
+- Terminal outcome publication remains governed by the existing H-C boundary.
+- Cancellation/failure propagation requires a separate orchestration decision.
+
+Next:
+
+    Audit the next Phase 40 workflow orchestration boundary before extending
+    automatic workflow behavior.
+
+Repository continuity remains based on:
+
+    PROJECT_STATE.md
+    PHASE_PLAN.md
+    PROJECT_INSTRUCTIONS.md

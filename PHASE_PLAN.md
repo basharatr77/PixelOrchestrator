@@ -1201,3 +1201,68 @@ Next checkpoint:
 - Audit the next Phase 40 workflow execution/orchestration boundary.
 
 ---
+---
+
+## Phase 40-I-C - Workflow Execution Orchestration
+
+Status: COMPLETE
+
+Implementation commit:
+
+- `ed0e894` - `Implement Phase 40-I-C workflow execution orchestration`
+
+Implemented:
+
+- Extended `WorkflowExecutor` into the canonical workflow orchestration
+  boundary.
+- Tracked registered workflows for dependency-driven advancement.
+- Added duplicate protection for canonical Tasks already present in the
+  existing `TaskQueue`.
+- Added `advance()` to re-evaluate tracked workflows and enqueue newly ready
+  Tasks.
+- Added `on_task_executed()` as the execution-to-workflow advancement hook.
+- Integrated workflow advancement into `BusRuntime.execute_once()` after the
+  existing `TASK_EXECUTED` event publication boundary.
+- Reused the existing `BusRuntime.execution_loop` and `TaskQueue`.
+- No second execution loop or second task queue was introduced.
+- Existing TaskExecutor, Task lifecycle, retry, cancellation, progress, and
+  workflow terminal-outcome semantics remain unchanged.
+- Legacy dictionary-task execution remains unchanged.
+
+Verification:
+
+- Targeted Phase 40-I-C workflow orchestration tests: 8 passed in 0.77s.
+- Full regression: 237 passed in 9.09s.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- BOM audit: PASS.
+- Exact implementation scope committed as `ed0e894`.
+- Unrelated working-tree changes remain unstaged.
+
+Affected files:
+
+    app/agents/orchestrator/workflow_executor.py
+    app/core/bus_runtime.py
+    tests/test_workflow_execution_orchestration.py
+
+Architectural decisions:
+
+- Workflow remains a definition and derived-state model.
+- WorkflowExecutor owns scheduling/orchestration advancement.
+- The existing TaskQueue remains the single canonical queue.
+- The existing BusRuntime execution loop remains the single automatic
+  execution loop.
+- Workflow advancement is attached to the existing Task execution boundary.
+
+Known limitations:
+
+- Tracked workflows are currently retained for the lifetime of the executor.
+- Workflow persistence is not part of this checkpoint.
+- Workflow terminal publication remains governed by the existing H-C boundary.
+- Cancellation/failure propagation remains a separate orchestration concern.
+
+Next checkpoint:
+
+- Audit the next Phase 40 workflow orchestration boundary.
+
+---

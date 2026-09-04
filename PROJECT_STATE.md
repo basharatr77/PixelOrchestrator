@@ -1232,3 +1232,80 @@ Continuity rule:
 
     Preserve unrelated working-tree changes as unstaged and do not restart
     completed Phase 40 checkpoints without evidence.
+---
+
+## Phase 40-I-C - Workflow Execution Orchestration
+
+Status: COMPLETE
+
+Implementation commit:
+
+    ed0e894 Implement Phase 40-I-C workflow execution orchestration
+
+Implemented:
+
+- Extended WorkflowExecutor into the canonical workflow orchestration
+  boundary.
+- WorkflowExecutor now tracks registered Workflow instances for subsequent
+  dependency-driven advancement.
+- Added duplicate protection so a canonical Task already present in the
+  existing TaskQueue is not enqueued again.
+- Added WorkflowExecutor.advance() to re-evaluate tracked workflows and enqueue
+  newly ready canonical Tasks.
+- Added WorkflowExecutor.on_task_executed() as the canonical advancement hook
+  after Task execution.
+- Integrated workflow advancement into BusRuntime.execute_once() after the
+  existing TASK_EXECUTED event publication boundary.
+- Reused the existing BusRuntime execution_loop and existing TaskQueue;
+  no second workflow execution loop or second queue was introduced.
+- Preserved the existing TaskExecutor, Task lifecycle, retry, cancellation,
+  progress, and workflow terminal-outcome semantics.
+- Preserved the legacy dictionary-task execution path.
+
+Verification:
+
+- Targeted Phase 40-I-C workflow orchestration tests: 8 passed in 0.77s.
+- Full regression: 237 passed in 9.09s.
+- compileall: PASS.
+- git diff --check: PASS.
+- BOM audit: PASS.
+- Exact Phase 40-I-C implementation scope was staged and committed as
+  `ed0e894`.
+- Unrelated working-tree changes remain unstaged.
+
+Affected files:
+
+    app/agents/orchestrator/workflow_executor.py
+    app/core/bus_runtime.py
+    tests/test_workflow_execution_orchestration.py
+
+Architectural decisions:
+
+- Workflow remains a definition and derived-state model.
+- WorkflowExecutor is the workflow scheduling/orchestration boundary.
+- Existing TaskQueue remains the single canonical task queue.
+- Existing BusRuntime.execution_loop remains the single automatic execution
+  loop.
+- Workflow advancement occurs at the existing Task execution boundary rather
+  than introducing a second execution mechanism.
+- Legacy LifecycleConsumer dictionary-task behavior remains untouched.
+
+Known limitations:
+
+- WorkflowExecutor currently retains tracked workflows for the lifetime of
+  the executor.
+- Workflow persistence has not been introduced.
+- Automatic workflow terminal-event publication is still governed by the
+  existing H-C publication boundary.
+- Workflow cancellation/failure propagation policy remains a separate
+  orchestration concern and must not be inferred from simple task completion.
+
+Next:
+
+    Audit the next Phase 40 workflow orchestration boundary before extending
+    automatic workflow behavior.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not restart
+    completed Phase 40 checkpoints without evidence.

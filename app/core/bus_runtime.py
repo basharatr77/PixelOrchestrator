@@ -158,6 +158,7 @@ class BusRuntime:
         if task is not None:
             self.task_queue.add_task(task)
 
+        queued_task = self.task_queue.peek_task()
         result = self.execution_worker.run_once()
 
         if result is not None:
@@ -167,6 +168,8 @@ class BusRuntime:
                     payload=self._serialize_task_result(result),
                 )
             )
+
+            self.workflow_executor.on_task_executed(queued_task)
 
         return result
 

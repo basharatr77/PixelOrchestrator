@@ -139,6 +139,15 @@ class Workflow:
 
         return "pending"
 
+    def is_terminal(self) -> bool:
+        """Return whether the workflow has reached a terminal outcome."""
+
+        return self.status() in {
+            "completed",
+            "failed",
+            "cancelled",
+        }
+
     def ready_tasks(self) -> list[Task]:
         """Return pending tasks whose dependencies are all completed."""
 

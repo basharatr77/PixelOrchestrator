@@ -1309,3 +1309,67 @@ Continuity rule:
 
     Preserve unrelated working-tree changes as unstaged and do not restart
     completed Phase 40 checkpoints without evidence.
+
+## Phase 40-I-E — Workflow Terminal Tracking / Cleanup Audit
+
+Status: COMPLETE — audit passed; no production cleanup change required.
+
+Audit findings:
+
+- `WorkflowExecutor` is the sole owner of in-memory tracked workflows through
+  `_workflows`.
+- No alternate workflow-tracking mechanism was found.
+- No existing workflow removal, unregister, cleanup, forget, discard, or clear
+  API exists.
+- Terminal workflows remain tracked for the lifetime of the
+  `WorkflowExecutor`.
+- A dedicated regression test verified that a completed workflow publishes
+  `WORKFLOW_COMPLETED` once and does not republish the same terminal outcome on
+  a later `BusRuntime.execute_once()` call.
+- Terminal workflow cleanup is therefore deferred until workflow lifecycle or
+  persistence ownership is explicitly introduced.
+- No second execution loop, queue, or workflow lifecycle mechanism was added.
+
+Verification:
+
+- Targeted workflow orchestration tests: 7 passed in 1.00s.
+- Full regression: 241 passed in 11.67s.
+- `compileall`: PASS.
+- `git diff --check`: PASS.
+- LF/CRLF warning only; no whitespace errors.
+- Unrelated working-tree changes remain unstaged.
+
+Affected file:
+
+    tests/test_workflow_execution_orchestration.py
+
+Architectural decisions:
+
+- WorkflowExecutor remains the sole in-memory workflow tracking boundary.
+- Terminal workflow tracking remains valid for the lifetime of the executor.
+- Terminal outcome publication must not be repeated for an already-completed
+  workflow.
+- Workflow cleanup/removal is deferred until an explicit lifecycle or
+  persistence contract exists.
+- Workflow and Task contracts remain unchanged.
+- BusRuntime remains the single execution-loop owner.
+- Generic TaskQueue duplicate semantics remain unchanged.
+- Legacy dictionary-task execution remains untouched.
+
+Known limitations:
+
+- Tracked workflows remain in memory for the lifetime of WorkflowExecutor.
+- Workflow persistence has not been introduced.
+- Explicit workflow unregister/cleanup is not yet part of the contract.
+- Cancellation/failure propagation policy remains a separate orchestration
+  concern.
+
+Next:
+
+    Audit the next Phase 40 workflow orchestration boundary before introducing
+    additional workflow lifecycle behavior.
+
+Continuity rule:
+
+    Preserve unrelated working-tree changes as unstaged and do not restart
+    completed Phase 40 checkpoints without evidence.

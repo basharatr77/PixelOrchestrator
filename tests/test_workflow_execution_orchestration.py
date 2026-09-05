@@ -395,3 +395,46 @@ def test_non_terminal_workflow_does_not_publish_terminal_outcome():
 
     assert events == []
     assert runtime.task_queue.peek_task() is task2
+
+def test_terminal_workflow_outcome_is_not_republished_on_later_execute_once():
+    runtime, module = make_runtime()
+
+    task = Task(
+        device_id="workflow-device",
+        module_id="workflow-test-module",
+        action_id="step",
+        parameters={"step": "complete"},
+    )
+
+    workflow = Workflow(
+        id="workflow-i-e-terminal-once",
+        tasks=[task],
+    )
+
+    runtime.enqueue_workflow_ready_tasks(workflow)
+    runtime.execute_once()
+
+    first_events = []
+    while not runtime.bus.queue.empty():
+        offset, event = runtime.bus.queue.get_nowait()
+        first_events.append(event)
+
+    first_terminal_events = [
+        event for event in first_events
+        if event.type == "WORKFLOW_COMPLETED"
+    ]
+
+    runtime.execute_once()
+
+    second_events = []
+    while not runtime.bus.queue.empty():
+        offset, event = runtime.bus.queue.get_nowait()
+        second_events.append(event)
+
+    second_terminal_events = [
+        event for event in second_events
+        if event.type == "WORKFLOW_COMPLETED"
+    ]
+
+    assert len(first_terminal_events) == 1
+    assert len(second_terminal_events) == 0

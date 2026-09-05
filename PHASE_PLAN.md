@@ -1266,3 +1266,53 @@ Next checkpoint:
 - Audit the next Phase 40 workflow orchestration boundary.
 
 ---
+
+## Phase 40-I-E — Workflow Terminal Tracking / Cleanup Audit
+
+Status: COMPLETE — no production cleanup change required.
+
+Audit:
+
+- `WorkflowExecutor._workflows` is the only workflow-tracking mechanism.
+- No workflow removal/unregister/cleanup API exists.
+- Terminal workflows remain tracked for the lifetime of the executor.
+- A dedicated regression test confirmed that a completed workflow publishes
+  `WORKFLOW_COMPLETED` once and does not republish it on a later
+  `BusRuntime.execute_once()` call.
+- Cleanup is deferred until explicit workflow lifecycle or persistence
+  ownership is introduced.
+
+Verification:
+
+- Targeted workflow orchestration tests: 7 passed in 1.00s.
+- Full regression: 241 passed in 11.67s.
+- compileall: PASS.
+- git diff --check: PASS.
+- Unrelated working-tree changes remain unstaged.
+
+Affected file:
+
+    tests/test_workflow_execution_orchestration.py
+
+Architectural decisions:
+
+- WorkflowExecutor remains the sole in-memory workflow tracking boundary.
+- Terminal workflows remain tracked for executor lifetime.
+- Terminal outcomes must not be republished for an already-terminal workflow.
+- Cleanup/removal is deferred until an explicit lifecycle or persistence
+  contract exists.
+- Workflow/Task contracts remain unchanged.
+- Existing BusRuntime execution loop remains the only execution loop.
+- Legacy dictionary-task execution remains untouched.
+
+Known limitations:
+
+- Workflow tracking remains in-memory.
+- Workflow persistence is not introduced.
+- Explicit workflow unregister/cleanup is not yet defined.
+
+Next checkpoint:
+
+- Audit the next Phase 40 workflow orchestration boundary.
+
+---

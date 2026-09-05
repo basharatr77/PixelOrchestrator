@@ -933,3 +933,55 @@ Repository continuity remains based on:
     PROJECT_STATE.md
     PHASE_PLAN.md
     PROJECT_INSTRUCTIONS.md
+
+## Phase 40-I-E — Workflow Terminal Tracking / Cleanup Audit
+
+Status: COMPLETE — no production cleanup change required.
+
+Findings:
+
+- WorkflowExecutor owns the only in-memory `_workflows` registry.
+- No alternate tracking or cleanup mechanism exists.
+- Terminal workflows remain tracked for executor lifetime.
+- A regression test confirms a completed workflow does not republish its
+  terminal outcome on a later `BusRuntime.execute_once()` call.
+- Cleanup is deferred until an explicit lifecycle or persistence contract
+  exists.
+
+Verification:
+
+- Targeted I-E workflow orchestration tests: 7 passed in 1.00s.
+- Full regression: 241 passed in 11.67s.
+- compileall: PASS.
+- git diff --check: PASS.
+- Unrelated working-tree changes remain unstaged.
+
+Affected file:
+
+    tests/test_workflow_execution_orchestration.py
+
+Decisions:
+
+- WorkflowExecutor remains the workflow tracking/orchestration boundary.
+- Terminal workflows remain tracked for executor lifetime.
+- Terminal outcome publication is not repeated after terminal completion.
+- No cleanup API is introduced at this checkpoint.
+- Workflow/Task contracts remain unchanged.
+- Existing TaskQueue and BusRuntime execution-loop semantics remain unchanged.
+- Legacy dictionary-task behavior remains untouched.
+
+Known limitations:
+
+- Workflow tracking is in-memory.
+- Workflow persistence is not introduced.
+- Explicit workflow unregister/cleanup is deferred.
+
+Next:
+
+    Audit the next Phase 40 workflow orchestration boundary.
+
+Repository continuity remains based on:
+
+    PROJECT_STATE.md
+    PHASE_PLAN.md
+    PROJECT_INSTRUCTIONS.md

@@ -3,9 +3,11 @@ import json
 
 import websockets
 
+from app.core.adb_transport import ADBTransport
 from app.core.broadcaster import broadcaster
 from app.core.event_log import EventLog
 from app.core.events import Event
+from app.core.fastboot_transport import FastbootTransport
 
 
 DASHBOARD_GROUP = "dashboard"
@@ -59,13 +61,154 @@ async def replay_dashboard(ws, last_offset):
         await ws.send(json.dumps(item))
 
 
+def _transport_for_request(data):
+    serial = data.get("serial")
+    mode = data.get("mode")
+
+    if not isinstance(serial, str) or not serial.strip():
+        raise ValueError("serial is required")
+
+    if not isinstance(mode, str) or not mode.strip():
+        raise ValueError("mode is required")
+
+    mode = mode.upper()
+
+    if mode == "ADB":
+        return ADBTransport(serial)
+
+    if mode == "FASTBOOT":
+        return FastbootTransport(serial)
+
+    raise ValueError(f"Unsupported transport mode: {mode}")
+
+
+def execute_transport_request(data):
+    request_id = data.get("request_id")
+
+    if not isinstance(request_id, str) or not request_id.strip():
+        raise ValueError("request_id is required")
+
+    operation = data.get("operation")
+
+    if operation not in {
+        "execute",
+        "get_device_info",
+    }:
+        raise ValueError(
+            f"Unsupported transport operation: {operation}"
+        )
+
+    transport = _transport_for_request(data)
+    mode = data.get("mode").upper()
+
+    if operation == "execute":
+        command = data.get("command")
+
+        if mode == "ADB":
+            if not isinstance(command, str) or not command.strip():
+                raise ValueError(
+                    "ADB command must be a non-empty string"
+                )
+
+        elif mode == "FASTBOOT":
+            if not isinstance(command, list) or not command:
+                raise ValueError(
+                    "FASTBOOT command must be a non-empty list"
+                )
+
+            if any(
+                not isinstance(item, str) or not item.strip()
+                for item in command
+            ):
+                raise ValueError(
+                    "FASTBOOT command must contain non-empty strings"
+                )
+
+        result = transport.execute(command)
+
+    else:
+        result = transport.get_device_info()
+
+    return {
+        "type": "transport_response",
+        "request_id": request_id,
+        "success": True,
+        "result": result,
+    }
+
+
+async def handle_transport_request(ws, data):
+    try:
+        response = await asyncio.to_thread(
+            execute_transport_request,
+            data,
+        )
+    except Exception as exc:
+        response = {
+            "type": "transport_response",
+            "request_id": data.get("request_id"),
+            "success": False,
+            "error": str(exc),
+        }
+
+    await ws.send(json.dumps(response))
+
+
 def create_handler(bus):
     async def handler(ws):
         await broadcaster.register(ws)
+        registered_agent_id = None
 
         try:
             async for msg in ws:
-                data = json.loads(msg)
+                try:
+                    data = json.loads(msg)
+                except (json.JSONDecodeError, TypeError):
+                    continue
+
+                if not isinstance(data, dict):
+                    continue
+
+                if data.get("type") == "agent_register":
+                    agent_id = data.get("agent_id")
+
+                    if registered_agent_id is not None:
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "agent_register_response",
+                                    "success": False,
+                                    "error": "agent already registered",
+                                }
+                            )
+                        )
+                        continue
+
+                    if not isinstance(agent_id, str) or not agent_id.strip():
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "agent_register_response",
+                                    "success": False,
+                                    "error": "agent_id is required",
+                                }
+                            )
+                        )
+                        continue
+
+                    registered_agent_id = agent_id
+
+                    await ws.send(
+                        json.dumps(
+                            {
+                                "type": "agent_register_response",
+                                "success": True,
+                                "agent_id": registered_agent_id,
+                            }
+                        )
+                    )
+
+                    continue
 
                 if data.get("type") == "dashboard_connect":
                     last_offset = int(
@@ -75,6 +218,27 @@ def create_handler(bus):
                     await replay_dashboard(
                         ws,
                         last_offset,
+                    )
+
+                    continue
+
+                if data.get("type") == "transport_request":
+                    if registered_agent_id is None:
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "transport_response",
+                                    "request_id": data.get("request_id"),
+                                    "success": False,
+                                    "error": "agent registration required",
+                                }
+                            )
+                        )
+                        continue
+
+                    await handle_transport_request(
+                        ws,
+                        data,
                     )
 
                     continue

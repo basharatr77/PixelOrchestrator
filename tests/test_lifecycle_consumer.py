@@ -176,3 +176,82 @@ def test_consumer_registers_with_stream_bus():
     assert len(
         bus.handlers[("orchestrator", "DEVICE_DISCONNECTED")]
     ) == 1
+
+def test_canonical_device_transport_tracks_mode_transition():
+    from app.core.device_registry import DeviceRegistry
+
+    registry = DeviceRegistry()
+    queue = TaskQueue()
+
+    consumer = LifecycleConsumer(
+        task_queue=queue,
+        registry_updater=lambda device, status, offset: True,
+        device_registry=registry,
+    )
+
+    serial = "PIXEL_42C_TRANSPORT"
+
+    consumer.handle(
+        Event(
+            "DEVICE_CONNECTED",
+            {
+                "serial": serial,
+                "mode": "ADB",
+                "brand": "",
+                "model": "",
+                "android_version": "",
+            },
+        ),
+        1,
+        "orchestrator",
+    )
+
+    device = registry.get(f"device:{serial}")
+
+    assert device is not None
+    assert device.device_id == f"device:{serial}"
+    assert device.state.value == "adb"
+    assert device.transport == "adb"
+    assert len(registry) == 1
+
+    consumer.handle(
+        Event(
+            "DEVICE_MODE_CHANGED",
+            {
+                "serial": serial,
+                "previous_mode": "ADB",
+                "mode": "FASTBOOT",
+            },
+        ),
+        2,
+        "orchestrator",
+    )
+
+    device = registry.get(f"device:{serial}")
+
+    assert device is not None
+    assert device.device_id == f"device:{serial}"
+    assert device.state.value == "fastboot"
+    assert device.transport == "fastboot"
+    assert len(registry) == 1
+
+    consumer.handle(
+        Event(
+            "DEVICE_MODE_CHANGED",
+            {
+                "serial": serial,
+                "previous_mode": "FASTBOOT",
+                "mode": "ADB",
+            },
+        ),
+        3,
+        "orchestrator",
+    )
+
+    device = registry.get(f"device:{serial}")
+
+    assert device is not None
+    assert device.device_id == f"device:{serial}"
+    assert device.state.value == "adb"
+    assert device.transport == "adb"
+    assert len(registry) == 1

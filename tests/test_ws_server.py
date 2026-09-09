@@ -197,6 +197,74 @@ def test_dashboard_handler_publishes_inbound_event(monkeypatch):
         "mode": "FASTBOOT",
     }
 
+def test_dashboard_handler_ignores_non_object_json_and_continues(monkeypatch):
+    bus = StreamBus()
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    async def fake_handle_transport_request(socket, data):
+        await socket.send(json.dumps({
+            "type": "transport_response",
+            "request_id": data["request_id"],
+            "success": True,
+            "result": {"device": "ok"},
+        }))
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+    monkeypatch.setattr(
+        ws_server,
+        "handle_transport_request",
+        fake_handle_transport_request,
+    )
+
+    ws = FakeWebSocket([
+        json.dumps([]),
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent-test-non-object",
+        }),
+        json.dumps({
+            "type": "transport_request",
+            "request_id": "after-non-object",
+            "operation": "get_device_info",
+            "serial": "TEST123",
+            "mode": "ADB",
+        }),
+    ])
+
+    handler = ws_server.create_handler(bus)
+
+    asyncio.run(handler(ws))
+
+    assert len(ws.sent) == 2
+
+    registration_response = json.loads(ws.sent[0])
+    response = json.loads(ws.sent[1])
+
+    assert registration_response == {
+        "type": "agent_register_response",
+        "success": True,
+        "agent_id": "agent-test-non-object",
+    }
+
+    assert response["type"] == "transport_response"
+    assert response["request_id"] == "after-non-object"
+    assert response["success"] is True
+
+
 def test_stream_bus_dispatch_broadcasts_dashboard_event(monkeypatch):
     async def run():
         bus = StreamBus()

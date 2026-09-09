@@ -63,3 +63,19 @@ def update_registry(device, status, offset=0):
     conn.close()
 
     return True
+
+
+def read_registry():
+    conn = sqlite3.connect(DB)
+    try:
+        rows = conn.execute(
+            """
+            SELECT device, status, last_offset
+            FROM registry
+            ORDER BY id
+            """
+        ).fetchall()
+    finally:
+        conn.close()
+
+    return rows

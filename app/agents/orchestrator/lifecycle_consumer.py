@@ -95,6 +95,8 @@ class LifecycleConsumer:
                     target_state,
                 )
 
+            device.transport = str(mode).lower()
+
         return device
 
     def handle(self, event, offset, group_id):

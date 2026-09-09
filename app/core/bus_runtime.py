@@ -29,6 +29,7 @@ class BusRuntime:
             task_executor
             if task_executor is not None
             else TaskExecutor(
+                device_registry=self.device_registry,
                 progress_callback=self._publish_task_progress,
             )
         )

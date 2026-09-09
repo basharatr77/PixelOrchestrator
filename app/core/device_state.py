@@ -13,6 +13,9 @@ class DeviceStateMachine:
             DeviceState.FASTBOOT,
             DeviceState.FASTBOOTD,
             DeviceState.EDL,
+            DeviceState.BROM,
+            DeviceState.PRELOADER,
+            DeviceState.DOWNLOAD,
         },
         DeviceState.DISCONNECTED: {
             DeviceState.ADB,
@@ -21,6 +24,9 @@ class DeviceStateMachine:
             DeviceState.FASTBOOT,
             DeviceState.FASTBOOTD,
             DeviceState.EDL,
+            DeviceState.BROM,
+            DeviceState.PRELOADER,
+            DeviceState.DOWNLOAD,
         },
         DeviceState.ADB: {
             DeviceState.DISCONNECTED,
@@ -53,6 +59,15 @@ class DeviceStateMachine:
             DeviceState.FASTBOOT,
         },
         DeviceState.EDL: {
+            DeviceState.DISCONNECTED,
+        },
+        DeviceState.BROM: {
+            DeviceState.DISCONNECTED,
+        },
+        DeviceState.PRELOADER: {
+            DeviceState.DISCONNECTED,
+        },
+        DeviceState.DOWNLOAD: {
             DeviceState.DISCONNECTED,
         },
     }

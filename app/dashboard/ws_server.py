@@ -4,6 +4,7 @@ import json
 import websockets
 
 from app.core.adb_transport import ADBTransport
+from app.core.agent_registry import Agent, AgentRegistry
 from app.core.broadcaster import broadcaster
 from app.core.event_log import EventLog
 from app.core.events import Event
@@ -154,7 +155,9 @@ async def handle_transport_request(ws, data):
     await ws.send(json.dumps(response))
 
 
-def create_handler(bus):
+def create_handler(bus, agent_registry=None):
+    if agent_registry is None:
+        agent_registry = AgentRegistry()
     async def handler(ws):
         await broadcaster.register(ws)
         registered_agent_id = None
@@ -195,6 +198,9 @@ def create_handler(bus):
                             )
                         )
                         continue
+
+                    if agent_registry.get(agent_id) is None:
+                        agent_registry.register(Agent(agent_id=agent_id))
 
                     registered_agent_id = agent_id
 

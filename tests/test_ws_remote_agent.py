@@ -307,3 +307,37 @@ def test_remote_agent_transport_request_requires_registration():
         }
 
     asyncio.run(run())
+
+def test_remote_agent_registration_uses_shared_agent_registry():
+    async def run():
+        from app.core.agent_registry import AgentRegistry
+
+        bus = StreamBus()
+        registry = AgentRegistry()
+
+        ws = FakeWebSocket([
+            json.dumps({
+                "type": "agent_register",
+                "agent_id": "agent-shared-001",
+            }),
+        ])
+
+        handler = ws_server.create_handler(
+            bus,
+            agent_registry=registry,
+        )
+        await handler(ws)
+
+        assert json.loads(ws.sent[0]) == {
+            "type": "agent_register_response",
+            "success": True,
+            "agent_id": "agent-shared-001",
+        }
+
+        agent = registry.get("agent-shared-001")
+
+        assert agent is not None
+        assert agent.agent_id == "agent-shared-001"
+        assert len(registry) == 1
+
+    asyncio.run(run())

@@ -571,3 +571,59 @@ def test_agent_device_ownership_owner_updates_after_reclaim():
     ownership.assign("agent-002", "device-001")
 
     assert ownership.owner_of("device-001") == "agent-002"
+
+
+def test_remote_agent_cannot_request_owned_but_unregistered_device():
+    async def run():
+        from app.core.agent_device_ownership import AgentDeviceOwnership
+        from app.core.agent_registry import AgentRegistry
+        from app.core.device_registry import DeviceRegistry
+
+        bus = StreamBus()
+        agent_registry = AgentRegistry()
+        device_registry = DeviceRegistry()
+        ownership = AgentDeviceOwnership()
+
+        agent_id = "agent-owner-003"
+        serial = "MISSING-DEVICE-001"
+        device_id = f"device:{serial}"
+
+        ownership.assign(agent_id, device_id)
+
+        ws = FakeWebSocket([
+            json.dumps({
+                "type": "agent_register",
+                "agent_id": agent_id,
+            }),
+            json.dumps({
+                "type": "transport_request",
+                "request_id": "request-missing-device-001",
+                "operation": "get_device_info",
+                "serial": serial,
+                "mode": "ADB",
+            }),
+        ])
+
+        handler = ws_server.create_handler(
+            bus,
+            agent_registry=agent_registry,
+            device_registry=device_registry,
+            ownership=ownership,
+        )
+
+        await handler(ws)
+
+        assert json.loads(ws.sent[0]) == {
+            "type": "agent_register_response",
+            "success": True,
+            "agent_id": agent_id,
+        }
+
+        response = json.loads(ws.sent[1])
+
+        assert response["type"] == "transport_response"
+        assert response["request_id"] == "request-missing-device-001"
+        assert response["success"] is False
+        assert "device" in response["error"].lower()
+
+    asyncio.run(run())

@@ -114,6 +114,11 @@ def execute_transport_request(data, device_registry=None, ownership=None, agent_
                 f"Agent '{agent_id}' does not have ownership of device '{device_id}'."
             )
 
+        if device_registry is not None and not device_registry.contains(device_id):
+            raise ValueError(
+                f"Device '{device_id}' is not registered."
+            )
+
     transport = _transport_for_request(data)
     mode = data.get("mode").upper()
 

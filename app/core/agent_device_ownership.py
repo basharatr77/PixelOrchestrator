@@ -39,3 +39,13 @@ class AgentDeviceOwnership:
             del self._ownership[agent_id]
 
         return True
+
+    def owner_of(self, device_id: str) -> str | None:
+        return next(
+            (
+                agent_id
+                for agent_id, device_ids in self._ownership.items()
+                if device_id in device_ids
+            ),
+            None,
+        )

@@ -528,3 +528,19 @@ def test_agent_device_ownership_rejects_non_owner_release():
 
     assert ownership.release("agent-002", "device-001") is False
     assert ownership.owns("agent-001", "device-001")
+
+def test_agent_device_ownership_returns_current_owner():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+
+    ownership.assign("agent-001", "device-001")
+
+    assert ownership.owner_of("device-001") == "agent-001"
+
+def test_agent_device_ownership_returns_none_for_unowned_device():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+
+    assert ownership.owner_of("device-unknown") is None

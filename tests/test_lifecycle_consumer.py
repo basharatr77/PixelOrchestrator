@@ -255,3 +255,79 @@ def test_canonical_device_transport_tracks_mode_transition():
     assert device.state.value == "adb"
     assert device.transport == "adb"
     assert len(registry) == 1
+
+
+def test_ownership_survives_disconnect_and_reconnect():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+    from app.core.device_registry import DeviceRegistry
+
+    queue = TaskQueue()
+    device_registry = DeviceRegistry()
+    ownership = AgentDeviceOwnership()
+
+    serial = "PIXEL_45I"
+    device_id = f"device:{serial}"
+    agent_id = "agent-001"
+
+    ownership.assign(agent_id, device_id)
+
+    consumer = LifecycleConsumer(
+        task_queue=queue,
+        registry_updater=lambda device, status, offset: True,
+        device_registry=device_registry,
+    )
+
+    consumer.handle(
+        Event(
+            "DEVICE_CONNECTED",
+            {
+                "serial": serial,
+                "mode": "ADB",
+                "brand": "",
+                "model": "",
+                "android_version": "",
+            },
+        ),
+        1,
+        "orchestrator",
+    )
+
+    assert ownership.owner_of(device_id) == agent_id
+
+    consumer.handle(
+        Event(
+            "DEVICE_DISCONNECTED",
+            {
+                "serial": serial,
+            },
+        ),
+        2,
+        "orchestrator",
+    )
+
+    device = device_registry.get(device_id)
+
+    assert device is not None
+    assert device.state.value == "disconnected"
+    assert ownership.owner_of(device_id) == agent_id
+
+    consumer.handle(
+        Event(
+            "DEVICE_CONNECTED",
+            {
+                "serial": serial,
+                "mode": "ADB",
+                "brand": "",
+                "model": "",
+                "android_version": "",
+            },
+        ),
+        3,
+        "orchestrator",
+    )
+
+    device = device_registry.get(device_id)
+
+    assert device is not None
+    assert device.state.value == "adb"
+    assert ownership.owner_of(device_id) == agent_id

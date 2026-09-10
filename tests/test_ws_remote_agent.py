@@ -496,3 +496,35 @@ def test_agent_device_ownership_allows_same_agent_reassignment():
     ownership.assign("agent-001", "device-001")
 
     assert ownership.owns("agent-001", "device-001")
+
+def test_agent_device_ownership_can_release_owned_device():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+
+    ownership.assign("agent-001", "device-001")
+
+    assert ownership.release("agent-001", "device-001") is True
+    assert ownership.owns("agent-001", "device-001") is False
+
+def test_agent_device_ownership_allows_reclaim_after_release():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+
+    ownership.assign("agent-001", "device-001")
+    assert ownership.release("agent-001", "device-001") is True
+
+    ownership.assign("agent-002", "device-001")
+
+    assert ownership.owns("agent-002", "device-001")
+
+def test_agent_device_ownership_rejects_non_owner_release():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+
+    ownership.assign("agent-001", "device-001")
+
+    assert ownership.release("agent-002", "device-001") is False
+    assert ownership.owns("agent-001", "device-001")

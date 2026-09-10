@@ -26,3 +26,16 @@ class AgentDeviceOwnership:
 
     def owns(self, agent_id: str, device_id: str) -> bool:
         return device_id in self._ownership.get(agent_id, set())
+
+    def release(self, agent_id: str, device_id: str) -> bool:
+        device_ids = self._ownership.get(agent_id)
+
+        if device_ids is None or device_id not in device_ids:
+            return False
+
+        device_ids.remove(device_id)
+
+        if not device_ids:
+            del self._ownership[agent_id]
+
+        return True

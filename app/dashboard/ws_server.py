@@ -83,7 +83,7 @@ def _transport_for_request(data):
     raise ValueError(f"Unsupported transport mode: {mode}")
 
 
-def execute_transport_request(data):
+def execute_transport_request(data, device_registry=None, ownership=None, agent_id=None):
     request_id = data.get("request_id")
 
     if not isinstance(request_id, str) or not request_id.strip():
@@ -98,6 +98,21 @@ def execute_transport_request(data):
         raise ValueError(
             f"Unsupported transport operation: {operation}"
         )
+
+    serial = data.get("serial")
+    device_id = f"device:{serial}" if isinstance(serial, str) else None
+
+    if ownership is not None:
+        if not isinstance(agent_id, str) or not agent_id.strip():
+            raise ValueError("agent identity required for device ownership")
+
+        if not isinstance(serial, str) or not serial.strip():
+            raise ValueError("serial is required for device ownership")
+
+        if not ownership.owns(agent_id, device_id):
+            raise PermissionError(
+                f"Agent '{agent_id}' does not have ownership of device '{device_id}'."
+            )
 
     transport = _transport_for_request(data)
     mode = data.get("mode").upper()
@@ -138,11 +153,14 @@ def execute_transport_request(data):
     }
 
 
-async def handle_transport_request(ws, data):
+async def handle_transport_request(ws, data, device_registry=None, ownership=None, agent_id=None):
     try:
         response = await asyncio.to_thread(
             execute_transport_request,
             data,
+            device_registry,
+            ownership,
+            agent_id,
         )
     except Exception as exc:
         response = {
@@ -155,7 +173,7 @@ async def handle_transport_request(ws, data):
     await ws.send(json.dumps(response))
 
 
-def create_handler(bus, agent_registry=None):
+def create_handler(bus, agent_registry=None, device_registry=None, ownership=None):
     if agent_registry is None:
         agent_registry = AgentRegistry()
     async def handler(ws):
@@ -245,6 +263,9 @@ def create_handler(bus, agent_registry=None):
                     await handle_transport_request(
                         ws,
                         data,
+                        device_registry=device_registry,
+                        ownership=ownership,
+                        agent_id=registered_agent_id,
                     )
 
                     continue

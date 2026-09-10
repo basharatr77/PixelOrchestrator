@@ -1,4 +1,5 @@
-"""Canonical agent-to-device ownership registry."""
+﻿"""Canonical agent-to-device ownership registry."""
+
 
 class AgentDeviceOwnership:
     """In-memory mapping of agents to owned device IDs."""
@@ -7,6 +8,20 @@ class AgentDeviceOwnership:
         self._ownership: dict[str, set[str]] = {}
 
     def assign(self, agent_id: str, device_id: str) -> None:
+        current_owner = next(
+            (
+                owner_id
+                for owner_id, device_ids in self._ownership.items()
+                if device_id in device_ids
+            ),
+            None,
+        )
+
+        if current_owner is not None and current_owner != agent_id:
+            raise ValueError(
+                f"Device '{device_id}' is already owned by agent '{current_owner}'."
+            )
+
         self._ownership.setdefault(agent_id, set()).add(device_id)
 
     def owns(self, agent_id: str, device_id: str) -> bool:

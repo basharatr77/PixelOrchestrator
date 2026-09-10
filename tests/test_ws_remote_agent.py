@@ -1,4 +1,5 @@
-﻿import asyncio
+﻿import pytest
+import asyncio
 import json
 
 from app.core.event_bus import StreamBus
@@ -473,3 +474,25 @@ def test_remote_agent_can_request_owned_device():
         assert response["success"] is True
 
     asyncio.run(run())
+
+def test_agent_device_ownership_rejects_second_agent_for_same_device():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+
+    ownership.assign("agent-001", "device-001")
+
+    with pytest.raises(ValueError, match="already owned"):
+        ownership.assign("agent-002", "device-001")
+
+
+
+def test_agent_device_ownership_allows_same_agent_reassignment():
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+
+    ownership.assign("agent-001", "device-001")
+    ownership.assign("agent-001", "device-001")
+
+    assert ownership.owns("agent-001", "device-001")

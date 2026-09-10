@@ -704,6 +704,9 @@ def test_websocket_transport_real_local_connection_lifecycle(monkeypatch):
 
                 assert first is True
                 assert transport.is_connected() is True
+                original_agent_id = transport._agent_id
+                assert isinstance(original_agent_id, str)
+                assert original_agent_id.strip()
 
                 first_result = await asyncio.to_thread(
                     transport.execute,
@@ -742,6 +745,7 @@ def test_websocket_transport_real_local_connection_lifecycle(monkeypatch):
 
                 assert reconnected is True
                 assert transport.is_connected() is True
+                assert transport._agent_id == original_agent_id
 
                 third_result = await asyncio.to_thread(
                     transport.execute,

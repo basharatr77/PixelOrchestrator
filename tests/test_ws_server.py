@@ -206,7 +206,7 @@ def test_dashboard_handler_ignores_non_object_json_and_continues(monkeypatch):
     async def fake_unregister(socket):
         pass
 
-    async def fake_handle_transport_request(socket, data):
+    async def fake_handle_transport_request(socket, data, device_registry=None, ownership=None, agent_id=None):
         await socket.send(json.dumps({
             "type": "transport_response",
             "request_id": data["request_id"],

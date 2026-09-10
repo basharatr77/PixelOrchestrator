@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 
 from app.core.adb_transport import ADBTransport
@@ -186,7 +186,7 @@ def test_execute_transport_request_get_device_info(monkeypatch):
 
 
 def test_handle_transport_request_success(monkeypatch):
-    def fake_execute(data):
+    def fake_execute(data, device_registry=None, ownership=None, agent_id=None):
         assert data["request_id"] == "req-005"
         return {
             "type": "transport_response",
@@ -228,7 +228,7 @@ def test_handle_transport_request_success(monkeypatch):
 
 
 def test_handle_transport_request_error_response(monkeypatch):
-    def fake_execute(data):
+    def fake_execute(data, device_registry=None, ownership=None, agent_id=None):
         raise ValueError("synthetic transport failure")
 
     monkeypatch.setattr(

@@ -272,3 +272,93 @@ def test_agent_registry_agent_without_last_seen_is_stale():
         now="2026-09-12T01:05:00+00:00",
         timeout_seconds=300,
     ) is True
+
+def test_agent_registry_connection_claim_replaces_previous_connection():
+    registry = AgentRegistry()
+
+    registry.register(Agent(agent_id="agent:connection-001"))
+
+    assert registry.claim_connection(
+        "agent:connection-001",
+        "connection-a",
+    ) is True
+
+    assert registry.is_connection_current(
+        "agent:connection-001",
+        "connection-a",
+    ) is True
+
+    assert registry.claim_connection(
+        "agent:connection-001",
+        "connection-b",
+    ) is True
+
+    assert registry.is_connection_current(
+        "agent:connection-001",
+        "connection-a",
+    ) is False
+
+    assert registry.is_connection_current(
+        "agent:connection-001",
+        "connection-b",
+    ) is True
+
+
+def test_agent_registry_old_connection_release_does_not_clear_new_connection():
+    registry = AgentRegistry()
+
+    registry.register(Agent(agent_id="agent:connection-002"))
+
+    registry.claim_connection(
+        "agent:connection-002",
+        "connection-a",
+    )
+    registry.claim_connection(
+        "agent:connection-002",
+        "connection-b",
+    )
+
+    assert registry.release_connection(
+        "agent:connection-002",
+        "connection-a",
+    ) is False
+
+    assert registry.is_connection_current(
+        "agent:connection-002",
+        "connection-b",
+    ) is True
+
+def test_agent_registry_connection_claim_rejects_unknown_agent():
+    registry = AgentRegistry()
+
+    with pytest.raises(
+        KeyError,
+        match=r"Unknown agent 'agent:connection-unknown-001'\.",
+    ):
+        registry.claim_connection(
+            "agent:connection-unknown-001",
+            "connection-a",
+        )
+
+
+def test_agent_registry_release_current_connection_clears_it():
+    registry = AgentRegistry()
+
+    registry.register(
+        Agent(agent_id="agent:connection-003")
+    )
+
+    registry.claim_connection(
+        "agent:connection-003",
+        "connection-a",
+    )
+
+    assert registry.release_connection(
+        "agent:connection-003",
+        "connection-a",
+    ) is True
+
+    assert registry.is_connection_current(
+        "agent:connection-003",
+        "connection-a",
+    ) is False

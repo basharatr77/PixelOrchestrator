@@ -16,6 +16,7 @@ class AgentRegistry:
 
     def __init__(self, repository=None) -> None:
         self._agents: dict[str, Agent] = {}
+        self._active_connections: dict[str, str] = {}
         self._repository = repository
 
         if repository is not None:
@@ -39,6 +40,39 @@ class AgentRegistry:
 
     def get(self, agent_id: str) -> Agent | None:
         return self._agents.get(agent_id)
+
+    def claim_connection(self, agent_id: str, connection_id: str) -> bool:
+        agent = self._agents.get(agent_id)
+
+        if agent is None:
+            raise KeyError(f"Unknown agent '{agent_id}'.")
+
+        self._active_connections[agent_id] = connection_id
+        return True
+
+    def is_connection_current(
+        self,
+        agent_id: str,
+        connection_id: str,
+    ) -> bool:
+        if agent_id not in self._agents:
+            raise KeyError(f"Unknown agent '{agent_id}'.")
+
+        return self._active_connections.get(agent_id) == connection_id
+
+    def release_connection(
+        self,
+        agent_id: str,
+        connection_id: str,
+    ) -> bool:
+        if agent_id not in self._agents:
+            raise KeyError(f"Unknown agent '{agent_id}'.")
+
+        if self._active_connections.get(agent_id) != connection_id:
+            return False
+
+        del self._active_connections[agent_id]
+        return True
 
     def mark_seen(self, agent_id: str, last_seen_at: str) -> None:
         agent = self._agents.get(agent_id)

@@ -184,6 +184,7 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
     async def handler(ws):
         await broadcaster.register(ws)
         registered_agent_id = None
+        connection_id = str(id(ws))
 
         try:
             async for msg in ws:
@@ -225,6 +226,7 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                     if agent_registry.get(agent_id) is None:
                         agent_registry.register(Agent(agent_id=agent_id))
 
+                    agent_registry.claim_connection(agent_id, connection_id)
                     registered_agent_id = agent_id
 
                     await ws.send(
@@ -291,6 +293,14 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
             pass
 
         finally:
+            if registered_agent_id is not None:
+                try:
+                    agent_registry.release_connection(
+                        registered_agent_id,
+                        connection_id,
+                    )
+                except KeyError:
+                    pass
             await broadcaster.unregister(ws)
 
     return handler

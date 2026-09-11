@@ -366,3 +366,99 @@ def test_stream_bus_dispatch_broadcasts_dashboard_event(monkeypatch):
         ) == offset
 
     asyncio.run(run())
+
+def test_dashboard_handler_same_agent_new_connection_supersedes_old_connection(
+    monkeypatch,
+):
+    bus = StreamBus()
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(ws_server.broadcaster, "register", fake_register)
+    monkeypatch.setattr(ws_server.broadcaster, "unregister", fake_unregister)
+
+    agent_registry = ws_server.AgentRegistry()
+    first_claimed = asyncio.Event()
+    release_first = asyncio.Event()
+    second_claimed = asyncio.Event()
+    release_second = asyncio.Event()
+
+    original_claim = agent_registry.claim_connection
+
+    def claim_connection(agent_id, connection_id):
+        result = original_claim(agent_id, connection_id)
+        if connection_id == str(id(first_ws)):
+            first_claimed.set()
+        elif connection_id == str(id(second_ws)):
+            second_claimed.set()
+        return result
+
+    monkeypatch.setattr(agent_registry, "claim_connection", claim_connection)
+
+    class CoordinatedWebSocket(FakeWebSocket):
+        def __init__(self, messages, release_event):
+            super().__init__(messages)
+            self.release_event = release_event
+
+        def __aiter__(self):
+            return self
+
+        async def __anext__(self):
+            if self.messages:
+                return self.messages.pop(0)
+            await self.release_event.wait()
+            raise StopAsyncIteration
+
+    first_ws = CoordinatedWebSocket(
+        [
+            json.dumps({
+                "type": "agent_register",
+                "agent_id": "agent:multi-001",
+            }),
+        ],
+        release_first,
+    )
+
+    second_ws = CoordinatedWebSocket(
+        [
+            json.dumps({
+                "type": "agent_register",
+                "agent_id": "agent:multi-001",
+            }),
+        ],
+        release_second,
+    )
+
+    async def run():
+        handler = ws_server.create_handler(
+            bus,
+            agent_registry=agent_registry,
+        )
+
+        first_task = asyncio.create_task(handler(first_ws))
+        await first_claimed.wait()
+
+        second_task = asyncio.create_task(handler(second_ws))
+        await second_claimed.wait()
+
+        assert agent_registry.is_connection_current(
+            "agent:multi-001",
+            str(id(second_ws)),
+        ) is True
+
+        release_first.set()
+        await first_task
+
+        assert agent_registry.is_connection_current(
+            "agent:multi-001",
+            str(id(second_ws)),
+        ) is True
+
+        release_second.set()
+        await second_task
+
+    asyncio.run(run())

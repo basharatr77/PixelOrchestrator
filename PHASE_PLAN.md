@@ -42,8 +42,8 @@ The architecture should remain:
 | 42 | Device Farm / Multi-Device Orchestration | COMPLETE |
 | 43 | Device Allocation / Selection | NEXT |
 | 44 | WebSocket / Remote Device Transport | PLANNED |
-| 45 | Plugin Architecture | PLANNED |
-| 46 | AI Diagnosis & Decision Engine | PLANNED |
+| 45 | Agent Registry / Remote Device Ownership | COMPLETE |
+| 46 | Agent Persistence, Presence & Secure Remote Ownership | NEXT |
 | 47 | Self-Healing / Auto-Repair Workflows | PLANNED |
 | 48 | GUI Device Operations & UX | PLANNED |
 | 49 | Production Hardening / Security / Observability | PLANNED |

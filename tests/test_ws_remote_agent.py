@@ -627,3 +627,41 @@ def test_remote_agent_cannot_request_owned_but_unregistered_device():
         assert "device" in response["error"].lower()
 
     asyncio.run(run())
+
+def test_agent_device_ownership_reloads_persisted_ownership(tmp_path):
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+    from app.core.agent_ownership_repository import AgentOwnershipRepository
+
+    db_path = tmp_path / "ownership.db"
+
+    ownership = AgentDeviceOwnership(
+        repository=AgentOwnershipRepository(db_path)
+    )
+
+    ownership.assign("agent-001", "device:PIXEL_01")
+
+    fresh_ownership = AgentDeviceOwnership(
+        repository=AgentOwnershipRepository(db_path)
+    )
+
+    assert fresh_ownership.owner_of("device:PIXEL_01") == "agent-001"
+    assert fresh_ownership.owns("agent-001", "device:PIXEL_01")
+
+def test_agent_device_ownership_persists_release(tmp_path):
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+    from app.core.agent_ownership_repository import AgentOwnershipRepository
+
+    db_path = tmp_path / "ownership.db"
+    repository = AgentOwnershipRepository(db_path)
+
+    ownership = AgentDeviceOwnership(repository=repository)
+    ownership.assign("agent-001", "device:PIXEL_01")
+
+    assert ownership.release("agent-001", "device:PIXEL_01") is True
+
+    fresh_ownership = AgentDeviceOwnership(
+        repository=AgentOwnershipRepository(db_path)
+    )
+
+    assert fresh_ownership.owner_of("device:PIXEL_01") is None
+    assert fresh_ownership.owns("agent-001", "device:PIXEL_01") is False

@@ -1,3 +1,4 @@
+import pytest
 from app.core.agent_registry import Agent, AgentRegistry
 
 
@@ -135,3 +136,139 @@ def test_agent_registry_reloads_persisted_agents(tmp_path):
 
     assert agent is not None
     assert agent.agent_id == "agent:restart-001"
+
+def test_agent_repository_persists_and_reloads_last_seen(tmp_path):
+    from app.core.agent_repository import AgentRepository
+
+    db_path = tmp_path / "agents.db"
+    repository = AgentRepository(db_path)
+
+    agent = Agent(
+        agent_id="agent:presence-001",
+        last_seen_at="2026-09-12T00:00:00+00:00",
+    )
+
+    repository.save(agent)
+
+    fresh_repository = AgentRepository(db_path)
+    fresh_agent = fresh_repository.get("agent:presence-001")
+
+    assert fresh_agent is not None
+    assert fresh_agent.agent_id == "agent:presence-001"
+    assert fresh_agent.last_seen_at == "2026-09-12T00:00:00+00:00"
+
+def test_agent_repository_migrates_existing_schema_for_last_seen(tmp_path):
+    import sqlite3
+    from app.core.agent_repository import AgentRepository
+
+    db_path = tmp_path / "agents.db"
+
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            """
+            CREATE TABLE agents (
+                agent_id TEXT PRIMARY KEY
+            )
+            """
+        )
+        conn.execute(
+            "INSERT INTO agents (agent_id) VALUES (?)",
+            ("agent:legacy-001",),
+        )
+
+    repository = AgentRepository(db_path)
+    agent = repository.get("agent:legacy-001")
+
+    assert agent is not None
+    assert agent.agent_id == "agent:legacy-001"
+    assert agent.last_seen_at is None
+
+def test_agent_registry_mark_seen_updates_last_seen():
+    registry = AgentRegistry()
+    agent = Agent(agent_id="agent:presence-002")
+
+    registry.register(agent)
+    registry.mark_seen(
+        "agent:presence-002",
+        "2026-09-12T01:00:00+00:00",
+    )
+
+    assert registry.get("agent:presence-002").last_seen_at == (
+        "2026-09-12T01:00:00+00:00"
+    )
+
+def test_agent_registry_mark_seen_persists_last_seen(tmp_path):
+    from app.core.agent_repository import AgentRepository
+
+    db_path = tmp_path / "agents.db"
+    repository = AgentRepository(db_path)
+
+    agent = Agent(agent_id="agent:presence-persist-001")
+    repository.save(agent)
+
+    registry = AgentRegistry(repository=repository)
+
+    registry.mark_seen(
+        "agent:presence-persist-001",
+        "2026-09-12T01:30:00+00:00",
+    )
+
+    fresh_repository = AgentRepository(db_path)
+    fresh_agent = fresh_repository.get("agent:presence-persist-001")
+
+    assert fresh_agent is not None
+    assert fresh_agent.last_seen_at == "2026-09-12T01:30:00+00:00"
+
+def test_agent_registry_mark_seen_rejects_unknown_agent():
+    registry = AgentRegistry()
+
+    with pytest.raises(
+        KeyError,
+        match=r"Unknown agent 'agent:presence-unknown-001'\.",
+    ):
+        registry.mark_seen(
+            "agent:presence-unknown-001",
+            "2026-09-12T01:45:00+00:00",
+        )
+
+def test_agent_registry_agent_is_stale_after_timeout():
+    registry = AgentRegistry()
+    registry.register(
+        Agent(
+            agent_id="agent:presence-stale-001",
+            last_seen_at="2026-09-12T01:00:00+00:00",
+        )
+    )
+
+    assert registry.is_stale(
+        "agent:presence-stale-001",
+        now="2026-09-12T01:05:01+00:00",
+        timeout_seconds=300,
+    ) is True
+
+def test_agent_registry_agent_is_not_stale_at_exact_timeout():
+    registry = AgentRegistry()
+    registry.register(
+        Agent(
+            agent_id="agent:presence-boundary-001",
+            last_seen_at="2026-09-12T01:00:00+00:00",
+        )
+    )
+
+    assert registry.is_stale(
+        "agent:presence-boundary-001",
+        now="2026-09-12T01:05:00+00:00",
+        timeout_seconds=300,
+    ) is False
+
+def test_agent_registry_agent_without_last_seen_is_stale():
+    registry = AgentRegistry()
+    registry.register(
+        Agent(agent_id="agent:presence-never-seen-001")
+    )
+
+    assert registry.is_stale(
+        "agent:presence-never-seen-001",
+        now="2026-09-12T01:05:00+00:00",
+        timeout_seconds=300,
+    ) is True

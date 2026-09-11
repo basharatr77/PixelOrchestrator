@@ -17,10 +17,23 @@ class AgentRepository:
             conn.execute(
                 """
                 CREATE TABLE IF NOT EXISTS agents (
-                    agent_id TEXT PRIMARY KEY
+                    agent_id TEXT PRIMARY KEY,
+                    last_seen_at TEXT
                 )
                 """
             )
+
+            columns = {
+                row[1]
+                for row in conn.execute(
+                    "PRAGMA table_info(agents)"
+                ).fetchall()
+            }
+
+            if "last_seen_at" not in columns:
+                conn.execute(
+                    "ALTER TABLE agents ADD COLUMN last_seen_at TEXT"
+                )
 
     def save(self, agent: Agent) -> None:
         if not isinstance(agent, Agent):
@@ -29,8 +42,8 @@ class AgentRepository:
         with sqlite3.connect(self.db_path) as conn:
             try:
                 conn.execute(
-                    "INSERT INTO agents (agent_id) VALUES (?)",
-                    (agent.agent_id,),
+                    "INSERT INTO agents (agent_id, last_seen_at) VALUES (?, ?)",
+                    (agent.agent_id, agent.last_seen_at),
                 )
             except sqlite3.IntegrityError as exc:
                 raise ValueError(
@@ -48,11 +61,25 @@ class AgentRepository:
     def get(self, agent_id: str) -> Agent | None:
         with sqlite3.connect(self.db_path) as conn:
             row = conn.execute(
-                "SELECT agent_id FROM agents WHERE agent_id = ?",
+                "SELECT agent_id, last_seen_at FROM agents WHERE agent_id = ?",
                 (agent_id,),
             ).fetchone()
 
         if row is None:
             return None
 
-        return Agent(agent_id=row[0])
+        return Agent(agent_id=row[0], last_seen_at=row[1])
+
+    def update_last_seen(self, agent_id: str, last_seen_at: str) -> None:
+        with sqlite3.connect(self.db_path) as conn:
+            cursor = conn.execute(
+                """
+                UPDATE agents
+                SET last_seen_at = ?
+                WHERE agent_id = ?
+                """,
+                (last_seen_at, agent_id),
+            )
+
+            if cursor.rowcount == 0:
+                raise KeyError(f"Unknown agent '{agent_id}'.")

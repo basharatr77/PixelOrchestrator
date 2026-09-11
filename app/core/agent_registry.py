@@ -8,6 +8,7 @@ class Agent:
     """Canonical remote-agent representation."""
 
     agent_id: str
+    last_seen_at: str | None = None
 
 
 class AgentRegistry:
@@ -38,6 +39,41 @@ class AgentRegistry:
 
     def get(self, agent_id: str) -> Agent | None:
         return self._agents.get(agent_id)
+
+    def mark_seen(self, agent_id: str, last_seen_at: str) -> None:
+        agent = self._agents.get(agent_id)
+
+        if agent is None:
+            raise KeyError(f"Unknown agent '{agent_id}'.")
+
+        agent.last_seen_at = last_seen_at
+
+        if self._repository is not None:
+            self._repository.update_last_seen(
+                agent_id,
+                last_seen_at,
+            )
+
+    def is_stale(
+        self,
+        agent_id: str,
+        now: str,
+        timeout_seconds: int,
+    ) -> bool:
+        agent = self._agents.get(agent_id)
+
+        if agent is None:
+            raise KeyError(f"Unknown agent '{agent_id}'.")
+
+        if agent.last_seen_at is None:
+            return True
+
+        from datetime import datetime
+
+        last_seen = datetime.fromisoformat(agent.last_seen_at)
+        current = datetime.fromisoformat(now)
+
+        return (current - last_seen).total_seconds() > timeout_seconds
 
     def contains(self, agent_id: str) -> bool:
         return agent_id in self._agents

@@ -77,3 +77,61 @@ def test_agent_registry_clear():
     assert len(registry) == 0
     assert registry.get("agent:test-004") is None
     assert registry.get("agent:test-005") is None
+
+def test_agent_repository_persists_and_reloads_agent(tmp_path):
+    from app.core.agent_repository import AgentRepository
+
+    db_path = tmp_path / "agents.db"
+    repository = AgentRepository(db_path)
+
+    repository.save(Agent(agent_id="agent:persist-001"))
+
+    fresh_repository = AgentRepository(db_path)
+
+    agent = fresh_repository.get("agent:persist-001")
+
+    assert agent is not None
+    assert agent.agent_id == "agent:persist-001"
+
+def test_agent_repository_rejects_non_agent(tmp_path):
+    from app.core.agent_repository import AgentRepository
+
+    repository = AgentRepository(tmp_path / "agents.db")
+
+    try:
+        repository.save(object())
+    except TypeError:
+        pass
+    else:
+        raise AssertionError("Non-Agent persistence must be rejected")
+
+def test_agent_repository_rejects_duplicate_identity(tmp_path):
+    from app.core.agent_repository import AgentRepository
+
+    repository = AgentRepository(tmp_path / "agents.db")
+    agent = Agent(agent_id="agent:persist-002")
+
+    repository.save(agent)
+
+    try:
+        repository.save(agent)
+    except ValueError as exc:
+        assert "already exists" in str(exc)
+    else:
+        raise AssertionError("Duplicate agent_id must be rejected")
+
+def test_agent_registry_reloads_persisted_agents(tmp_path):
+    from app.core.agent_registry import Agent, AgentRegistry
+    from app.core.agent_repository import AgentRepository
+
+    db_path = tmp_path / "agents.db"
+    repository = AgentRepository(db_path)
+
+    repository.save(Agent(agent_id="agent:restart-001"))
+
+    fresh_registry = AgentRegistry(repository=AgentRepository(db_path))
+
+    agent = fresh_registry.get("agent:restart-001")
+
+    assert agent is not None
+    assert agent.agent_id == "agent:restart-001"

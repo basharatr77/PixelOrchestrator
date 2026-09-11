@@ -13,8 +13,15 @@ class Agent:
 class AgentRegistry:
     """In-memory registry of canonical remote agents."""
 
-    def __init__(self) -> None:
+    def __init__(self, repository=None) -> None:
         self._agents: dict[str, Agent] = {}
+        self._repository = repository
+
+        if repository is not None:
+            for agent_id in repository.list_ids():
+                agent = repository.get(agent_id)
+                if agent is not None:
+                    self._agents[agent.agent_id] = agent
 
     def register(self, agent: Agent) -> None:
         if not isinstance(agent, Agent):

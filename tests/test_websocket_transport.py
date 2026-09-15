@@ -4,6 +4,11 @@ import json
 from app.core.websocket_transport import WebSocketTransport
 
 
+class AllowingAuthenticator:
+    def authenticate(self, agent_id, data):
+        return True
+
+
 class FakeWebSocket:
     def __init__(self, responses):
         self.sent = []
@@ -318,7 +323,10 @@ def test_websocket_transport_real_local_server_client(monkeypatch):
             fake_execute,
         )
 
-        handler = ws_server.create_handler(None)
+        handler = ws_server.create_handler(
+            None,
+            authenticator=AllowingAuthenticator(),
+        )
 
         async with websockets.serve(
             handler,
@@ -379,7 +387,10 @@ def test_websocket_transport_real_local_fastboot_server_client(monkeypatch):
             fake_execute,
         )
 
-        handler = ws_server.create_handler(None)
+        handler = ws_server.create_handler(
+            None,
+            authenticator=AllowingAuthenticator(),
+        )
 
         async with websockets.serve(
             handler,
@@ -441,7 +452,10 @@ def test_websocket_transport_real_local_adb_get_device_info(monkeypatch):
             fake_get_device_info,
         )
 
-        handler = ws_server.create_handler(None)
+        handler = ws_server.create_handler(
+            None,
+            authenticator=AllowingAuthenticator(),
+        )
 
         async with websockets.serve(
             handler,
@@ -496,7 +510,10 @@ def test_websocket_transport_real_local_fastboot_get_device_info(monkeypatch):
             fake_get_device_info,
         )
 
-        handler = ws_server.create_handler(None)
+        handler = ws_server.create_handler(
+            None,
+            authenticator=AllowingAuthenticator(),
+        )
 
         async with websockets.serve(
             handler,
@@ -545,7 +562,10 @@ def test_websocket_transport_real_local_server_error_to_client_exception(
             fake_execute,
         )
 
-        handler = ws_server.create_handler(None)
+        handler = ws_server.create_handler(
+            None,
+            authenticator=AllowingAuthenticator(),
+        )
 
         async with websockets.serve(
             handler,
@@ -783,7 +803,10 @@ def test_websocket_transport_real_local_concurrent_request_response_isolation(
             fake_execute,
         )
 
-        handler = ws_server.create_handler(None)
+        handler = ws_server.create_handler(
+            None,
+            authenticator=AllowingAuthenticator(),
+        )
 
         async with websockets.serve(
             handler,

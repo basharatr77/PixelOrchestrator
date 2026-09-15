@@ -24,6 +24,11 @@ class FakeWebSocket:
         self.sent.append(message)
 
 
+class AllowingAuthenticator:
+    def authenticate(self, agent_id, data):
+        return True
+
+
 def test_remote_agent_registration_requires_agent_id():
     async def run():
         bus = StreamBus()
@@ -34,7 +39,10 @@ def test_remote_agent_registration_requires_agent_id():
             }),
         ])
 
-        handler = ws_server.create_handler(bus)
+        handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
         await handler(ws)
 
         assert len(ws.sent) == 1
@@ -61,7 +69,10 @@ def test_remote_agent_registration_accepts_stable_agent_id():
             }),
         ])
 
-        handler = ws_server.create_handler(bus)
+        handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
         await handler(ws)
 
         assert len(ws.sent) == 1
@@ -88,7 +99,10 @@ def test_remote_agent_registration_rejects_empty_agent_id():
             }),
         ])
 
-        handler = ws_server.create_handler(bus)
+        handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
         await handler(ws)
 
         assert len(ws.sent) == 1
@@ -115,7 +129,10 @@ def test_remote_agent_registration_rejects_whitespace_agent_id():
             }),
         ])
 
-        handler = ws_server.create_handler(bus)
+        handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
         await handler(ws)
 
         assert len(ws.sent) == 1
@@ -143,7 +160,10 @@ def test_remote_agent_registration_rejects_non_string_agent_id():
                 }),
             ])
 
-            handler = ws_server.create_handler(bus)
+            handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
             await handler(ws)
 
             assert len(ws.sent) == 1
@@ -174,7 +194,10 @@ def test_remote_agent_registration_rejects_second_registration_on_same_connectio
             }),
         ])
 
-        handler = ws_server.create_handler(bus)
+        handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
         await handler(ws)
 
         assert len(ws.sent) == 2
@@ -224,7 +247,10 @@ def test_remote_agent_registration_connection_cleanup():
         ws_server.broadcaster.unregister = fake_unregister
 
         try:
-            handler = ws_server.create_handler(bus)
+            handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
             await handler(ws)
         finally:
             ws_server.broadcaster.register = original_register
@@ -260,7 +286,10 @@ def test_remote_agent_registration_allows_same_id_on_new_connection():
             }),
         ])
 
-        handler = ws_server.create_handler(bus)
+        handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
 
         await handler(ws1)
         await handler(ws2)
@@ -293,7 +322,10 @@ def test_remote_agent_transport_request_requires_registration():
             }),
         ])
 
-        handler = ws_server.create_handler(bus)
+        handler = ws_server.create_handler(
+            bus,
+            authenticator=AllowingAuthenticator(),
+        )
         await handler(ws)
 
         assert len(ws.sent) == 1
@@ -326,6 +358,7 @@ def test_remote_agent_registration_uses_shared_agent_registry():
         handler = ws_server.create_handler(
             bus,
             agent_registry=registry,
+            authenticator=AllowingAuthenticator(),
         )
         await handler(ws)
 
@@ -383,6 +416,7 @@ def test_remote_agent_cannot_request_unowned_device():
             agent_registry=agent_registry,
             device_registry=device_registry,
             ownership=ownership,
+            authenticator=AllowingAuthenticator(),
         )
 
         await handler(ws)
@@ -457,6 +491,7 @@ def test_remote_agent_can_request_owned_device():
             agent_registry=agent_registry,
             device_registry=device_registry,
             ownership=ownership,
+            authenticator=AllowingAuthenticator(),
         )
 
         await handler(ws)
@@ -609,6 +644,7 @@ def test_remote_agent_cannot_request_owned_but_unregistered_device():
             agent_registry=agent_registry,
             device_registry=device_registry,
             ownership=ownership,
+            authenticator=AllowingAuthenticator(),
         )
 
         await handler(ws)

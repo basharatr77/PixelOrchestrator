@@ -6,6 +6,11 @@ from app.core.event_bus import StreamBus
 from app.core.events import Event
 
 
+class AllowingAuthenticator:
+    def authenticate(self, agent_id, data):
+        return True
+
+
 class FakeWebSocket:
     def __init__(self, messages=None):
         self.messages = list(messages or [])
@@ -245,7 +250,14 @@ def test_dashboard_handler_ignores_non_object_json_and_continues(monkeypatch):
         }),
     ])
 
-    handler = ws_server.create_handler(bus)
+    class FakeAuthenticator:
+        def authenticate(self, agent_id, data):
+            return True
+
+    handler = ws_server.create_handler(
+        bus,
+        authenticator=FakeAuthenticator(),
+    )
 
     asyncio.run(handler(ws))
 
@@ -437,6 +449,7 @@ def test_dashboard_handler_same_agent_new_connection_supersedes_old_connection(
         handler = ws_server.create_handler(
             bus,
             agent_registry=agent_registry,
+            authenticator=AllowingAuthenticator(),
         )
 
         first_task = asyncio.create_task(handler(first_ws))
@@ -462,3 +475,251 @@ def test_dashboard_handler_same_agent_new_connection_supersedes_old_connection(
         await second_task
 
     asyncio.run(run())
+
+def test_dashboard_handler_rejects_agent_registration_without_authentication(monkeypatch):
+    bus = StreamBus()
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:unauthenticated",
+        })
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    agent_registry = ws_server.AgentRegistry()
+
+    claimed = []
+
+    def fake_claim_connection(agent_id, connection_id):
+        claimed.append((agent_id, connection_id))
+        return True
+
+    monkeypatch.setattr(
+        agent_registry,
+        "claim_connection",
+        fake_claim_connection,
+    )
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+    )
+
+    asyncio.run(handler(ws))
+
+    response = json.loads(ws.sent[0])
+
+    assert response["type"] == "agent_register_response"
+    assert response["success"] is False
+    assert "authentication" in response["error"].lower()
+    assert claimed == []
+    assert agent_registry.get("agent:unauthenticated") is None
+
+def test_dashboard_handler_allows_agent_registration_after_authentication(monkeypatch):
+    bus = StreamBus()
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:authenticated",
+        })
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    authenticated = []
+
+    class FakeAuthenticator:
+        def authenticate(self, agent_id, data):
+            authenticated.append((agent_id, data))
+            return True
+
+    agent_registry = ws_server.AgentRegistry()
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        authenticator=FakeAuthenticator(),
+    )
+
+    asyncio.run(handler(ws))
+
+    response = json.loads(ws.sent[0])
+
+    assert response == {
+        "type": "agent_register_response",
+        "success": True,
+        "agent_id": "agent:authenticated",
+    }
+
+    assert authenticated == [
+        (
+            "agent:authenticated",
+            {
+                "type": "agent_register",
+                "agent_id": "agent:authenticated",
+            },
+        )
+    ]
+
+    assert agent_registry.get("agent:authenticated") is not None
+
+def test_dashboard_handler_rejects_failed_authentication_without_agent_creation(monkeypatch):
+    bus = StreamBus()
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:rejected",
+        })
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    class FakeAuthenticator:
+        def authenticate(self, agent_id, data):
+            return False
+
+    agent_registry = ws_server.AgentRegistry()
+
+    claimed = []
+
+    def fake_claim_connection(agent_id, connection_id):
+        claimed.append((agent_id, connection_id))
+        return True
+
+    monkeypatch.setattr(
+        agent_registry,
+        "claim_connection",
+        fake_claim_connection,
+    )
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        authenticator=FakeAuthenticator(),
+    )
+
+    asyncio.run(handler(ws))
+
+    response = json.loads(ws.sent[0])
+
+    assert response == {
+        "type": "agent_register_response",
+        "success": False,
+        "error": "authentication failed",
+    }
+
+    assert agent_registry.get("agent:rejected") is None
+    assert claimed == []
+
+def test_dashboard_handler_rejects_authentication_exception(monkeypatch):
+    bus = StreamBus()
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:auth-error",
+        })
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    class FailingAuthenticator:
+        def authenticate(self, agent_id, data):
+            raise RuntimeError("authentication backend unavailable")
+
+    agent_registry = ws_server.AgentRegistry()
+
+    claimed = []
+
+    def fake_claim_connection(agent_id, connection_id):
+        claimed.append((agent_id, connection_id))
+        return True
+
+    monkeypatch.setattr(
+        agent_registry,
+        "claim_connection",
+        fake_claim_connection,
+    )
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        authenticator=FailingAuthenticator(),
+    )
+
+    asyncio.run(handler(ws))
+
+    response = json.loads(ws.sent[0])
+
+    assert response == {
+        "type": "agent_register_response",
+        "success": False,
+        "error": "authentication failed",
+    }
+
+    assert agent_registry.get("agent:auth-error") is None
+    assert claimed == []

@@ -178,7 +178,7 @@ async def handle_transport_request(ws, data, device_registry=None, ownership=Non
     await ws.send(json.dumps(response))
 
 
-def create_handler(bus, agent_registry=None, device_registry=None, ownership=None):
+def create_handler(bus, agent_registry=None, device_registry=None, ownership=None, authenticator=None):
     if agent_registry is None:
         agent_registry = AgentRegistry()
     async def handler(ws):
@@ -218,6 +218,38 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                                     "type": "agent_register_response",
                                     "success": False,
                                     "error": "agent_id is required",
+                                }
+                            )
+                        )
+                        continue
+
+                    if authenticator is None:
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "agent_register_response",
+                                    "success": False,
+                                    "error": "authentication required",
+                                }
+                            )
+                        )
+                        continue
+
+                    try:
+                        authenticated = authenticator.authenticate(
+                            agent_id,
+                            data,
+                        )
+                    except Exception:
+                        authenticated = False
+
+                    if authenticated is not True:
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "agent_register_response",
+                                    "success": False,
+                                    "error": "authentication failed",
                                 }
                             )
                         )

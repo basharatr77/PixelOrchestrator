@@ -1,0 +1,127 @@
+PixelOrchestrator — MASTER PHASE 1–50 RECONCILIATION
+Updated: 2026-09-18
+
+CURRENT IMPLEMENTATION CHECKPOINT
+Phase 46-H — Crash / Restart Recovery
+HEAD: c260314 — Add agent restart recovery coverage
+Targeted: tests/test_agent_registry.py — 25 passed
+Full regression: 351 passed in 12.35s
+There is NO Phase 46-I.
+
+PHASE STATUS
+
+1–34 — Foundation / Earlier Architecture
+STATUS: COMPLETE / HISTORICAL
+The individual historical checkpoints are not all preserved in the current PHASE_PLAN.md, so no missing commits/tests are invented here.
+
+35 — Canonical Device Identity & Transport State
+STATUS: COMPLETE
+Commit: 3d30994
+Validation: 102 passed
+Canonical Device, DeviceState, ModuleType, stable device_id, explicit transport, detector/transport migration.
+
+36 — Device Detection & Registry
+STATUS: COMPLETE
+Established canonical DeviceRegistry and device discovery/registration boundary.
+
+37 — Device State / Lifecycle Hardening
+STATUS: COMPLETE
+Commit: 31e8613
+Validation: 118 passed; targeted lifecycle/state 12; BusRuntime integration 4; compileall PASS; diff check PASS.
+Added DeviceStateMachine and canonical lifecycle/registry integration.
+
+38 — Unified Transport Layer Hardening
+STATUS: COMPLETE
+Validation: 118 passed at checkpoint.
+Unified ADB/Fastboot transport abstraction, resolver/factory, errors, timeouts, availability checks.
+
+39 — Device Capability System
+STATUS: COMPLETE
+Validation: 129 passed.
+Stable capability IDs, CapabilityRegistry, ModuleRegistry ownership, structured unknown-action failure, capability enforcement.
+
+40 — Workflow / Task Execution Layer
+STATUS: COMPLETE
+Major checkpoints:
+40-A Task Contract — 0a3522b — 14 Task tests; 143 full.
+40-B Task Queue — 0e12c95 — 150 full.
+40-C Canonical Execution — 1bbc156 — 160 full.
+40-D Workflow Definition — 2e1a16f — 169 full.
+40-E DAG Readiness — 23c7749 — 176 full.
+40-F-A Retry Policy — bf52f7f — 184 full.
+40-F-B Retry Execution — 2278a16 — 189 full.
+40-F-C Cancellation — e66d62c — 191 full.
+40-G Progress — 9fb360b, 7ebf3c0, 4b7eae7, 481e70b — final orchestration 31 targeted / 241 full.
+40-H Workflow Outcomes — 2c070ea, 21b993b, db0bba5.
+40-I Workflow Orchestration — d11241a, 12d730d, ed0e894; later terminal tracking/publication audits completed.
+Canonical chain: Workflow → ready_tasks → WorkflowExecutor → TaskQueue → ExecutionWorker → TaskExecutor → ActionResult → BusRuntime → terminal publication.
+
+41 — Persistent Event & Replay Infrastructure
+STATUS: SUBSTANTIALLY IMPLEMENTED / CONTRACT-VERIFIED
+Verified consumer offsets, replay batching, fidelity, reconstruction, recovery dispatch, replay/live isolation, concurrent append, bounded replay, and recovery retry boundaries.
+Not established as universal guarantees: automatic startup recovery, workflow persistence, schema migration, event versioning.
+
+42 — Device Farm / Multi-Device Orchestration
+STATUS: COMPLETE
+Closure: 2026-09-06
+Final audit: 02a64ca
+Validation: 247 full; compileall PASS.
+Verified shared DeviceRegistry, identity/isolation, multi-device and concurrent execution, failure isolation, disconnect/reconnect.
+Explicitly deferred: allocation/selection, reservation/lease, per-device queues, device health/availability/monitoring.
+
+43 — Worker Pool & Distributed Execution (ORIGINAL ROADMAP LABEL)
+STATUS: NOT IMPLEMENTED / DEFERRED
+The old roadmap defines Phase 43 as Worker Pool & Distributed Execution. Actual development moved from Phase 42 into Phase 44 remote transport and later agent architecture without completing a separate Phase 43 worker-pool implementation.
+Do not mark Phase 43 complete without a new contract and implementation checkpoint.
+
+44 — WebSocket / Remote Device Transport
+STATUS: COMPLETE
+Official closure: 44-I-AN-V
+Final known validation: 291 full.
+Remote agent registration, connection loss/reconnect, identity lifecycle, malformed contract handling, WebSocket boundary hardening.
+
+45 — Agent Registry / Remote Device Ownership (ACTUAL IMPLEMENTATION LABEL)
+STATUS: COMPLETE
+45-C commit 34b7f61 — remote agent device ownership; 13 targeted passed.
+45-H commit 522cb5c — DeviceRegistry ownership boundary; 23 targeted / 323 full.
+Authentication, authorization, ownership, registered-device existence, reconnect lifecycle hardened.
+NOTE: The old PHASE_PLAN label for 45 was Plugin Architecture; that roadmap label was superseded by actual project development.
+
+46 — Agent Persistence / Identity / Security / Recovery (ACTUAL IMPLEMENTATION LABEL)
+STATUS: COMPLETE THROUGH 46-H
+NOTE: The old PHASE_PLAN label for 46 was AI Diagnosis & Decision Engine; that roadmap label was superseded by actual project development.
+46-A Persistent Agent Registry.
+46-B Persistent Agent Identity — b10f593.
+46-C Agent Device Ownership — a8382e4.
+46-D Presence / Last Seen — 352285b.
+46-E Global Connection Policy — 591dba3.
+46-F Authentication Boundary — 570d8bb.
+46-G Authorization / Reconnect Lifecycle — fdc16fd.
+46-H Crash / Restart Recovery — c260314.
+Persistent: agent identity, ownership, last_seen, registry knowledge.
+Ephemeral: active WebSocket connection, connection_id, live connection state.
+
+47 — Self-Healing / Auto-Repair Workflows (ROADMAP)
+STATUS: PLANNED / NOT STARTED AS A FORMAL IMPLEMENTATION PHASE
+Use only after the next implementation checkpoint is explicitly defined and contracted.
+
+48 — GUI Device Operations & UX
+STATUS: PLANNED / NOT STARTED AS A FORMAL PHASE
+Production-facing GUI around stable backend; diagnostics, device operations, reporting, configuration and UX.
+
+49 — Production Hardening / Security / Observability
+STATUS: PLANNED / NOT STARTED AS A FORMAL PHASE
+Production error handling, secrets/configuration, crash recovery, performance, concurrency, security and observability.
+
+50 — Release / Packaging / Deployment
+STATUS: PLANNED / NOT STARTED AS A FORMAL PHASE
+Reproducible production release, packaging, deployment and release validation.
+
+RECONCILIATION RULE
+The old PHASE_PLAN contains roadmap labels that no longer match the actual implementation after Phase 42. The authoritative record must distinguish ORIGINAL ROADMAP LABEL from ACTUAL IMPLEMENTATION LABEL rather than rewriting history or inventing phases.
+
+NEXT DOCUMENTATION CHECKPOINT
+Synchronize PROJECT_STATE.md and PHASE_PLAN.md to this reconciliation, preserve unrelated working-tree changes, and commit documentation only.
+
+NEXT IMPLEMENTATION CHECKPOINT
+Do NOT invent Phase 47 implementation work yet. First perform the documentation-only sync and then define the next checkpoint from the reconciled roadmap plus current architecture gaps. Candidate areas include Device Allocation/Selection, Worker Pool/Distributed Execution, Reconciliation, Real-Hardware Reliability, Observability, or AI/Self-Healing, but the exact next checkpoint must be explicitly contracted before code changes.

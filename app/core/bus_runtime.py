@@ -8,6 +8,7 @@ from app.agents.orchestrator.execution_worker import ExecutionWorker
 from app.agents.orchestrator.workflow_executor import WorkflowExecutor
 from app.core.event_bus import StreamBus
 from app.core.device_registry import DeviceRegistry
+from app.core.reconciler import Reconciler
 from app.core.events import Event
 from app.core.registry import create_registry_table, update_registry, read_registry
 from app.core.worker_pool import WorkerPool
@@ -22,6 +23,7 @@ class BusRuntime:
         self.task_queue = TaskQueue()
         self.workflow_executor = WorkflowExecutor(task_queue=self.task_queue)
         self.device_registry = DeviceRegistry()
+        self.reconciler = Reconciler(self.device_registry)
 
         self._rehydrate_registry()
 
@@ -93,6 +95,9 @@ class BusRuntime:
             )
 
             self.device_registry.register(device)
+
+    def reconcile_devices(self, observed):
+        return self.reconciler.reconcile(observed)
 
     def setup(self):
         self.lifecycle_consumer.subscribe(self.bus)

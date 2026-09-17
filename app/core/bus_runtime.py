@@ -10,6 +10,7 @@ from app.core.event_bus import StreamBus
 from app.core.device_registry import DeviceRegistry
 from app.core.reconciler import Reconciler
 from app.core.recovery_decision import RecoveryDecision
+from app.core.repair_plan import RepairPlan
 from app.core.events import Event
 from app.core.registry import create_registry_table, update_registry, read_registry
 from app.core.worker_pool import WorkerPool
@@ -109,6 +110,13 @@ class BusRuntime:
                     previous_state,
                     observed_state,
                 )
+                if change["decision"] == "SAFE_TO_REPAIR":
+                    change["repair_plan"] = RepairPlan.create(
+                        serial=change["serial"],
+                        current_state=previous_state,
+                        observed_state=observed_state,
+                        decision=change["decision"],
+                    )
         return changes
 
     def setup(self):

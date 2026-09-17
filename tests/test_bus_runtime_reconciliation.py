@@ -28,6 +28,7 @@ def test_bus_runtime_reconciliation_uses_canonical_device_registry():
             "previous_state": DeviceState.ADB,
             "state": DeviceState.FASTBOOT,
             "decision": "SAFE_TO_REPAIR",
+            "repair_plan": changes[0]["repair_plan"],
         }
     ]
 

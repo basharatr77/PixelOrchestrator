@@ -9,6 +9,7 @@ from app.agents.orchestrator.workflow_executor import WorkflowExecutor
 from app.core.event_bus import StreamBus
 from app.core.device_registry import DeviceRegistry
 from app.core.reconciler import Reconciler
+from app.core.recovery_decision import RecoveryDecision
 from app.core.events import Event
 from app.core.registry import create_registry_table, update_registry, read_registry
 from app.core.worker_pool import WorkerPool
@@ -97,7 +98,18 @@ class BusRuntime:
             self.device_registry.register(device)
 
     def reconcile_devices(self, observed):
-        return self.reconciler.reconcile(observed)
+        changes = self.reconciler.reconcile(observed)
+        for change in changes:
+            previous_state = change["previous_state"]
+            observed_state = change["state"]
+            if previous_state is None:
+                change["decision"] = "UNKNOWN"
+            else:
+                change["decision"] = RecoveryDecision.decide(
+                    previous_state,
+                    observed_state,
+                )
+        return changes
 
     def setup(self):
         self.lifecycle_consumer.subscribe(self.bus)

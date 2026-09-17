@@ -27,6 +27,7 @@ def test_bus_runtime_reconciliation_uses_canonical_device_registry():
             "serial": "PIXEL_RECON_8",
             "previous_state": DeviceState.ADB,
             "state": DeviceState.FASTBOOT,
+            "decision": "SAFE_TO_REPAIR",
         }
     ]
 

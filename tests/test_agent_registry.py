@@ -362,3 +362,68 @@ def test_agent_registry_release_current_connection_clears_it():
         "agent:connection-003",
         "connection-a",
     ) is False
+def test_agent_registry_restart_does_not_restore_active_connection(tmp_path):
+    from app.core.agent_registry import Agent, AgentRegistry
+    from app.core.agent_repository import AgentRepository
+
+    db_path = tmp_path / "agents.db"
+    repository = AgentRepository(db_path)
+
+    agent = Agent(agent_id="agent:restart-connection-001")
+    repository.save(agent)
+
+    registry = AgentRegistry(repository=repository)
+    registry.claim_connection(
+        "agent:restart-connection-001",
+        "connection-old",
+    )
+
+    fresh_registry = AgentRegistry(
+        repository=AgentRepository(db_path)
+    )
+
+    assert fresh_registry.get("agent:restart-connection-001") is not None
+
+    try:
+        assert fresh_registry.is_connection_current(
+            "agent:restart-connection-001",
+            "connection-old",
+        ) is False
+    except KeyError:
+        raise AssertionError(
+            "Persisted agent must remain known after restart"
+        )
+
+def test_agent_registry_restart_recovers_last_seen_for_stale_detection(tmp_path):
+    from app.core.agent_registry import Agent, AgentRegistry
+    from app.core.agent_repository import AgentRepository
+
+    db_path = tmp_path / "agents.db"
+
+    repository = AgentRepository(db_path)
+    repository.save(
+        Agent(
+            agent_id="agent:restart-presence-001",
+            last_seen_at="2026-09-12T01:00:00+00:00",
+        )
+    )
+
+    fresh_registry = AgentRegistry(
+        repository=AgentRepository(db_path)
+    )
+
+    assert fresh_registry.get(
+        "agent:restart-presence-001"
+    ).last_seen_at == "2026-09-12T01:00:00+00:00"
+
+    assert fresh_registry.is_stale(
+        "agent:restart-presence-001",
+        now="2026-09-12T01:05:01+00:00",
+        timeout_seconds=300,
+    ) is True
+
+    assert fresh_registry.is_stale(
+        "agent:restart-presence-001",
+        now="2026-09-12T01:04:59+00:00",
+        timeout_seconds=300,
+    ) is False

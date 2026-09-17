@@ -323,13 +323,10 @@ def test_websocket_transport_real_local_server_client(monkeypatch):
             fake_execute,
         )
 
-        handler = ws_server.create_handler(
-            None,
-            authenticator=AllowingAuthenticator(),
-        )
+        agent_registry = ws_server.AgentRegistry()
 
         async with websockets.serve(
-            handler,
+            None,
             "127.0.0.1",
             0,
         ) as server:
@@ -340,6 +337,25 @@ def test_websocket_transport_real_local_server_client(monkeypatch):
                 serial="LOCAL-ADB-001",
                 mode="ADB",
                 timeout=5,
+            )
+
+            agent_registry.register(
+                ws_server.Agent(agent_id=transport._agent_id)
+            )
+
+            handler = ws_server.create_handler(
+                None,
+                agent_registry=agent_registry,
+                authenticator=AllowingAuthenticator(),
+            )
+
+            server.close()
+            await server.wait_closed()
+
+            server = await websockets.serve(
+                handler,
+                "127.0.0.1",
+                port,
             )
 
             try:
@@ -387,13 +403,10 @@ def test_websocket_transport_real_local_fastboot_server_client(monkeypatch):
             fake_execute,
         )
 
-        handler = ws_server.create_handler(
-            None,
-            authenticator=AllowingAuthenticator(),
-        )
+        agent_registry = ws_server.AgentRegistry()
 
         async with websockets.serve(
-            handler,
+            None,
             "127.0.0.1",
             0,
         ) as server:
@@ -404,6 +417,25 @@ def test_websocket_transport_real_local_fastboot_server_client(monkeypatch):
                 serial="LOCAL-FASTBOOT-001",
                 mode="FASTBOOT",
                 timeout=5,
+            )
+
+            agent_registry.register(
+                ws_server.Agent(agent_id=transport._agent_id)
+            )
+
+            handler = ws_server.create_handler(
+                None,
+                agent_registry=agent_registry,
+                authenticator=AllowingAuthenticator(),
+            )
+
+            server.close()
+            await server.wait_closed()
+
+            server = await websockets.serve(
+                handler,
+                "127.0.0.1",
+                port,
             )
 
             try:
@@ -452,13 +484,10 @@ def test_websocket_transport_real_local_adb_get_device_info(monkeypatch):
             fake_get_device_info,
         )
 
-        handler = ws_server.create_handler(
-            None,
-            authenticator=AllowingAuthenticator(),
-        )
+        agent_registry = ws_server.AgentRegistry()
 
         async with websockets.serve(
-            handler,
+            None,
             "127.0.0.1",
             0,
         ) as server:
@@ -469,6 +498,25 @@ def test_websocket_transport_real_local_adb_get_device_info(monkeypatch):
                 serial="LOCAL-ADB-INFO-001",
                 mode="ADB",
                 timeout=5,
+            )
+
+            agent_registry.register(
+                ws_server.Agent(agent_id=transport._agent_id)
+            )
+
+            handler = ws_server.create_handler(
+                None,
+                agent_registry=agent_registry,
+                authenticator=AllowingAuthenticator(),
+            )
+
+            server.close()
+            await server.wait_closed()
+
+            server = await websockets.serve(
+                handler,
+                "127.0.0.1",
+                port,
             )
 
             try:
@@ -510,13 +558,10 @@ def test_websocket_transport_real_local_fastboot_get_device_info(monkeypatch):
             fake_get_device_info,
         )
 
-        handler = ws_server.create_handler(
-            None,
-            authenticator=AllowingAuthenticator(),
-        )
+        agent_registry = ws_server.AgentRegistry()
 
         async with websockets.serve(
-            handler,
+            None,
             "127.0.0.1",
             0,
         ) as server:
@@ -527,6 +572,25 @@ def test_websocket_transport_real_local_fastboot_get_device_info(monkeypatch):
                 serial="LOCAL-FASTBOOT-INFO-001",
                 mode="FASTBOOT",
                 timeout=5,
+            )
+
+            agent_registry.register(
+                ws_server.Agent(agent_id=transport._agent_id)
+            )
+
+            handler = ws_server.create_handler(
+                None,
+                agent_registry=agent_registry,
+                authenticator=AllowingAuthenticator(),
+            )
+
+            server.close()
+            await server.wait_closed()
+
+            server = await websockets.serve(
+                handler,
+                "127.0.0.1",
+                port,
             )
 
             try:
@@ -562,13 +626,10 @@ def test_websocket_transport_real_local_server_error_to_client_exception(
             fake_execute,
         )
 
-        handler = ws_server.create_handler(
-            None,
-            authenticator=AllowingAuthenticator(),
-        )
+        agent_registry = ws_server.AgentRegistry()
 
         async with websockets.serve(
-            handler,
+            None,
             "127.0.0.1",
             0,
         ) as server:
@@ -579,6 +640,25 @@ def test_websocket_transport_real_local_server_error_to_client_exception(
                 serial="LOCAL-ADB-ERROR-001",
                 mode="ADB",
                 timeout=5,
+            )
+
+            agent_registry.register(
+                ws_server.Agent(agent_id=transport._agent_id)
+            )
+
+            handler = ws_server.create_handler(
+                None,
+                agent_registry=agent_registry,
+                authenticator=AllowingAuthenticator(),
+            )
+
+            server.close()
+            await server.wait_closed()
+
+            server = await websockets.serve(
+                handler,
+                "127.0.0.1",
+                port,
             )
 
             try:
@@ -803,13 +883,10 @@ def test_websocket_transport_real_local_concurrent_request_response_isolation(
             fake_execute,
         )
 
-        handler = ws_server.create_handler(
-            None,
-            authenticator=AllowingAuthenticator(),
-        )
+        agent_registry = ws_server.AgentRegistry()
 
         async with websockets.serve(
-            handler,
+            None,
             "127.0.0.1",
             0,
         ) as server:
@@ -820,6 +897,25 @@ def test_websocket_transport_real_local_concurrent_request_response_isolation(
                 serial="LOCAL-CONCURRENT-001",
                 mode="ADB",
                 timeout=5,
+            )
+
+            agent_registry.register(
+                ws_server.Agent(agent_id=transport._agent_id)
+            )
+
+            handler = ws_server.create_handler(
+                None,
+                agent_registry=agent_registry,
+                authenticator=AllowingAuthenticator(),
+            )
+
+            server.close()
+            await server.wait_closed()
+
+            server = await websockets.serve(
+                handler,
+                "127.0.0.1",
+                port,
             )
 
             try:

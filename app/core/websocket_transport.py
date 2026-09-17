@@ -184,9 +184,22 @@ class WebSocketTransport(Transport):
         if self._loop is None:
             return True
 
+        loop = self._loop
+        thread = self._thread
+
         result = self._run(self._disconnect())
 
-        self._loop.call_soon_threadsafe(self._loop.stop)
+        loop.call_soon_threadsafe(loop.stop)
+
+        if thread is not threading.current_thread():
+            thread.join(self.timeout)
+
+        if thread.is_alive():
+            raise TimeoutError("WebSocket event loop failed to stop.")
+
+        self._loop = None
+        self._thread = None
+        self._thread_ready.clear()
 
         return result
 

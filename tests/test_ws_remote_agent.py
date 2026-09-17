@@ -32,6 +32,8 @@ class AllowingAuthenticator:
 def test_remote_agent_registration_requires_agent_id():
     async def run():
         bus = StreamBus()
+        from app.core.agent_registry import AgentRegistry
+        agent_registry = AgentRegistry()
 
         ws = FakeWebSocket([
             json.dumps({
@@ -41,6 +43,7 @@ def test_remote_agent_registration_requires_agent_id():
 
         handler = ws_server.create_handler(
             bus,
+            agent_registry=agent_registry,
             authenticator=AllowingAuthenticator(),
         )
         await handler(ws)
@@ -61,6 +64,10 @@ def test_remote_agent_registration_requires_agent_id():
 def test_remote_agent_registration_accepts_stable_agent_id():
     async def run():
         bus = StreamBus()
+        agent_registry = ws_server.AgentRegistry()
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-test-001")
+        )
 
         ws = FakeWebSocket([
             json.dumps({
@@ -71,6 +78,7 @@ def test_remote_agent_registration_accepts_stable_agent_id():
 
         handler = ws_server.create_handler(
             bus,
+            agent_registry=agent_registry,
             authenticator=AllowingAuthenticator(),
         )
         await handler(ws)
@@ -182,6 +190,13 @@ def test_remote_agent_registration_rejects_non_string_agent_id():
 def test_remote_agent_registration_rejects_second_registration_on_same_connection():
     async def run():
         bus = StreamBus()
+        agent_registry = ws_server.AgentRegistry()
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-test-001")
+        )
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-test-002")
+        )
 
         ws = FakeWebSocket([
             json.dumps({
@@ -196,6 +211,7 @@ def test_remote_agent_registration_rejects_second_registration_on_same_connectio
 
         handler = ws_server.create_handler(
             bus,
+            agent_registry=agent_registry,
             authenticator=AllowingAuthenticator(),
         )
         await handler(ws)
@@ -223,6 +239,10 @@ def test_remote_agent_registration_rejects_second_registration_on_same_connectio
 def test_remote_agent_registration_connection_cleanup():
     async def run():
         bus = StreamBus()
+        agent_registry = ws_server.AgentRegistry()
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-test-cleanup")
+        )
 
         ws = FakeWebSocket([
             json.dumps({
@@ -249,6 +269,7 @@ def test_remote_agent_registration_connection_cleanup():
         try:
             handler = ws_server.create_handler(
             bus,
+            agent_registry=agent_registry,
             authenticator=AllowingAuthenticator(),
         )
             await handler(ws)
@@ -271,6 +292,10 @@ def test_remote_agent_registration_connection_cleanup():
 def test_remote_agent_registration_allows_same_id_on_new_connection():
     async def run():
         bus = StreamBus()
+        agent_registry = ws_server.AgentRegistry()
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-test-001")
+        )
 
         ws1 = FakeWebSocket([
             json.dumps({
@@ -288,6 +313,7 @@ def test_remote_agent_registration_allows_same_id_on_new_connection():
 
         handler = ws_server.create_handler(
             bus,
+            agent_registry=agent_registry,
             authenticator=AllowingAuthenticator(),
         )
 
@@ -347,6 +373,9 @@ def test_remote_agent_registration_uses_shared_agent_registry():
 
         bus = StreamBus()
         registry = AgentRegistry()
+        registry.register(
+            ws_server.Agent(agent_id="agent-shared-001")
+        )
 
         ws = FakeWebSocket([
             json.dumps({
@@ -387,6 +416,9 @@ def test_remote_agent_cannot_request_unowned_device():
         device_registry = DeviceRegistry()
         from app.core.agent_device_ownership import AgentDeviceOwnership
         ownership = AgentDeviceOwnership()
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-owner-001")
+        )
 
         ws = FakeWebSocket([
             json.dumps({
@@ -456,6 +488,9 @@ def test_remote_agent_can_request_owned_device():
         agent_registry = AgentRegistry()
         device_registry = DeviceRegistry()
         ownership = AgentDeviceOwnership()
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-owner-002")
+        )
 
         agent_id = "agent-owner-002"
         serial = "OWNED-DEVICE-001"
@@ -618,6 +653,9 @@ def test_remote_agent_cannot_request_owned_but_unregistered_device():
         agent_registry = AgentRegistry()
         device_registry = DeviceRegistry()
         ownership = AgentDeviceOwnership()
+        agent_registry.register(
+            ws_server.Agent(agent_id="agent-owner-003")
+        )
 
         agent_id = "agent-owner-003"
         serial = "MISSING-DEVICE-001"

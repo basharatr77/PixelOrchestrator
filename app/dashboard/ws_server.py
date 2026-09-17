@@ -256,7 +256,16 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                         continue
 
                     if agent_registry.get(agent_id) is None:
-                        agent_registry.register(Agent(agent_id=agent_id))
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "agent_register_response",
+                                    "success": False,
+                                    "error": "agent not authorized",
+                                }
+                            )
+                        )
+                        continue
 
                     agent_registry.claim_connection(agent_id, connection_id)
                     registered_agent_id = agent_id

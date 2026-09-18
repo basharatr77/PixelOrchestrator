@@ -182,6 +182,26 @@ A phase is complete only when:
 
 ---
 
+## CURRENT PROJECT AUTHORITY
+
+Effective repository checkpoint: **Phase 47 COMPLETE**.
+Final checkpoint commit: `0181018` - Add deterministic device allocation boundary.
+Final full regression: **391 passed**.
+
+**Phase 48 - GUI Device Operations & UX is the NEXT implementation phase.**
+Phase 49 - Production Hardening / Security / Observability is planned.
+Phase 50 - Release / Packaging / Deployment is planned.
+
+Authority order for continuation:
+1. `PROJECT_STATE.md` - exact active implementation checkpoint.
+2. `PHASE_PLAN.md` - authoritative phase roadmap.
+3. `PROJECT_INSTRUCTIONS.md` - continuation and safety rules.
+4. Chat history and older notes - supplementary historical evidence only.
+
+If these sources disagree, do not guess or silently advance a phase. Inspect the repository and reconcile the documentation first. A completed phase must not be reopened solely because an older section says it is current or planned.
+
+The older sections below that describe Phase 35/36 and earlier checkpoints are historical continuity records, not the active project checkpoint.
+
 ## 11. Current Checkpoint
 
 At the time this file was created:
@@ -377,7 +397,7 @@ All new device-related architecture must build on the canonical contract unless 
 
 ---
 
-## 20. Current Resume Point
+## 20. Historical Resume Point - Phase 35
 
 Current completed phase:
 

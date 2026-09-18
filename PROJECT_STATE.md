@@ -7,7 +7,7 @@
 
 ### Phase
 
-**Phase 46-H — Crash / Restart Recovery**
+**Phase 47 - Self-Healing / Auto-Repair Workflows**
 
 ### Status
 
@@ -15,15 +15,13 @@
 
 ### Commit
 
-`c260314` — Add agent restart recovery coverage
+`0181018` - Add deterministic device allocation boundary
 
 ### Validation
 
-- Targeted: `python -m pytest -q tests/test_agent_registry.py`
-- Result: **25 passed**
 - Full regression: `python -m pytest -q`
-- Result: **351 passed in 12.35s**
-- Latest targeted runtime: **25 passed in 0.67s**
+- Result: **391 passed**
+- Phase 47 allocation tests: **4 passed**
 
 ## PHASE 46 RESULT
 
@@ -61,7 +59,7 @@ Ephemeral:
 | 44 | COMPLETE | WebSocket / Remote Device Transport |
 | 45 | COMPLETE | Actual implementation: Agent Registry / Remote Device Ownership |
 | 46 | COMPLETE THROUGH 46-H | Actual implementation: Agent Persistence / Identity / Security / Recovery |
-| 47 | PLANNED | Self-Healing / Auto-Repair Workflows |
+| 47 | COMPLETE | Self-Healing / Auto-Repair Workflows |
 | 48 | PLANNED | GUI Device Operations & UX |
 | 49 | PLANNED | Production Hardening / Security / Observability |
 | 50 | PLANNED | Release / Packaging / Deployment |
@@ -91,20 +89,21 @@ These historical roadmap labels must remain documented rather than silently rewr
 - Do not reopen completed checkpoints without new evidence.
 - Any Phase 47+ implementation must receive an explicit contract before code changes begin.
 
+## CURRENT AUTHORITATIVE ROADMAP
+
+Phase 47 is COMPLETE. The final implementation checkpoint is commit `0181018` (Add deterministic device allocation boundary), with 391 full regression tests passed.
+
+**Phase 48 - GUI Device Operations & UX is the NEXT implementation phase.**
+
+Phase 49 - Production Hardening / Security / Observability remains planned.
+Phase 50 - Release / Packaging / Deployment remains planned.
+
+Completed phases must not be reopened solely because an older document contains stale current-checkpoint wording. Phase mapping must be taken from the reconciled repository state.
+
 ## NEXT DOCUMENTATION ACTION
 
-Synchronize this checkpoint with `PHASE_PLAN.md` and the GPT Project/Library source, then create a documentation-only commit.
+Documentation synchronization is complete after this reconciliation. Future documentation updates must preserve the authoritative Phase 47 completion checkpoint and Phase 48 next-phase mapping.
 
 ## NEXT IMPLEMENTATION DECISION
 
-After documentation synchronization, define the next implementation checkpoint from the reconciled architecture gaps. No Phase 47 implementation should be started merely because it has a roadmap label.
-
-Candidate areas requiring an explicit contract include:
-
-1. Device allocation / selection deferred from Phase 42.
-2. Worker pool / distributed execution deferred from the original Phase 43 roadmap.
-3. Reconciliation and real-hardware reliability.
-4. Observability and production hardening.
-5. AI diagnosis / self-healing after deterministic safety boundaries are established.
-
-The next checkpoint must be selected and written as a RED-first contract before production implementation.
+The next implementation work begins from Phase 48 - GUI Device Operations & UX. Any Phase 48 implementation checkpoint must be explicitly defined and RED-first before production code changes begin.

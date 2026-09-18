@@ -21,7 +21,7 @@
 | 44 | COMPLETE | WebSocket / Remote Device Transport |
 | 45 | COMPLETE | Agent Registry / Remote Device Ownership (actual implementation) |
 | 46 | COMPLETE THROUGH 46-H | Agent Persistence / Identity / Security / Recovery (actual implementation) |
-| 47 | PLANNED | Self-Healing / Auto-Repair Workflows |
+| 47 | COMPLETE | Self-Healing / Auto-Repair Workflows |
 | 48 | PLANNED | GUI Device Operations & UX |
 | 49 | PLANNED | Production Hardening / Security / Observability |
 | 50 | PLANNED | Release / Packaging / Deployment |
@@ -159,11 +159,13 @@ Ephemeral state: active WebSocket connection, connection_id and live connection 
 
 Historical note: the original roadmap called Phase 46 “AI Diagnosis & Decision Engine”. That label was superseded by actual implementation.
 
-## 47 — SELF-HEALING / AUTO-REPAIR WORKFLOWS
+## 47 - SELF-HEALING / AUTO-REPAIR WORKFLOWS
 
-Status: PLANNED.
+Status: COMPLETE.
+Final implementation checkpoint: `0181018` - Add deterministic device allocation boundary.
+Validation: 4 allocator tests passed; full regression **391 passed**.
 
-This remains a future roadmap area. It must not begin until deterministic safety boundaries, recovery contracts and observability requirements are explicitly defined.
+Phase 47 established the deterministic device allocation boundary required before higher-level recovery and self-healing behavior. The implementation is complete and must not be reopened without new evidence and an explicit new contract.
 
 ## 48 — GUI DEVICE OPERATIONS & UX
 
@@ -183,16 +185,13 @@ Status: PLANNED.
 
 Reproducible packaging, deployment, release validation and production distribution.
 
-## NEXT IMPLEMENTATION DECISION
+## NEXT IMPLEMENTATION PHASE
 
-After this documentation reconciliation, do not automatically jump to Phase 47.
+**Phase 48 - GUI Device Operations & UX** is the next implementation phase.
 
-The next implementation checkpoint must be explicitly selected from the current architecture gaps. Candidate areas are:
+Phase 48 is planned as the production-facing GUI layer around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling.
 
-1. Device allocation / selection deferred by Phase 42.
-2. Worker pool / distributed execution deferred by original Phase 43.
-3. Reconciliation and real-hardware reliability.
-4. Observability / production hardening.
-5. AI diagnosis / self-healing after deterministic safety contracts.
+Before any Phase 48 production code change, define an explicit RED-first checkpoint and preserve unrelated working-tree changes.
 
-The chosen checkpoint must be RED-first, narrowly scoped, regression-preserving and committed independently of unrelated working-tree changes.
+Phase 49 - Production Hardening / Security / Observability remains planned.
+Phase 50 - Release / Packaging / Deployment remains planned.

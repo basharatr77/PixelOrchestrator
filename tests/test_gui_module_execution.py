@@ -354,3 +354,23 @@ def test_main_window_refresh_clears_removed_selected_device():
     assert window.device_selector.currentData() == "test:remaining-device"
 
     window.close()
+
+def test_main_window_device_selector_is_attached_to_visible_gui_layout():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    window = MainWindow(device_registry=registry)
+
+    window.show()
+    app.processEvents()
+
+    assert window.device_selector.isVisible()
+    assert window.device_selector.parentWidget() is not None
+    assert window.device_selector.parentWidget().layout() is not None
+
+    window.close()

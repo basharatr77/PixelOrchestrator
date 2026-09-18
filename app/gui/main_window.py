@@ -104,6 +104,7 @@ class MainWindow(QMainWindow):
 
         header.addWidget(heading)
         header.addStretch()
+        header.addWidget(self.device_selector)
         header.addWidget(ai_status)
 
         workspace_layout.addLayout(header)

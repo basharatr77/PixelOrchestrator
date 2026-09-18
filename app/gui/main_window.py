@@ -6,14 +6,14 @@ import sys
 import app.gui.qt_bootstrap
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QMessageBox, QScrollArea )
+from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QMessageBox, QScrollArea, QLineEdit, QGridLayout, QComboBox )
 
 from app.gui.ai.service import AIService
 from app.gui.module_adapter import GUIModuleAdapter
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, device_registry=None):
         super().__init__()
 
         self.setWindowTitle("PixelOrchestrator")
@@ -22,6 +22,11 @@ class MainWindow(QMainWindow):
         self.ai_service = AIService()
 
         self.module_adapter = GUIModuleAdapter()
+        self.device_registry = device_registry
+        self.selected_device_id = None
+        self.device_selector = QComboBox()
+        self.device_selector.currentIndexChanged.connect(self._on_device_selected)
+        self._populate_device_selector()
         self.module_adapter.load_modules()
 
         root = QWidget()
@@ -208,6 +213,33 @@ class MainWindow(QMainWindow):
 
         self.module_layout.addStretch()
 
+    def _populate_device_selector(self):
+        selected_device_id = self.selected_device_id
+
+        self.device_selector.clear()
+        if self.device_registry is None:
+            return
+
+        device_ids = list(self.device_registry.snapshot())
+
+        for device_id in device_ids:
+            self.device_selector.addItem(str(device_id), device_id)
+
+        if selected_device_id in device_ids:
+            index = self.device_selector.findData(selected_device_id)
+            if index >= 0:
+                self.device_selector.setCurrentIndex(index)
+
+    def _on_device_selected(self, index):
+        if index < 0:
+            self.selected_device_id = None
+            return
+
+        self.selected_device_id = self.device_selector.itemData(index)
+
+    def refresh_device_selector(self):
+        self._populate_device_selector()
+
     def execute_module_action(self, module_id, action_id):
         """Execute a dynamically rendered module action."""
         try:
@@ -247,9 +279,24 @@ class MainWindow(QMainWindow):
                 if confirmation != QMessageBox.StandardButton.Yes:
                     return
 
+            device = None
+            if getattr(action, "requires_device", False):
+                if self.device_registry is None:
+                    raise ValueError("No device registry is configured.")
+
+                if not self.selected_device_id:
+                    raise ValueError("No device is selected.")
+
+                device = self.device_registry.get(self.selected_device_id)
+                if device is None:
+                    raise ValueError(
+                        f"Selected device not found: {self.selected_device_id}"
+                    )
+
             result = self.module_adapter.execute_action(
                 module_id,
                 action_id,
+                device=device,
             )
 
             message = getattr(result, "message", None) or str(result)

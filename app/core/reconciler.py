@@ -23,7 +23,7 @@ class Reconciler:
 
         self.registry = registry
 
-    def reconcile(self, observed: dict[str, str]) -> list[dict]:
+    def reconcile(self, observed: dict[str, str], apply: bool = True) -> list[dict]:
         if not isinstance(observed, dict):
             raise TypeError("observed must be a dict")
 
@@ -59,5 +59,14 @@ class Reconciler:
             )
 
 
-            self.registry.update(Device(device_id=device.device_id, module_type=device.module_type, state=target, model=device.model, serial=device.serial, transport=device.transport, properties=dict(device.properties)))
+            if apply:
+                self.registry.update(Device(
+                    device_id=device.device_id,
+                    module_type=device.module_type,
+                    state=target,
+                    model=device.model,
+                    serial=device.serial,
+                    transport=device.transport,
+                    properties=dict(device.properties),
+                ))
         return changes

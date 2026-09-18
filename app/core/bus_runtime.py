@@ -99,7 +99,7 @@ class BusRuntime:
             self.device_registry.register(device)
 
     def reconcile_devices(self, observed):
-        changes = self.reconciler.reconcile(observed)
+        changes = self.reconciler.reconcile(observed, apply=False)
         for change in changes:
             previous_state = change["previous_state"]
             observed_state = change["state"]

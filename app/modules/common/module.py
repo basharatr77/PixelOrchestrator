@@ -4,6 +4,7 @@ Provides vendor-neutral capabilities and actions that can be
 shared by the GUI and vendor-specific modules.
 """
 
+from app.core.device_state import DeviceStateMachine
 from app.core.module_contract import (
     Action,
     ActionResult,
@@ -51,6 +52,13 @@ class CommonModule(ModuleContract):
                 capability_id="device_information",
                 requires_device=True,
             ),
+            Action(
+                id="reconcile_state",
+                name="Reconcile Device State",
+                description="Reconcile a device to the observed state.",
+                capability_id="device_information",
+                requires_device=True,
+            ),
         ),
     )
 
@@ -70,6 +78,47 @@ class CommonModule(ModuleContract):
             return ActionResult(
                 success=True,
                 message="Device refresh requested.",
+            )
+
+        if action_id == "reconcile_state":
+            if device is None:
+                return ActionResult(
+                    success=False,
+                    message="A device is required.",
+                    error_code="DEVICE_REQUIRED",
+                )
+
+            target_state = kwargs.get("target_state")
+            if target_state is None:
+                return ActionResult(
+                    success=False,
+                    message="A target state is required.",
+                    error_code="TARGET_STATE_REQUIRED",
+                )
+
+            if not isinstance(target_state, type(device.state)):
+                return ActionResult(
+                    success=False,
+                    message="target_state must be a DeviceState.",
+                    error_code="INVALID_TARGET_STATE",
+                )
+
+            try:
+                DeviceStateMachine.transition(device, target_state)
+            except ValueError as exc:
+                return ActionResult(
+                    success=False,
+                    message=str(exc),
+                    error_code="INVALID_STATE_TRANSITION",
+                )
+
+            return ActionResult(
+                success=True,
+                message="Device state reconciled.",
+                data={
+                    "device_id": device.device_id,
+                    "state": device.state.value,
+                },
             )
 
         if action_id == "device_info":

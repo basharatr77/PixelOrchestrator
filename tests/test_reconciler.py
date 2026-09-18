@@ -160,3 +160,31 @@ def test_reconciliation_applies_observed_state_to_registry():
         }
     ]
     assert registry.get("device:PIXEL_8").state == DeviceState.FASTBOOT
+
+def test_reconciliation_can_detect_without_applying_observed_state():
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="device:PIXEL_8",
+            module_type=ModuleType.ADB,
+            state=DeviceState.ADB,
+            serial="PIXEL_8",
+        )
+    )
+
+    from app.core.reconciler import Reconciler
+
+    reconciler = Reconciler(registry)
+    changes = reconciler.reconcile(
+        {"PIXEL_8": "FASTBOOT"},
+        apply=False,
+    )
+
+    assert changes == [
+        {
+            "serial": "PIXEL_8",
+            "previous_state": DeviceState.ADB,
+            "state": DeviceState.FASTBOOT,
+        }
+    ]
+    assert registry.get("device:PIXEL_8").state is DeviceState.ADB

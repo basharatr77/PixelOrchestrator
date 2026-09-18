@@ -32,4 +32,4 @@ def test_bus_runtime_reconciliation_uses_canonical_device_registry():
         }
     ]
 
-    assert runtime.device_registry.get("device:PIXEL_RECON_8").state == DeviceState.FASTBOOT
+    assert runtime.device_registry.get("device:PIXEL_RECON_8").state is DeviceState.ADB

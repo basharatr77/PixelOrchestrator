@@ -11,6 +11,7 @@ from app.core.device_registry import DeviceRegistry
 from app.core.reconciler import Reconciler
 from app.core.recovery_decision import RecoveryDecision
 from app.core.repair_plan import RepairPlan
+from app.core.repair_verifier import RepairVerifier
 from app.core.events import Event
 from app.core.registry import create_registry_table, update_registry, read_registry
 from app.core.worker_pool import WorkerPool
@@ -201,6 +202,23 @@ class BusRuntime:
                 self.publish_workflow_terminal_outcome(workflow)
 
         return result
+
+    def execute_repair(self, plan):
+        if not isinstance(plan, RepairPlan):
+            return RepairVerifier.verify(plan, self.device_registry)
+
+        from app.core.task import Task
+
+        task = Task(
+            device_id=f"device:{plan.serial}",
+            module_id="common",
+            action_id="reconcile_state",
+            parameters={"target_state": plan.observed_state},
+        )
+
+        self.execute_once(task)
+
+        return RepairVerifier.verify(plan, self.device_registry)
 
     async def execution_loop(self):
         while True:

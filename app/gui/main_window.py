@@ -194,7 +194,12 @@ class MainWindow(QMainWindow):
                 action_id = action["id"]
 
                 button = QPushButton(action["name"])
-                button.setEnabled(bool(action["enabled"]))
+                enabled = bool(action["enabled"])
+
+                if action.get("requires_device", False):
+                    enabled = enabled and self.selected_device_id is not None
+
+                button.setEnabled(enabled)
                 button.setToolTip(
                     action.get("description")
                     or action.get("capability_id", "")
@@ -239,9 +244,36 @@ class MainWindow(QMainWindow):
     def _on_device_selected(self, index):
         if index < 0:
             self.selected_device_id = None
+        else:
+            self.selected_device_id = self.device_selector.itemData(index)
+
+        if not hasattr(self, "module_action_buttons"):
             return
 
-        self.selected_device_id = self.device_selector.itemData(index)
+        for module_id, buttons in self.module_action_buttons.items():
+            module = self.module_adapter.registry.get(module_id)
+            if module is None:
+                continue
+
+            actions = {
+                action.id: action
+                for action in module.get_actions()
+            }
+
+            for action_id, button in buttons.items():
+                action = actions.get(action_id)
+                if action is None:
+                    continue
+
+                enabled = bool(action.enabled)
+
+                if action.requires_device:
+                    enabled = (
+                        enabled
+                        and self.selected_device_id is not None
+                    )
+
+                button.setEnabled(enabled)
 
     def refresh_device_selector(self):
         self._populate_device_selector()

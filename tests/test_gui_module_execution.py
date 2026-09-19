@@ -471,3 +471,59 @@ def test_main_window_device_selector_clearly_represents_no_selected_device():
     assert window.device_selector.placeholderText() == "Select a device"
 
     window.close()
+
+def test_main_window_disables_device_required_action_without_selected_device():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    button = window.module_action_buttons["common"]["device_info"]
+
+    assert window.selected_device_id is None
+    assert not button.isEnabled()
+
+    window.close()
+
+def test_main_window_enables_device_required_action_when_device_is_selected():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="test:selected-device",
+            module_type=ModuleType.COMMON,
+            model="Selected Test",
+            serial="SELECTED123",
+        )
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    button = window.module_action_buttons["common"]["device_info"]
+
+    assert window.selected_device_id is None
+    assert not button.isEnabled()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert window.selected_device_id == "test:selected-device"
+    assert button.isEnabled()
+
+    window.close()

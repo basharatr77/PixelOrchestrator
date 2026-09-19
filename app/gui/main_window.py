@@ -293,8 +293,11 @@ class MainWindow(QMainWindow):
 
         model = getattr(device, "model", None) or "Unknown"
         serial = getattr(device, "serial", None) or "Unknown"
+        state = getattr(device, "state", None) or "Unknown"
+        transport = getattr(device, "transport", None) or "Unknown"
+        module_type = getattr(device, "module_type", None) or "Unknown"
         self.device_details.setText(
-            f"Device: {device.device_id}    Model: {model}    Serial: {serial}"
+            f"Device: {device.device_id}    Model: {model}    Serial: {serial}    State: {state}    Transport: {transport}    Module: {module_type}"
         )
 
     def refresh_device_selector(self):

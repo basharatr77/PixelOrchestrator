@@ -1022,3 +1022,36 @@ def test_main_window_clears_device_details_when_selected_device_is_removed():
     assert window.device_details.text() == "No device selected."
 
     window.close()
+
+def test_main_window_shows_selected_device_state_and_transport():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:state-device",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="State Test Model",
+        serial="STATE-SERIAL",
+        transport="usb",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.device_selector.setCurrentIndex(0)
+
+    app.processEvents()
+
+    details = window.device_details.text()
+
+    assert "ADB" in details
+    assert "usb" in details
+    assert "ADB" in details
+
+    window.close()

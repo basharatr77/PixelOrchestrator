@@ -616,3 +616,48 @@ def test_main_window_dispatches_action_to_newly_selected_device():
     assert calls[-1][2] is second_device
 
     window.close()
+
+def test_main_window_rejects_action_when_selected_device_is_removed_from_registry():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:stale-device",
+        module_type=ModuleType.COMMON,
+        model="Stale Test",
+        serial="STALE123",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert window.selected_device_id == "test:stale-device"
+
+    registry.remove("test:stale-device")
+
+    captured = []
+
+    def capture(*args, **kwargs):
+        captured.append((args, kwargs))
+        return ActionResult(success=True, message="should not execute")
+
+    window.module_adapter.execute_action = capture
+
+    window.execute_module_action("common", "device_info")
+
+    app.processEvents()
+
+    assert captured == []
+
+    window.close()

@@ -876,3 +876,46 @@ def test_main_window_executes_dangerous_action_when_confirmation_is_yes():
     finally:
         QMessageBox.question = original_question
         window.close()
+
+def test_main_window_dangerous_confirmation_dialog_contract():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.module_adapter.registry.register(TestDangerousModule())
+
+    captured = {}
+
+    def question(parent, title, message, buttons, default_button):
+        captured["parent"] = parent
+        captured["title"] = title
+        captured["message"] = message
+        captured["buttons"] = buttons
+        captured["default_button"] = default_button
+        return QMessageBox.StandardButton.No
+
+    original_question = QMessageBox.question
+    QMessageBox.question = question
+
+    try:
+        window.execute_module_action(
+            "test_dangerous",
+            "dangerous_action",
+        )
+        app.processEvents()
+
+        assert captured["parent"] is window
+        assert captured["title"] == "Confirm Dangerous Action"
+        assert "Are you sure you want to execute 'Dangerous Action'?" in captured["message"]
+        assert "This action is marked as dangerous." in captured["message"]
+        assert captured["buttons"] == (
+            QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No
+        )
+        assert captured["default_button"] == QMessageBox.StandardButton.No
+    finally:
+        QMessageBox.question = original_question
+        window.close()

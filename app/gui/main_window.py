@@ -24,6 +24,8 @@ class MainWindow(QMainWindow):
         self.module_adapter = GUIModuleAdapter()
         self.device_registry = device_registry
         self.selected_device_id = None
+        self.device_details = QLabel('No device selected.')
+        self.device_details.setObjectName('device_details')
         self.device_selector = QComboBox()
         self.device_selector.currentIndexChanged.connect(self._on_device_selected)
         self._populate_device_selector()
@@ -108,6 +110,8 @@ class MainWindow(QMainWindow):
         header.addWidget(ai_status)
 
         workspace_layout.addLayout(header)
+
+        workspace_layout.addWidget(self.device_details)
 
         # Dynamic module/action workspace.
         self.module_scroll = QScrollArea()
@@ -247,6 +251,8 @@ class MainWindow(QMainWindow):
         else:
             self.selected_device_id = self.device_selector.itemData(index)
 
+        self._update_device_details()
+
         if not hasattr(self, "module_action_buttons"):
             return
 
@@ -275,8 +281,25 @@ class MainWindow(QMainWindow):
 
                 button.setEnabled(enabled)
 
+    def _update_device_details(self):
+        if self.device_registry is None or self.selected_device_id is None:
+            self.device_details.setText("No device selected.")
+            return
+
+        device = self.device_registry.get(self.selected_device_id)
+        if device is None:
+            self.device_details.setText("No device selected.")
+            return
+
+        model = getattr(device, "model", None) or "Unknown"
+        serial = getattr(device, "serial", None) or "Unknown"
+        self.device_details.setText(
+            f"Device: {device.device_id}    Model: {model}    Serial: {serial}"
+        )
+
     def refresh_device_selector(self):
         self._populate_device_selector()
+        self._update_device_details()
 
     def execute_module_action(self, module_id, action_id):
         """Execute a dynamically rendered module action."""

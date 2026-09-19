@@ -919,3 +919,106 @@ def test_main_window_dangerous_confirmation_dialog_contract():
     finally:
         QMessageBox.question = original_question
         window.close()
+
+def test_main_window_shows_selected_device_details():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:details-device",
+        module_type=ModuleType.COMMON,
+        model="Test Model",
+        serial="TEST-SERIAL",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.device_selector.setCurrentIndex(0)
+
+    app.processEvents()
+
+    assert hasattr(window, "device_details")
+    assert "test:details-device" in window.device_details.text()
+    assert "Test Model" in window.device_details.text()
+    assert "TEST-SERIAL" in window.device_details.text()
+
+    window.close()
+
+def test_main_window_updates_device_details_when_selection_changes():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    first = Device(
+        device_id="test:first-details",
+        module_type=ModuleType.COMMON,
+        model="First Model",
+        serial="FIRST-SERIAL",
+    )
+    second = Device(
+        device_id="test:second-details",
+        module_type=ModuleType.COMMON,
+        model="Second Model",
+        serial="SECOND-SERIAL",
+    )
+    registry.register(first)
+    registry.register(second)
+
+    window = MainWindow(device_registry=registry)
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert "test:first-details" in window.device_details.text()
+    assert "First Model" in window.device_details.text()
+    assert "FIRST-SERIAL" in window.device_details.text()
+
+    window.device_selector.setCurrentIndex(1)
+    app.processEvents()
+
+    assert "test:second-details" in window.device_details.text()
+    assert "Second Model" in window.device_details.text()
+    assert "SECOND-SERIAL" in window.device_details.text()
+
+    window.close()
+
+def test_main_window_clears_device_details_when_selected_device_is_removed():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:removed-details",
+        module_type=ModuleType.COMMON,
+        model="Removed Model",
+        serial="REMOVED-SERIAL",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert "test:removed-details" in window.device_details.text()
+
+    registry.remove("test:removed-details")
+    window.refresh_device_selector()
+    app.processEvents()
+
+    assert window.selected_device_id is None
+    assert window.device_details.text() == "No device selected."
+
+    window.close()

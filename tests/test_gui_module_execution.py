@@ -763,3 +763,116 @@ def test_main_window_shows_critical_for_action_exception():
     finally:
         QMessageBox.critical = original_critical
         window.close()
+
+class TestDangerousModule(ModuleContract):
+    manifest = ModuleManifest(
+        id="test_dangerous",
+        name="Test Dangerous",
+        version="1.0.0",
+        module_type=ModuleType.COMMON,
+        capabilities=(
+            Capability(
+                id="dangerous_capability",
+                name="Dangerous Capability",
+            ),
+        ),
+        actions=(
+            Action(
+                id="dangerous_action",
+                name="Dangerous Action",
+                capability_id="dangerous_capability",
+                requires_device=False,
+                dangerous=True,
+            ),
+        ),
+    )
+
+    def detect(self):
+        return []
+
+    def execute(self, action_id, device=None, **kwargs):
+        return ActionResult(
+            success=True,
+            message="dangerous action executed",
+        )
+
+
+def test_main_window_rejects_dangerous_action_when_confirmation_is_no():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.module_adapter.registry.register(TestDangerousModule())
+
+    captured = []
+
+    def capture(*args, **kwargs):
+        captured.append((args, kwargs))
+        return ActionResult(success=True, message="should not execute")
+
+    def question(parent, title, message, *args, **kwargs):
+        return QMessageBox.StandardButton.No
+
+    window.module_adapter.execute_action = capture
+    original_question = QMessageBox.question
+    QMessageBox.question = question
+
+    try:
+        window.execute_module_action(
+            "test_dangerous",
+            "dangerous_action",
+        )
+        app.processEvents()
+
+        assert captured == []
+    finally:
+        QMessageBox.question = original_question
+        window.close()
+
+def test_main_window_executes_dangerous_action_when_confirmation_is_yes():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.module_adapter.registry.register(TestDangerousModule())
+
+    captured = []
+
+    def capture(module_id, action_id, device=None, **kwargs):
+        captured.append((module_id, action_id, device, kwargs))
+        return ActionResult(
+            success=True,
+            message="dangerous action executed",
+        )
+
+    def question(parent, title, message, *args, **kwargs):
+        return QMessageBox.StandardButton.Yes
+
+    window.module_adapter.execute_action = capture
+    original_question = QMessageBox.question
+    QMessageBox.question = question
+
+    try:
+        window.execute_module_action(
+            "test_dangerous",
+            "dangerous_action",
+        )
+        app.processEvents()
+
+        assert captured == [
+            (
+                "test_dangerous",
+                "dangerous_action",
+                None,
+                {},
+            )
+        ]
+    finally:
+        QMessageBox.question = original_question
+        window.close()

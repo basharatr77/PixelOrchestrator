@@ -661,3 +661,105 @@ def test_main_window_rejects_action_when_selected_device_is_removed_from_registr
     assert captured == []
 
     window.close()
+
+def test_main_window_shows_success_message_for_successful_action():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+
+    captured = []
+
+    def capture(*args, **kwargs):
+        return ActionResult(
+            success=True,
+            message="GUI success contract.",
+        )
+
+    def information(parent, title, message, *args, **kwargs):
+        captured.append((title, message))
+
+    window.module_adapter.execute_action = capture
+    original_information = QMessageBox.information
+    QMessageBox.information = information
+
+    try:
+        window.execute_module_action("common", "refresh_devices")
+        app.processEvents()
+
+        assert captured == [
+            ("Module Action", "GUI success contract.")
+        ]
+    finally:
+        QMessageBox.information = original_information
+        window.close()
+
+def test_main_window_shows_warning_for_failed_action():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+
+    captured = []
+
+    def capture(*args, **kwargs):
+        return ActionResult(
+            success=False,
+            message="GUI failure contract.",
+        )
+
+    def warning(parent, title, message, *args, **kwargs):
+        captured.append((title, message))
+
+    window.module_adapter.execute_action = capture
+    original_warning = QMessageBox.warning
+    QMessageBox.warning = warning
+
+    try:
+        window.execute_module_action("common", "refresh_devices")
+        app.processEvents()
+
+        assert captured == [
+            ("Module Action", "GUI failure contract.")
+        ]
+    finally:
+        QMessageBox.warning = original_warning
+        window.close()
+
+def test_main_window_shows_critical_for_action_exception():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+
+    captured = []
+
+    def capture(*args, **kwargs):
+        raise RuntimeError("GUI exception contract.")
+
+    def critical(parent, title, message, *args, **kwargs):
+        captured.append((title, message))
+
+    window.module_adapter.execute_action = capture
+    original_critical = QMessageBox.critical
+    QMessageBox.critical = critical
+
+    try:
+        window.execute_module_action("common", "refresh_devices")
+        app.processEvents()
+
+        assert captured == [
+            ("Module Action Error", "GUI exception contract.")
+        ]
+    finally:
+        QMessageBox.critical = original_critical
+        window.close()

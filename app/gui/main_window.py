@@ -230,6 +230,11 @@ class MainWindow(QMainWindow):
             index = self.device_selector.findData(selected_device_id)
             if index >= 0:
                 self.device_selector.setCurrentIndex(index)
+        elif selected_device_id is None:
+            self.device_selector.setCurrentIndex(-1)
+            self.device_selector.setPlaceholderText("Select a device")
+        elif device_ids:
+            self.device_selector.setCurrentIndex(0)
 
     def _on_device_selected(self, index):
         if index < 0:

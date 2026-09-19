@@ -374,3 +374,100 @@ def test_main_window_device_selector_is_attached_to_visible_gui_layout():
     assert window.device_selector.parentWidget().layout() is not None
 
     window.close()
+
+def test_main_window_device_selector_shows_selected_device_identity():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="test:visible-device",
+            module_type=ModuleType.COMMON,
+            model="Pixel Test",
+            serial="ABC123",
+        )
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert "test:visible-device" in window.device_selector.currentText()
+
+    window.close()
+
+def test_main_window_device_selector_updates_visible_identity_when_selection_changes():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="test:first-device",
+            module_type=ModuleType.COMMON,
+            model="First Test",
+            serial="FIRST123",
+        )
+    )
+    registry.register(
+        Device(
+            device_id="test:second-device",
+            module_type=ModuleType.COMMON,
+            model="Second Test",
+            serial="SECOND123",
+        )
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(1)
+    app.processEvents()
+
+    assert window.selected_device_id == "test:second-device"
+    assert "test:second-device" in window.device_selector.currentText()
+
+    window.close()
+
+def test_main_window_device_selector_clearly_represents_no_selected_device():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="test:first-device",
+            module_type=ModuleType.COMMON,
+            model="First Test",
+            serial="FIRST123",
+        )
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    assert window.selected_device_id is None
+    assert window.device_selector.placeholderText() == "Select a device"
+
+    window.close()

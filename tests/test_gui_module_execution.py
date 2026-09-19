@@ -567,3 +567,52 @@ def test_main_window_disables_device_required_action_when_selected_device_is_rem
     assert not button.isEnabled()
 
     window.close()
+
+def test_main_window_dispatches_action_to_newly_selected_device():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType, ActionResult
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    first_device = Device(
+        device_id="test:first-device",
+        module_type=ModuleType.COMMON,
+        model="First Test",
+        serial="FIRST123",
+    )
+    second_device = Device(
+        device_id="test:second-device",
+        module_type=ModuleType.COMMON,
+        model="Second Test",
+        serial="SECOND123",
+    )
+    registry.register(first_device)
+    registry.register(second_device)
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    calls = []
+
+    def fake_execute_action(module_id, action_id, device=None, **kwargs):
+        calls.append((module_id, action_id, device))
+        return ActionResult(success=True)
+
+    window.module_adapter.execute_action = fake_execute_action
+
+    window.device_selector.setCurrentIndex(1)
+    app.processEvents()
+
+    assert window.selected_device_id == "test:second-device"
+
+    window.execute_module_action("common", "device_info")
+
+    assert calls[-1][0:2] == ("common", "device_info")
+    assert calls[-1][2] is second_device
+
+    window.close()

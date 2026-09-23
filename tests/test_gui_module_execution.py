@@ -1204,3 +1204,27 @@ def test_main_window_groups_connection_status_information():
     assert window.device_connection_group.isVisible()
 
     window.close()
+def test_main_window_device_workspace_has_visual_hierarchy_groups():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    assert hasattr(window, "device_identity_group")
+    assert hasattr(window, "device_connection_group")
+    assert hasattr(window, "device_operations_group")
+
+    assert window.device_identity_group.parentWidget() is window.device_workspace
+    assert window.device_connection_group.parentWidget() is window.device_workspace
+    assert window.device_operations_group.parentWidget() is window.device_workspace
+
+    assert window.device_identity_group.isVisible()
+    assert window.device_connection_group.isVisible()
+    assert window.device_operations_group.isVisible()
+
+    window.close()

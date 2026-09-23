@@ -141,8 +141,11 @@ class MainWindow(QMainWindow):
         device_connection_layout.addWidget(self.device_transport)
         device_connection_layout.addWidget(self.device_module_type)
         device_workspace_layout.addWidget(self.device_connection_group)
-        workspace_layout.addWidget(self.device_workspace)
 
+        self.device_operations_group = QFrame()
+        self.device_operations_group.setObjectName("device_operations_group")
+        device_operations_layout = QVBoxLayout(self.device_operations_group)
+        device_operations_layout.setContentsMargins(0, 0, 0, 0)
 
         # Dynamic module/action workspace.
         self.operations_panel = QFrame()
@@ -161,7 +164,9 @@ class MainWindow(QMainWindow):
 
         self.module_scroll.setWidget(self.module_container)
         operations_layout.addWidget(self.module_scroll)
-        workspace_layout.addWidget(self.operations_panel, 1)
+        device_operations_layout.addWidget(self.operations_panel)
+        device_workspace_layout.addWidget(self.device_operations_group, 1)
+        workspace_layout.addWidget(self.device_workspace, 1)
 
         self.refresh_module_action_ui()
 

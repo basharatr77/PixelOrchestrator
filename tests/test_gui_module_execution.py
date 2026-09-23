@@ -1089,3 +1089,61 @@ def test_main_window_action_button_exposes_real_capability_id():
     assert "device_information" in button.toolTip()
 
     window.close()
+
+def test_main_window_exposes_professional_device_operations_workspace():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QFrame
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    assert isinstance(window.device_workspace, QFrame)
+    assert window.device_workspace.objectName() == "device_workspace"
+    assert isinstance(window.operations_panel, QFrame)
+    assert window.operations_panel.objectName() == "operations_panel"
+    assert window.device_workspace.isVisible()
+    assert window.operations_panel.isVisible()
+
+    window.close()
+def test_main_window_exposes_structured_device_information_fields():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QLabel
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+
+    assert isinstance(window.device_model, QLabel)
+    assert isinstance(window.device_serial, QLabel)
+    assert isinstance(window.device_state, QLabel)
+    assert isinstance(window.device_transport, QLabel)
+    assert isinstance(window.device_module_type, QLabel)
+
+    window.close()
+def test_main_window_places_structured_device_information_in_workspace():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    for field in (
+        window.device_model,
+        window.device_serial,
+        window.device_state,
+        window.device_transport,
+        window.device_module_type,
+    ):
+        assert field.parentWidget() is window.device_workspace
+        assert field.isVisible()
+
+    window.close()

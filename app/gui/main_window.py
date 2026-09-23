@@ -26,6 +26,11 @@ class MainWindow(QMainWindow):
         self.selected_device_id = None
         self.device_details = QLabel('No device selected.')
         self.device_details.setObjectName('device_details')
+        self.device_model = QLabel("Model: Unknown")
+        self.device_serial = QLabel("Serial: Unknown")
+        self.device_state = QLabel("State: Unknown")
+        self.device_transport = QLabel("Transport: Unknown")
+        self.device_module_type = QLabel("Module: Unknown")
         self.device_selector = QComboBox()
         self.device_selector.currentIndexChanged.connect(self._on_device_selected)
         self._populate_device_selector()
@@ -111,9 +116,25 @@ class MainWindow(QMainWindow):
 
         workspace_layout.addLayout(header)
 
-        workspace_layout.addWidget(self.device_details)
+        self.device_workspace = QFrame()
+        self.device_workspace.setObjectName("device_workspace")
+        device_workspace_layout = QVBoxLayout(self.device_workspace)
+        device_workspace_layout.setContentsMargins(16, 14, 16, 14)
+        device_workspace_layout.addWidget(self.device_details)
+        device_workspace_layout.addWidget(self.device_model)
+        device_workspace_layout.addWidget(self.device_serial)
+        device_workspace_layout.addWidget(self.device_state)
+        device_workspace_layout.addWidget(self.device_transport)
+        device_workspace_layout.addWidget(self.device_module_type)
+        workspace_layout.addWidget(self.device_workspace)
+
 
         # Dynamic module/action workspace.
+        self.operations_panel = QFrame()
+        self.operations_panel.setObjectName("operations_panel")
+        operations_layout = QVBoxLayout(self.operations_panel)
+        operations_layout.setContentsMargins(16, 14, 16, 14)
+
         self.module_scroll = QScrollArea()
         self.module_scroll.setWidgetResizable(True)
         self.module_scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -124,7 +145,8 @@ class MainWindow(QMainWindow):
         self.module_layout.setSpacing(12)
 
         self.module_scroll.setWidget(self.module_container)
-        workspace_layout.addWidget(self.module_scroll, 1)
+        operations_layout.addWidget(self.module_scroll)
+        workspace_layout.addWidget(self.operations_panel, 1)
 
         self.refresh_module_action_ui()
 
@@ -288,11 +310,21 @@ class MainWindow(QMainWindow):
     def _update_device_details(self):
         if self.device_registry is None or self.selected_device_id is None:
             self.device_details.setText("No device selected.")
+            self.device_model.setText("Model: Unknown")
+            self.device_serial.setText("Serial: Unknown")
+            self.device_state.setText("State: Unknown")
+            self.device_transport.setText("Transport: Unknown")
+            self.device_module_type.setText("Module: Unknown")
             return
 
         device = self.device_registry.get(self.selected_device_id)
         if device is None:
             self.device_details.setText("No device selected.")
+            self.device_model.setText("Model: Unknown")
+            self.device_serial.setText("Serial: Unknown")
+            self.device_state.setText("State: Unknown")
+            self.device_transport.setText("Transport: Unknown")
+            self.device_module_type.setText("Module: Unknown")
             return
 
         model = getattr(device, "model", None) or "Unknown"
@@ -301,8 +333,18 @@ class MainWindow(QMainWindow):
         transport = getattr(device, "transport", None) or "Unknown"
         module_type = getattr(device, "module_type", None) or "Unknown"
         self.device_details.setText(
-            f"Device: {device.device_id}    Model: {model}    Serial: {serial}    State: {state}    Transport: {transport}    Module: {module_type}"
-        )
+        f"Device: {device.device_id} | "
+        f"Model: {model} | "
+        f"Serial: {serial} | "
+        f"State: {state} | "
+        f"Transport: {transport} | "
+        f"Module: {module_type}"
+    )
+        self.device_model.setText(f"Model: {model}")
+        self.device_serial.setText(f"Serial: {serial}")
+        self.device_state.setText(f"State: {state}")
+        self.device_transport.setText(f"Transport: {transport}")
+        self.device_module_type.setText(f"Module: {module_type}")
 
     def refresh_device_selector(self):
         self._populate_device_selector()

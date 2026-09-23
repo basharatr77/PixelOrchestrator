@@ -1266,3 +1266,71 @@ def test_main_window_exposes_selected_device_metadata():
     assert window.device_android_version.text() == "Android: 15"
 
     window.close()
+
+
+def test_main_window_enables_action_when_selected_device_has_capability():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:capability-present",
+        module_type=ModuleType.COMMON,
+        capabilities=("test_capability",),
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.module_adapter.registry.register(TestExecutableModule())
+    window.refresh_module_action_ui()
+
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    button = window.module_action_buttons["test_exec"]["test_action"]
+
+    assert window.selected_device_id == "test:capability-present"
+    assert button.isEnabled()
+
+    window.close()
+
+
+def test_main_window_disables_action_when_selected_device_lacks_capability():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:capability-missing",
+        module_type=ModuleType.COMMON,
+    )
+    device.capabilities = ()
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.module_adapter.registry.register(TestExecutableModule())
+    window.refresh_module_action_ui()
+
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    button = window.module_action_buttons["test_exec"]["test_action"]
+
+    assert window.selected_device_id == "test:capability-missing"
+    assert not button.isEnabled()
+
+    window.close()

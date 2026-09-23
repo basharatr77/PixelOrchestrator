@@ -335,6 +335,15 @@ class MainWindow(QMainWindow):
                         and self.selected_device_id is not None
                     )
 
+                if enabled and action.capability_id:
+                    device = None
+                    if self.selected_device_id is not None and self.device_registry is not None:
+                        device = self.device_registry.get(self.selected_device_id)
+
+                    capabilities = getattr(device, 'capabilities', None)
+                    if capabilities is not None:
+                        enabled = action.capability_id in capabilities
+
                 button.setEnabled(enabled)
 
     def _update_device_details(self):

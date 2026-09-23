@@ -69,6 +69,7 @@ class Device:
     serial: str | None = None
     transport: str | None = None
     properties: dict[str, Any] = field(default_factory=dict)
+    capabilities: tuple[str, ...] | None = None
 
 
 @dataclass

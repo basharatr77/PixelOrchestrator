@@ -1055,3 +1055,37 @@ def test_main_window_shows_selected_device_state_and_transport():
     assert "ADB" in details
 
     window.close()
+
+
+def test_main_window_action_button_exposes_capability_id():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.module_adapter.registry.register(TestExecutableModule())
+    window.refresh_module_action_ui()
+
+    button = window.module_action_buttons["test_exec"]["test_action"]
+
+    assert "test_capability" in button.toolTip()
+
+    window.close()
+
+
+def test_main_window_action_button_exposes_real_capability_id():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+
+    button = window.module_action_buttons["common"]["device_info"]
+
+    assert "device_information" in button.toolTip()
+
+    window.close()

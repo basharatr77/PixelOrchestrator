@@ -204,10 +204,14 @@ class MainWindow(QMainWindow):
                     enabled = enabled and self.selected_device_id is not None
 
                 button.setEnabled(enabled)
-                button.setToolTip(
-                    action.get("description")
-                    or action.get("capability_id", "")
+                description = action.get("description") or ""
+                capability_id = action.get("capability_id") or ""
+                tooltip = (
+                    f"{description} [{capability_id}]"
+                    if description and capability_id
+                    else description or capability_id
                 )
+                button.setToolTip(tooltip)
 
                 button.clicked.connect(
                     lambda checked=False,

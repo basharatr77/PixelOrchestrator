@@ -1168,3 +1168,21 @@ def test_main_window_groups_device_identity_information():
     assert window.device_serial.parentWidget() is window.device_identity_group
 
     window.close()
+
+def test_main_window_identity_group_has_visible_heading():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    assert hasattr(window, "device_identity_heading")
+    assert window.device_identity_heading.text() == "Device Identity"
+    assert window.device_identity_heading.parentWidget() is window.device_identity_group
+    assert window.device_identity_heading.isVisible()
+
+    window.close()

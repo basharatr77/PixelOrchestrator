@@ -1228,3 +1228,41 @@ def test_main_window_device_workspace_has_visual_hierarchy_groups():
     assert window.device_operations_group.isVisible()
 
     window.close()
+def test_main_window_exposes_selected_device_metadata():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="meta-device-1",
+        module_type=ModuleType.COMMON,
+        state=DeviceState.CONNECTED,
+        model="Pixel Test",
+        serial="META123",
+        transport="ADB",
+        properties={
+            "brand": "Google",
+            "android_version": "15",
+        },
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert hasattr(window, "device_brand")
+    assert hasattr(window, "device_android_version")
+
+    assert window.device_brand.text() == "Brand: Google"
+    assert window.device_android_version.text() == "Android: 15"
+
+    window.close()

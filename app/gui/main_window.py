@@ -31,6 +31,8 @@ class MainWindow(QMainWindow):
         self.device_state = QLabel("State: Unknown")
         self.device_transport = QLabel("Transport: Unknown")
         self.device_module_type = QLabel("Module: Unknown")
+        self.device_brand = QLabel("Brand: Unknown")
+        self.device_android_version = QLabel("Android: Unknown")
         self.device_selector = QComboBox()
         self.device_selector.currentIndexChanged.connect(self._on_device_selected)
         self._populate_device_selector()
@@ -141,6 +143,14 @@ class MainWindow(QMainWindow):
         device_connection_layout.addWidget(self.device_transport)
         device_connection_layout.addWidget(self.device_module_type)
         device_workspace_layout.addWidget(self.device_connection_group)
+
+        self.device_metadata_group = QFrame()
+        self.device_metadata_group.setObjectName("device_metadata_group")
+        device_metadata_layout = QVBoxLayout(self.device_metadata_group)
+        device_metadata_layout.setContentsMargins(0, 0, 0, 0)
+        device_metadata_layout.addWidget(self.device_brand)
+        device_metadata_layout.addWidget(self.device_android_version)
+        device_workspace_layout.addWidget(self.device_metadata_group)
 
         self.device_operations_group = QFrame()
         self.device_operations_group.setObjectName("device_operations_group")
@@ -335,6 +345,8 @@ class MainWindow(QMainWindow):
             self.device_state.setText("State: Unknown")
             self.device_transport.setText("Transport: Unknown")
             self.device_module_type.setText("Module: Unknown")
+            self.device_brand.setText("Brand: Unknown")
+            self.device_android_version.setText("Android: Unknown")
             return
 
         device = self.device_registry.get(self.selected_device_id)
@@ -345,6 +357,8 @@ class MainWindow(QMainWindow):
             self.device_state.setText("State: Unknown")
             self.device_transport.setText("Transport: Unknown")
             self.device_module_type.setText("Module: Unknown")
+            self.device_brand.setText("Brand: Unknown")
+            self.device_android_version.setText("Android: Unknown")
             return
 
         model = getattr(device, "model", None) or "Unknown"
@@ -365,6 +379,11 @@ class MainWindow(QMainWindow):
         self.device_state.setText(f"State: {state}")
         self.device_transport.setText(f"Transport: {transport}")
         self.device_module_type.setText(f"Module: {module_type}")
+        properties = getattr(device, "properties", {}) or {}
+        brand = properties.get("brand") or "Unknown"
+        android_version = properties.get("android_version") or "Unknown"
+        self.device_brand.setText(f"Brand: {brand}")
+        self.device_android_version.setText(f"Android: {android_version}")
 
     def refresh_device_selector(self):
         self._populate_device_selector()

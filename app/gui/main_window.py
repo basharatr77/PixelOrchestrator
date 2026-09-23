@@ -133,9 +133,14 @@ class MainWindow(QMainWindow):
         device_identity_layout.addWidget(self.device_serial)
         device_workspace_layout.addWidget(self.device_identity_group)
 
-        device_workspace_layout.addWidget(self.device_state)
-        device_workspace_layout.addWidget(self.device_transport)
-        device_workspace_layout.addWidget(self.device_module_type)
+        self.device_connection_group = QFrame()
+        self.device_connection_group.setObjectName("device_connection_group")
+        device_connection_layout = QVBoxLayout(self.device_connection_group)
+        device_connection_layout.setContentsMargins(0, 0, 0, 0)
+        device_connection_layout.addWidget(self.device_state)
+        device_connection_layout.addWidget(self.device_transport)
+        device_connection_layout.addWidget(self.device_module_type)
+        device_workspace_layout.addWidget(self.device_connection_group)
         workspace_layout.addWidget(self.device_workspace)
 
 

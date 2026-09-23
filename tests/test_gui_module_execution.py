@@ -1148,7 +1148,7 @@ def test_main_window_places_structured_device_information_in_workspace():
         window.device_transport,
         window.device_module_type,
     ):
-        assert field.parentWidget() is window.device_workspace
+        assert field.parentWidget() is window.device_connection_group
         assert field.isVisible()
 
     window.close()
@@ -1184,5 +1184,23 @@ def test_main_window_identity_group_has_visible_heading():
     assert window.device_identity_heading.text() == "Device Identity"
     assert window.device_identity_heading.parentWidget() is window.device_identity_group
     assert window.device_identity_heading.isVisible()
+
+    window.close()
+def test_main_window_groups_connection_status_information():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    assert hasattr(window, "device_connection_group")
+    assert window.device_state.parentWidget() is window.device_connection_group
+    assert window.device_transport.parentWidget() is window.device_connection_group
+    assert window.device_module_type.parentWidget() is window.device_connection_group
+    assert window.device_connection_group.isVisible()
 
     window.close()

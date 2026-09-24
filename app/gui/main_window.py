@@ -109,6 +109,23 @@ class MainWindow(QMainWindow):
         workspace_layout.setContentsMargins(28, 24, 28, 20)
         workspace_layout.setSpacing(18)
 
+        self.dashboard_workspace = QFrame()
+        self.dashboard_workspace.setObjectName("dashboard_workspace")
+        dashboard_layout = QVBoxLayout(self.dashboard_workspace)
+        dashboard_layout.setContentsMargins(16, 14, 16, 14)
+
+        dashboard_title = QLabel("Dashboard")
+        dashboard_title.setObjectName("workspace_title")
+        dashboard_layout.addWidget(dashboard_title)
+
+        dashboard_placeholder = QLabel(
+            "Dashboard workspace is ready. Device operations are available from Devices."
+        )
+        dashboard_layout.addWidget(dashboard_placeholder)
+        dashboard_layout.addStretch()
+
+        workspace_layout.addWidget(self.dashboard_workspace, 1)
+
         header = QHBoxLayout()
 
         heading = QLabel("AI WORKSPACE")
@@ -183,6 +200,13 @@ class MainWindow(QMainWindow):
         device_operations_layout.addWidget(self.operations_panel)
         device_workspace_layout.addWidget(self.device_operations_group, 1)
         workspace_layout.addWidget(self.device_workspace, 1)
+
+        self._workspaces = {
+            "dashboard": self.dashboard_workspace,
+            "devices": self.device_workspace,
+        }
+
+        self._show_workspace("devices")
 
         self.refresh_module_action_ui()
 
@@ -516,20 +540,26 @@ class MainWindow(QMainWindow):
                 str(exc),
             )
 
+    def _show_workspace(self, workspace_id):
+        """Show one registered workspace and hide the others."""
+        workspace = self._workspaces[workspace_id]
+
+        for candidate in self._workspaces.values():
+            candidate.setVisible(candidate is workspace)
+
+        workspace.raise_()
+
     def open_dashboard(self):
         """Show the main dashboard workspace."""
-        self.device_workspace.show()
-        self.device_workspace.raise_()
+        self._show_workspace("dashboard")
 
     def open_devices(self):
         """Show the device operations workspace."""
-        self.device_workspace.show()
-        self.device_workspace.raise_()
+        self._show_workspace("devices")
 
     def open_tools(self):
         """Show the available device tools workspace."""
-        self.device_workspace.show()
-        self.device_workspace.raise_()
+        self._show_workspace("devices")
 
     def open_database(self):
         """Open the database navigation surface."""

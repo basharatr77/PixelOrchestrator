@@ -1876,3 +1876,32 @@ def test_selected_device_capability_gates_module_actions():
         assert not adb_buttons["shell"].isEnabled()
     finally:
         window.close()
+
+def test_main_window_sidebar_switches_between_distinct_workspaces():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QPushButton
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    try:
+        sidebar = {
+            button.text(): button
+            for button in window.findChildren(QPushButton)
+            if button.text() in {"Dashboard", "Devices", "Tools"}
+        }
+
+        sidebar["Devices"].click()
+        app.processEvents()
+        assert window.device_workspace.isVisible()
+
+        sidebar["Dashboard"].click()
+        app.processEvents()
+
+        assert window.dashboard_workspace.isVisible()
+        assert not window.device_workspace.isVisible()
+    finally:
+        window.close()

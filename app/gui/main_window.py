@@ -94,6 +94,12 @@ class MainWindow(QMainWindow):
         device_manager_button.clicked.connect(self.open_device_manager)
         drivers_button.clicked.connect(self.open_drivers_folder)
         ai_button.clicked.connect(self.open_ai_assistant)
+        dashboard_button.clicked.connect(self.open_dashboard)
+        devices_button.clicked.connect(self.open_devices)
+        tools_button.clicked.connect(self.open_tools)
+        database_button.clicked.connect(self.open_database)
+        logs_button.clicked.connect(self.open_logs)
+        settings_button.clicked.connect(self.open_settings)
 
         sidebar_layout.addStretch()
 
@@ -509,6 +515,45 @@ class MainWindow(QMainWindow):
                 "Module Action Error",
                 str(exc),
             )
+
+    def open_dashboard(self):
+        """Show the main dashboard workspace."""
+        self.device_workspace.show()
+        self.device_workspace.raise_()
+
+    def open_devices(self):
+        """Show the device operations workspace."""
+        self.device_workspace.show()
+        self.device_workspace.raise_()
+
+    def open_tools(self):
+        """Show the available device tools workspace."""
+        self.device_workspace.show()
+        self.device_workspace.raise_()
+
+    def open_database(self):
+        """Open the database navigation surface."""
+        QMessageBox.information(
+            self,
+            "Database",
+            "Database workspace is not implemented yet.",
+        )
+
+    def open_logs(self):
+        """Open the logs navigation surface."""
+        QMessageBox.information(
+            self,
+            "Logs",
+            "Logs workspace is not implemented yet.",
+        )
+
+    def open_settings(self):
+        """Open the settings navigation surface."""
+        QMessageBox.information(
+            self,
+            "Settings",
+            "Settings workspace is not implemented yet.",
+        )
 
     def open_ai_assistant(self):
         """Open the AI Assistant interaction."""

@@ -1747,3 +1747,39 @@ def test_main_window_shows_structured_result_data_for_successful_action(monkeypa
     assert "DATA123" in shown_message
     assert "Pixel Test" in shown_message
     assert "android_version" in shown_message
+
+def test_main_window_primary_sidebar_buttons_are_wired():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+
+    try:
+        from PyQt6.QtWidgets import QPushButton
+
+        sidebar_buttons = {
+            button.text(): button
+            for button in window.findChildren(QPushButton)
+        }
+
+        expected = [
+            "Dashboard",
+            "Devices",
+            "Tools",
+            "AI Assistant",
+            "Database",
+            "Logs",
+            "Settings",
+        ]
+
+        for label in expected:
+            assert label in sidebar_buttons
+            assert sidebar_buttons[label].receivers(
+                sidebar_buttons[label].clicked
+            ) >= 1, f"{label} sidebar button is not wired"
+
+    finally:
+        window.close()

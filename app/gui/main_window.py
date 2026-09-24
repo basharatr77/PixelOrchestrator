@@ -126,6 +126,23 @@ class MainWindow(QMainWindow):
 
         workspace_layout.addWidget(self.dashboard_workspace, 1)
 
+        self.logs_workspace = QFrame()
+        self.logs_workspace.setObjectName("logs_workspace")
+        logs_layout = QVBoxLayout(self.logs_workspace)
+        logs_layout.setContentsMargins(16, 14, 16, 14)
+
+        logs_title = QLabel("Logs")
+        logs_title.setObjectName("workspace_title")
+        logs_layout.addWidget(logs_title)
+
+        logs_placeholder = QLabel(
+            "Logs workspace is ready. Event log display will be added separately."
+        )
+        logs_layout.addWidget(logs_placeholder)
+        logs_layout.addStretch()
+
+        workspace_layout.addWidget(self.logs_workspace, 1)
+
         header = QHBoxLayout()
 
         heading = QLabel("AI WORKSPACE")
@@ -204,6 +221,7 @@ class MainWindow(QMainWindow):
         self._workspaces = {
             "dashboard": self.dashboard_workspace,
             "devices": self.device_workspace,
+            "logs": self.logs_workspace,
         }
 
         self._show_workspace("devices")
@@ -570,12 +588,8 @@ class MainWindow(QMainWindow):
         )
 
     def open_logs(self):
-        """Open the logs navigation surface."""
-        QMessageBox.information(
-            self,
-            "Logs",
-            "Logs workspace is not implemented yet.",
-        )
+        """Show the logs workspace."""
+        self._show_workspace("logs")
 
     def open_settings(self):
         """Open the settings navigation surface."""

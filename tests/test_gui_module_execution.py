@@ -1783,3 +1783,96 @@ def test_main_window_primary_sidebar_buttons_are_wired():
 
     finally:
         window.close()
+
+def test_devices_sidebar_activates_device_workspace_and_shows_identity():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QPushButton
+
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    device = Device(
+        device_id="test-device-001",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Test Model",
+        serial="TEST123",
+        transport="adb",
+    )
+
+    class FakeDeviceRegistry:
+        def snapshot(self):
+            return [device.device_id]
+
+        def get(self, device_id):
+            return device if device_id == device.device_id else None
+
+    window = MainWindow(device_registry=FakeDeviceRegistry())
+    window.show()
+
+    try:
+        sidebar = {
+            button.text(): button
+            for button in window.findChildren(QPushButton)
+        }
+
+        assert "Devices" in sidebar
+
+        assert window.device_selector.count() == 1
+        window.device_selector.setCurrentIndex(0)
+
+        sidebar["Devices"].click()
+
+        assert window.device_workspace.isVisible()
+
+        assert window.device_model.text() == "Model: Test Model"
+        assert window.device_serial.text() == "Serial: TEST123"
+        assert window.device_state.text() == "State: DeviceState.ADB"
+        assert window.device_transport.text() == "Transport: adb"
+        assert "Device: test-device-001" in window.device_details.text()
+        assert "Model: Test Model" in window.device_details.text()
+        assert "Serial: TEST123" in window.device_details.text()
+    finally:
+        window.close()
+
+
+def test_selected_device_capability_gates_module_actions():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    device = Device(
+        device_id="test-device-capability",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Capability Test",
+        serial="CAP123",
+        transport="adb",
+        capabilities=("adb_information",),
+    )
+
+    class FakeDeviceRegistry:
+        def snapshot(self):
+            return [device.device_id]
+
+        def get(self, device_id):
+            return device if device_id == device.device_id else None
+
+    window = MainWindow(device_registry=FakeDeviceRegistry())
+    window.show()
+
+    try:
+        window.device_selector.setCurrentIndex(0)
+
+        adb_buttons = window.module_action_buttons["adb"]
+
+        assert adb_buttons["device_info"].isEnabled()
+        assert not adb_buttons["shell"].isEnabled()
+    finally:
+        window.close()

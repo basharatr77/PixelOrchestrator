@@ -135,6 +135,8 @@ def test_adapter_returns_gui_action_buttons():
             "requires_device": True,
             "dangerous": False,
             "enabled": True,
+            "allowed_states": None,
+            "allowed_transports": None,
         }
     ]
 

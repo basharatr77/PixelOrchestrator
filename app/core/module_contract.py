@@ -56,6 +56,8 @@ class Action:
     requires_device: bool = True
     dangerous: bool = False
     enabled: bool = True
+    allowed_transports: tuple[str, ...] | None = None
+    allowed_states: tuple[str, ...] | None = None
 
 
 @dataclass

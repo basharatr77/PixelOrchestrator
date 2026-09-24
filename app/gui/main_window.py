@@ -344,6 +344,23 @@ class MainWindow(QMainWindow):
                     if capabilities is not None:
                         enabled = action.capability_id in capabilities
 
+                if enabled and action.allowed_transports is not None:
+                    device = None
+                    if self.selected_device_id is not None and self.device_registry is not None:
+                        device = self.device_registry.get(self.selected_device_id)
+
+                    transport = getattr(device, 'transport', None)
+                    enabled = transport in action.allowed_transports
+
+                if enabled and action.allowed_states is not None:
+                    device = None
+                    if self.selected_device_id is not None and self.device_registry is not None:
+                        device = self.device_registry.get(self.selected_device_id)
+
+                    state = getattr(device, 'state', None)
+                    state_value = getattr(state, 'value', state)
+                    enabled = state_value in action.allowed_states
+
                 button.setEnabled(enabled)
 
     def _update_device_details(self):

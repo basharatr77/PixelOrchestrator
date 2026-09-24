@@ -1334,3 +1334,319 @@ def test_main_window_disables_action_when_selected_device_lacks_capability():
     assert not button.isEnabled()
 
     window.close()
+
+def test_main_window_enables_action_when_selected_device_has_allowed_transport():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:transport-context-allowed",
+        module_type=ModuleType.COMMON,
+        transport="fastboot",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+
+    action = Action(
+        id="test_transport_action_allowed",
+        name="Fastboot Action",
+        capability_id="test_capability",
+        requires_device=True,
+        allowed_transports=("fastboot",),
+    )
+
+    class TestAllowedTransportModule(ModuleContract):
+        manifest = ModuleManifest(
+            id="test_transport_allowed",
+            name="Test Allowed Transport",
+            version="1.0.0",
+            module_type=ModuleType.COMMON,
+            capabilities=(
+                Capability(
+                    id="test_capability",
+                    name="Test Capability",
+                ),
+            ),
+            actions=(action,),
+        )
+
+        def detect(self):
+            return []
+
+        def execute(self, action_id, device=None, **kwargs):
+            return ActionResult(success=True, message="Test action executed.")
+
+    window.module_adapter.registry.register(TestAllowedTransportModule())
+    window.refresh_module_action_ui()
+
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    button = window.module_action_buttons[
+        "test_transport_allowed"
+    ]["test_transport_action_allowed"]
+
+    assert window.selected_device_id == "test:transport-context-allowed"
+    assert button.isEnabled()
+
+    window.close()
+
+
+
+def test_main_window_enables_action_when_selected_device_has_allowed_state():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:state-context-allowed",
+        module_type=ModuleType.COMMON,
+        state="recovery",
+        transport="usb",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+
+    action = Action(
+        id="test_state_allowed_action",
+        name="Recovery Action",
+        capability_id="test_capability",
+        requires_device=True,
+        allowed_states=("recovery",),
+    )
+
+    class TestStateContextAllowedModule(ModuleContract):
+        manifest = ModuleManifest(
+            id="test_state_context_allowed",
+            name="Test State Context Allowed",
+            version="1.0.0",
+            module_type=ModuleType.COMMON,
+            capabilities=(Capability(id="test_capability", name="Test Capability"),),
+            actions=(action,),
+        )
+
+        def detect(self):
+            return []
+
+        def execute(self, action_id, *, device=None, parameters=None):
+            return ActionResult(success=True, message="Test action executed.")
+
+    window.module_adapter.registry.register(TestStateContextAllowedModule())
+    window.refresh_module_action_ui()
+    window.show()
+    app.processEvents()
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    button = window.module_action_buttons["test_state_context_allowed"]["test_state_allowed_action"]
+
+    assert window.selected_device_id == "test:state-context-allowed"
+    assert button.isEnabled()
+
+    window.close()
+
+
+def test_main_window_disables_action_when_selected_device_has_wrong_state():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:state-context",
+        module_type=ModuleType.COMMON,
+        state="fastboot",
+        transport="usb",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+
+    action = Action(
+        id="test_state_action",
+        name="Recovery Action",
+        capability_id="test_capability",
+        requires_device=True,
+        allowed_states=("recovery",),
+    )
+
+    class TestStateContextModule(ModuleContract):
+        manifest = ModuleManifest(
+            id="test_state_context",
+            name="Test State Context",
+            version="1.0.0",
+            module_type=ModuleType.COMMON,
+            capabilities=(
+                Capability(
+                    id="test_capability",
+                    name="Test Capability",
+                ),
+            ),
+            actions=(action,),
+        )
+
+        def detect(self):
+            return []
+
+        def execute(self, action_id, device=None, **kwargs):
+            return ActionResult(success=True, message="Test action executed.")
+
+    window.module_adapter.registry.register(TestStateContextModule())
+    window.refresh_module_action_ui()
+
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    button = window.module_action_buttons[
+        "test_state_context"
+    ]["test_state_action"]
+
+    assert window.selected_device_id == "test:state-context"
+    assert not button.isEnabled()
+
+    window.close()
+
+
+
+def test_main_window_keeps_unrestricted_action_enabled_without_context_filters():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:unrestricted-context",
+        module_type=ModuleType.COMMON,
+        state="fastboot",
+        transport="usb",
+        capabilities=("test_capability",),
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+
+    action = Action(
+        id="test_unrestricted_action",
+        name="Unrestricted Action",
+        capability_id="test_capability",
+        requires_device=True,
+        allowed_transports=None,
+        allowed_states=None,
+    )
+
+    class TestUnrestrictedContextModule(ModuleContract):
+        manifest = ModuleManifest(
+            id="test_unrestricted_context",
+            name="Test Unrestricted Context",
+            version="1.0.0",
+            module_type=ModuleType.COMMON,
+            capabilities=(Capability(id="test_capability", name="Test Capability"),),
+            actions=(action,),
+        )
+
+        def detect(self):
+            return []
+
+        def execute(self, action_id, *, device=None, parameters=None):
+            return ActionResult(success=True, message="Test action executed.")
+
+    window.module_adapter.registry.register(TestUnrestrictedContextModule())
+    window.refresh_module_action_ui()
+    window.show()
+    app.processEvents()
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    button = window.module_action_buttons["test_unrestricted_context"]["test_unrestricted_action"]
+
+    assert window.selected_device_id == "test:unrestricted-context"
+    assert button.isEnabled()
+
+    window.close()
+
+
+def test_main_window_disables_action_when_selected_device_has_wrong_transport():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:transport-context",
+        module_type=ModuleType.COMMON,
+        transport="adb",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+
+    action = Action(
+        id="test_transport_action",
+        name="Fastboot Action",
+        capability_id="test_capability",
+        requires_device=True,
+        allowed_transports=("fastboot",),
+    )
+
+    class TestTransportContextModule(ModuleContract):
+        manifest = ModuleManifest(
+            id="test_transport",
+            name="Test Transport",
+            version="1.0.0",
+            module_type=ModuleType.COMMON,
+            capabilities=(
+                Capability(
+                    id="test_capability",
+                    name="Test Capability",
+                ),
+            ),
+            actions=(action,),
+        )
+
+        def detect(self):
+            return []
+
+        def execute(self, action_id, device=None, **kwargs):
+            return ActionResult(success=True, message="Test action executed.")
+
+    window.module_adapter.registry.register(TestTransportContextModule())
+    window.refresh_module_action_ui()
+
+    window.show()
+    app.processEvents()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    button = window.module_action_buttons["test_transport"]["test_transport_action"]
+
+    assert window.selected_device_id == "test:transport-context"
+    assert not button.isEnabled()
+
+    window.close()

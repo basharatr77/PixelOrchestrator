@@ -75,6 +75,8 @@ class GUIModuleAdapter:
                 "requires_device": action.requires_device,
                 "dangerous": action.dangerous,
                 "enabled": action.enabled,
+                "allowed_transports": action.allowed_transports,
+                "allowed_states": action.allowed_states,
             }
             for action in actions
         ]

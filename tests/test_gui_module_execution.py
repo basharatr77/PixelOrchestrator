@@ -2129,3 +2129,33 @@ def test_main_window_updates_operation_result_device_context_when_selection_chan
     )
 
     window.close()
+
+def test_main_window_persists_validation_failure_in_operation_result(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    window = MainWindow(device_registry=registry)
+
+    monkeypatch.setattr(
+        "app.gui.main_window.QMessageBox.critical",
+        lambda *args, **kwargs: None,
+    )
+
+    window.execute_module_action("common", "device_info")
+    app.processEvents()
+
+    assert window.operation_result_operation.text() == (
+        "Operation: common.device_info"
+    )
+    assert window.operation_result_status.text() == "Status: Failed"
+    assert window.operation_result_message.text() == (
+        "Message: No device is selected."
+    )
+    assert window.operation_result_details.toPlainText() == ""
+
+    window.close()

@@ -602,6 +602,15 @@ class MainWindow(QMainWindow):
                 )
 
         except Exception as exc:
+            self.operation_result_operation.setText(
+                f"Operation: {module_id}.{action_id}"
+            )
+            self.operation_result_status.setText("Status: Failed")
+            self.operation_result_message.setText(
+                f"Message: {exc}"
+            )
+            self.operation_result_details.clear()
+
             QMessageBox.critical(
                 self,
                 "Module Action Error",

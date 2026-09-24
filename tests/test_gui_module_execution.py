@@ -1650,3 +1650,42 @@ def test_main_window_disables_action_when_selected_device_has_wrong_transport():
     assert not button.isEnabled()
 
     window.close()
+
+
+def test_main_window_shows_error_code_for_failed_action():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+
+    def capture(*args, **kwargs):
+        return ActionResult(
+            success=False,
+            message="Device operation failed.",
+            error_code="DEVICE_NOT_READY",
+        )
+
+    captured = []
+
+    def warning(parent, title, message, *args, **kwargs):
+        captured.append((title, message))
+
+    window.module_adapter.execute_action = capture
+    original_warning = QMessageBox.warning
+    QMessageBox.warning = warning
+
+    try:
+        window.execute_module_action("common", "refresh_devices")
+        app.processEvents()
+
+        assert captured == [
+            (
+                "Module Action",
+                "Device operation failed.\n\nError code: DEVICE_NOT_READY",
+            )
+        ]
+    finally:
+        QMessageBox.warning = original_warning
+        window.close()

@@ -476,6 +476,11 @@ class MainWindow(QMainWindow):
 
             message = getattr(result, "message", None) or str(result)
 
+            if not getattr(result, "success", True):
+                error_code = getattr(result, "error_code", None)
+                if error_code:
+                    message = f"{message}\n\nError code: {error_code}"
+
             if getattr(result, "success", True):
                 QMessageBox.information(
                     self,

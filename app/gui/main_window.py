@@ -476,6 +476,15 @@ class MainWindow(QMainWindow):
 
             message = getattr(result, "message", None) or str(result)
 
+            result_data = getattr(result, "data", None)
+            if getattr(result, "success", True) and result_data:
+                import json
+
+                message = (
+                    f"{message}\n\n"
+                    f"Result data:\n{json.dumps(result_data, indent=2, default=str)}"
+                )
+
             if not getattr(result, "success", True):
                 error_code = getattr(result, "error_code", None)
                 if error_code:

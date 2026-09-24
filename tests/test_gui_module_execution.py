@@ -1,4 +1,4 @@
-﻿from app.core.module_contract import (
+from app.core.module_contract import (
     Action,
     ActionResult,
     Capability,
@@ -1689,3 +1689,61 @@ def test_main_window_shows_error_code_for_failed_action():
     finally:
         QMessageBox.warning = original_warning
         window.close()
+
+def test_main_window_shows_structured_result_data_for_successful_action(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QMessageBox
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import ActionResult, Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:DATA123",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Pixel Test",
+        serial="DATA123",
+        transport="adb",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.device_selector.setCurrentText("adb:DATA123")
+    app.processEvents()
+
+    def fake_execute_action(module_id, action_id, device=None, **kwargs):
+        return ActionResult(
+            success=True,
+            message="Device information retrieved.",
+            data={
+                "serial": "DATA123",
+                "model": "Pixel Test",
+                "android_version": "15",
+            },
+        )
+
+    monkeypatch.setattr(
+        window.module_adapter,
+        "execute_action",
+        fake_execute_action,
+    )
+
+    messages = []
+
+    monkeypatch.setattr(
+        QMessageBox,
+        "information",
+        lambda *args: messages.append(args),
+    )
+
+    window.execute_module_action("adb", "device_info")
+
+    assert messages
+    shown_message = messages[-1][2]
+    assert "Device information retrieved." in shown_message
+    assert "DATA123" in shown_message
+    assert "Pixel Test" in shown_message
+    assert "android_version" in shown_message

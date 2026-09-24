@@ -6,7 +6,7 @@ import sys
 import app.gui.qt_bootstrap
 
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QMessageBox, QScrollArea, QLineEdit, QGridLayout, QComboBox )
+from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QMessageBox, QScrollArea, QLineEdit, QGridLayout, QComboBox, QPlainTextEdit )
 
 from app.gui.ai.service import AIService
 from app.gui.module_adapter import GUIModuleAdapter
@@ -202,6 +202,39 @@ class MainWindow(QMainWindow):
         self.operations_panel.setObjectName("operations_panel")
         operations_layout = QVBoxLayout(self.operations_panel)
         operations_layout.setContentsMargins(16, 14, 16, 14)
+
+        self.operation_result = QFrame()
+        self.operation_result.setObjectName("operation_result")
+        operation_result_layout = QVBoxLayout(self.operation_result)
+        operation_result_layout.setContentsMargins(12, 10, 12, 10)
+
+        self.operation_result_heading = QLabel("Operation Result")
+        self.operation_result_heading.setObjectName("operation_result_heading")
+        operation_result_layout.addWidget(self.operation_result_heading)
+
+        self.operation_result_operation = QLabel("Operation: -")
+        self.operation_result_operation.setObjectName("operation_result_operation")
+        operation_result_layout.addWidget(self.operation_result_operation)
+
+        self.operation_result_status = QLabel("Status: -")
+        self.operation_result_status.setObjectName("operation_result_status")
+        operation_result_layout.addWidget(self.operation_result_status)
+
+        self.operation_result_message = QLabel("Message: -")
+        self.operation_result_message.setObjectName("operation_result_message")
+        self.operation_result_message.setWordWrap(True)
+        operation_result_layout.addWidget(self.operation_result_message)
+
+        self.operation_result_details = QPlainTextEdit()
+        self.operation_result_details.setObjectName("operation_result_details")
+        self.operation_result_details.setReadOnly(True)
+        self.operation_result_details.setPlaceholderText(
+            "Operation details will appear here."
+        )
+        self.operation_result_details.setMaximumHeight(120)
+        operation_result_layout.addWidget(self.operation_result_details)
+
+        operations_layout.addWidget(self.operation_result)
 
         self.module_scroll = QScrollArea()
         self.module_scroll.setWidgetResizable(True)
@@ -522,7 +555,15 @@ class MainWindow(QMainWindow):
                 device=device,
             )
 
-            message = getattr(result, "message", None) or str(result)
+            result_message = getattr(result, "message", None) or str(result)
+
+            self._update_operation_result(
+                module_id,
+                action_id,
+                result,
+            )
+
+            message = result_message
 
             result_data = getattr(result, "data", None)
             if getattr(result, "success", True) and result_data:
@@ -557,6 +598,36 @@ class MainWindow(QMainWindow):
                 "Module Action Error",
                 str(exc),
             )
+
+    def _update_operation_result(self, module_id, action_id, result):
+        """Update the persistent GUI surface with the latest operation result."""
+        success = getattr(result, "success", True)
+        message = getattr(result, "message", None) or str(result)
+        result_data = getattr(result, "data", None)
+        error_code = getattr(result, "error_code", None)
+
+        self.operation_result_operation.setText(
+            f"Operation: {module_id}.{action_id}"
+        )
+        self.operation_result_status.setText(
+            "Status: Success" if success else "Status: Failed"
+        )
+        self.operation_result_message.setText(
+            f"Message: {message}"
+        )
+
+        if success and result_data:
+            import json
+
+            self.operation_result_details.setPlainText(
+                json.dumps(result_data, indent=2, default=str)
+            )
+        elif not success and error_code:
+            self.operation_result_details.setPlainText(
+                f"Error code: {error_code}"
+            )
+        else:
+            self.operation_result_details.clear()
 
     def _show_workspace(self, workspace_id):
         """Show one registered workspace and hide the others."""

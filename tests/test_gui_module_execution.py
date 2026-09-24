@@ -1228,6 +1228,125 @@ def test_main_window_device_workspace_has_visual_hierarchy_groups():
     assert window.device_operations_group.isVisible()
 
     window.close()
+def test_main_window_exposes_operation_result_workspace():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QFrame
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    assert hasattr(window, "operation_result")
+    assert isinstance(window.operation_result, QFrame)
+    assert window.operation_result.objectName() == "operation_result"
+    assert window.operation_result.parentWidget() is window.operations_panel
+
+    window.close()
+
+
+def test_main_window_displays_successful_operation_result(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import ActionResult, Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:DATA123",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Pixel Test",
+        serial="DATA123",
+        transport="adb",
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.device_selector.setCurrentText("adb:DATA123")
+    app.processEvents()
+
+    result = ActionResult(
+        success=True,
+        message="Device information retrieved.",
+        data={
+            "serial": "DATA123",
+            "model": "Pixel Test",
+        },
+    )
+
+    monkeypatch.setattr(
+        window.module_adapter,
+        "execute_action",
+        lambda *args, **kwargs: result,
+    )
+
+    monkeypatch.setattr(
+        "app.gui.main_window.QMessageBox.information",
+        lambda *args, **kwargs: None,
+    )
+
+    window.execute_module_action("adb", "device_info")
+
+    assert window.operation_result_operation.text() == "Operation: adb.device_info"
+    assert window.operation_result_status.text() == "Status: Success"
+    assert window.operation_result_message.text() == (
+        "Message: Device information retrieved."
+    )
+    assert "DATA123" in window.operation_result_details.toPlainText()
+    assert "Pixel Test" in window.operation_result_details.toPlainText()
+
+    window.close()
+
+
+def test_main_window_displays_failed_operation_result_with_error_code(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.module_contract import ActionResult
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow()
+
+    result = ActionResult(
+        success=False,
+        message="Device operation failed.",
+        error_code="DEVICE_NOT_READY",
+    )
+
+    monkeypatch.setattr(
+        window.module_adapter,
+        "execute_action",
+        lambda *args, **kwargs: result,
+    )
+
+    monkeypatch.setattr(
+        "app.gui.main_window.QMessageBox.warning",
+        lambda *args, **kwargs: None,
+    )
+
+    window.execute_module_action("common", "refresh_devices")
+
+    assert window.operation_result_operation.text() == (
+        "Operation: common.refresh_devices"
+    )
+    assert window.operation_result_status.text() == "Status: Failed"
+    assert window.operation_result_message.text() == (
+        "Message: Device operation failed."
+    )
+    assert window.operation_result_details.toPlainText() == (
+        "Error code: DEVICE_NOT_READY"
+    )
+
+    window.close()
+
+
 def test_main_window_exposes_selected_device_metadata():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication

@@ -212,6 +212,10 @@ class MainWindow(QMainWindow):
         self.operation_result_heading.setObjectName("operation_result_heading")
         operation_result_layout.addWidget(self.operation_result_heading)
 
+        self.operation_result_device = QLabel("Device: -")
+        self.operation_result_device.setObjectName("operation_result_device")
+        operation_result_layout.addWidget(self.operation_result_device)
+
         self.operation_result_operation = QLabel("Operation: -")
         self.operation_result_operation.setObjectName("operation_result_operation")
         operation_result_layout.addWidget(self.operation_result_operation)
@@ -389,6 +393,11 @@ class MainWindow(QMainWindow):
             self.selected_device_id = self.device_selector.itemData(index)
 
         self._update_device_details()
+
+        if hasattr(self, "operation_result_device"):
+            self.operation_result_device.setText(
+                f"Device: {self.selected_device_id or '-'}"
+            )
 
         if not hasattr(self, "module_action_buttons"):
             return

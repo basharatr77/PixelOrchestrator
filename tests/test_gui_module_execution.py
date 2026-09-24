@@ -2050,3 +2050,82 @@ def test_main_window_logs_sidebar_has_distinct_workspace():
         assert window.logs_workspace.isVisible()
     finally:
         window.close()
+
+def test_main_window_exposes_operation_result_device_context():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="test:operation-device",
+            module_type=ModuleType.ADB,
+            model="Operation Test",
+            serial="OP123",
+            transport="adb",
+        )
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert hasattr(window, "operation_result_device")
+    assert window.operation_result_device.text() == (
+        "Device: test:operation-device"
+    )
+
+    window.close()
+
+
+def test_main_window_updates_operation_result_device_context_when_selection_changes():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="test:operation-first",
+            module_type=ModuleType.ADB,
+            model="First Operation Test",
+            serial="OP-FIRST",
+            transport="adb",
+        )
+    )
+    registry.register(
+        Device(
+            device_id="test:operation-second",
+            module_type=ModuleType.ADB,
+            model="Second Operation Test",
+            serial="OP-SECOND",
+            transport="adb",
+        )
+    )
+
+    window = MainWindow(device_registry=registry)
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    assert window.operation_result_device.text() == (
+        "Device: test:operation-first"
+    )
+
+    window.device_selector.setCurrentIndex(1)
+    app.processEvents()
+
+    assert window.operation_result_device.text() == (
+        "Device: test:operation-second"
+    )
+
+    window.close()

@@ -370,3 +370,104 @@ def test_google_firmware_source_resolver_returns_official_candidate():
     assert result["source"] == "GOOGLE"
     assert result["repository"] in {"FACTORY_IMAGES", "FULL_OTA"}
     assert result["availability"] == "OFFICIAL_SOURCE"
+
+def test_firmware_candidate_contract_contains_exact_metadata():
+    from app.core.firmware_source_resolver import FirmwareCandidate
+
+    candidate = FirmwareCandidate(
+        source="GOOGLE",
+        repository="FACTORY_IMAGES",
+        device_codename="shiba",
+        build_id="AQ3A.240829.003",
+        android_release="15",
+        security_patch="2024-09-01",
+        release_date="2024-09-05",
+        package_url="https://example.invalid/factory.zip",
+        package_sha256="abc123",
+        source_verified=True,
+        candidate_verified=False,
+        verification="UNKNOWN",
+    )
+
+    assert candidate.source == "GOOGLE"
+    assert candidate.repository == "FACTORY_IMAGES"
+    assert candidate.device_codename == "shiba"
+    assert candidate.build_id == "AQ3A.240829.003"
+    assert candidate.android_release == "15"
+    assert candidate.security_patch == "2024-09-01"
+    assert candidate.release_date == "2024-09-05"
+    assert candidate.package_url.endswith("factory.zip")
+    assert candidate.package_sha256 == "abc123"
+    assert candidate.source_verified is True
+    assert candidate.candidate_verified is False
+    assert candidate.verification == "UNKNOWN"
+
+
+def test_firmware_candidate_missing_metadata_is_unknown():
+    from app.core.firmware_source_resolver import FirmwareCandidate
+
+    candidate = FirmwareCandidate(
+        source="GOOGLE",
+        repository="FACTORY_IMAGES",
+        device_codename="shiba",
+        build_id="UNKNOWN",
+        android_release="UNKNOWN",
+        security_patch="UNKNOWN",
+        release_date="UNKNOWN",
+        package_url="UNKNOWN",
+        package_sha256="UNKNOWN",
+        source_verified=True,
+        candidate_verified=False,
+        verification="UNKNOWN",
+    )
+
+    assert candidate.verification == "UNKNOWN"
+    assert candidate.candidate_verified is False
+
+
+def test_firmware_candidate_missing_sha256_is_not_verified():
+    from app.core.firmware_source_resolver import FirmwareCandidate
+
+    candidate = FirmwareCandidate(
+        source="GOOGLE",
+        repository="FACTORY_IMAGES",
+        device_codename="shiba",
+        build_id="AQ3A.240829.003",
+        android_release="15",
+        security_patch="2024-09-01",
+        release_date="2024-09-05",
+        package_url="https://example.invalid/factory.zip",
+        package_sha256="UNKNOWN",
+        source_verified=True,
+        candidate_verified=False,
+        verification="UNKNOWN",
+    )
+
+    assert candidate.package_sha256 == "UNKNOWN"
+    assert candidate.candidate_verified is False
+    assert candidate.verification == "UNKNOWN"
+
+
+def test_firmware_candidate_unknown_device_is_not_verified():
+    from app.core.firmware_source_resolver import FirmwareCandidate
+
+    candidate = FirmwareCandidate(
+        source="GOOGLE",
+        repository="UNKNOWN",
+        device_codename="UNKNOWN",
+        build_id="UNKNOWN",
+        android_release="UNKNOWN",
+        security_patch="UNKNOWN",
+        release_date="UNKNOWN",
+        package_url="UNKNOWN",
+        package_sha256="UNKNOWN",
+        source_verified=False,
+        candidate_verified=False,
+        verification="UNKNOWN",
+    )
+
+    assert candidate.device_codename == "UNKNOWN"
+    assert candidate.repository == "UNKNOWN"
+    assert candidate.source_verified is False
+    assert candidate.candidate_verified is False
+    assert candidate.verification == "UNKNOWN"

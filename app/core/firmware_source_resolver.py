@@ -1,3 +1,21 @@
+from dataclasses import dataclass
+
+
+@dataclass(frozen=True)
+class FirmwareCandidate:
+    source: str
+    repository: str
+    device_codename: str
+    build_id: str
+    android_release: str
+    security_patch: str
+    release_date: str
+    package_url: str
+    package_sha256: str
+    source_verified: bool
+    candidate_verified: bool
+    verification: str
+
 class GoogleFirmwareSourceResolver:
     """Resolve official Google firmware source families.
 

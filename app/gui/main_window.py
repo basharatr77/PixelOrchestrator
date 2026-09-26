@@ -151,6 +151,24 @@ class MainWindow(QMainWindow):
 
         workspace_layout.addWidget(self.logs_workspace, 1)
 
+        self.settings_workspace = QFrame()
+        self.settings_workspace.setObjectName("settings_workspace")
+        settings_layout = QVBoxLayout(self.settings_workspace)
+        settings_layout.setContentsMargins(16, 14, 16, 14)
+
+        settings_title = QLabel("Settings")
+        settings_title.setObjectName("workspace_title")
+        settings_layout.addWidget(settings_title)
+
+        settings_placeholder = QLabel(
+            "Settings workspace is ready. Configuration controls will be added here."
+        )
+        settings_placeholder.setWordWrap(True)
+        settings_layout.addWidget(settings_placeholder)
+        settings_layout.addStretch()
+
+        workspace_layout.addWidget(self.settings_workspace, 1)
+
         header = QHBoxLayout()
 
         heading = QLabel("AI WORKSPACE")
@@ -267,6 +285,7 @@ class MainWindow(QMainWindow):
             "dashboard": self.dashboard_workspace,
             "devices": self.device_workspace,
             "logs": self.logs_workspace,
+            "settings": self.settings_workspace,
         }
 
         self._show_workspace("devices")
@@ -709,12 +728,8 @@ class MainWindow(QMainWindow):
         self._show_workspace("logs")
 
     def open_settings(self):
-        """Open the settings navigation surface."""
-        QMessageBox.information(
-            self,
-            "Settings",
-            "Settings workspace is not implemented yet.",
-        )
+        """Show the settings workspace."""
+        self._show_workspace("settings")
 
     def open_ai_assistant(self):
         """Open the AI Assistant interaction."""

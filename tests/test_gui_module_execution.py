@@ -2025,6 +2025,33 @@ def test_main_window_sidebar_switches_between_distinct_workspaces():
     finally:
         window.close()
 
+def test_main_window_settings_sidebar_has_distinct_workspace():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QPushButton
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    try:
+        sidebar = {
+            button.text(): button
+            for button in window.findChildren(QPushButton)
+            if button.text() == 'Settings'
+        }
+
+        assert 'Settings' in sidebar
+
+        sidebar['Settings'].click()
+        app.processEvents()
+
+        assert window.settings_workspace.isVisible()
+    finally:
+        window.close()
+
+
 def test_main_window_logs_sidebar_has_distinct_workspace():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication, QPushButton

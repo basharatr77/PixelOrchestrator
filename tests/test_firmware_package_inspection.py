@@ -73,3 +73,29 @@ def test_factory_package_inspection_extracts_nested_image_evidence(tmp_path):
         "vendor.img",
         "vbmeta.img",
     ]
+
+def test_factory_package_inspection_classifies_partition_image_evidence(tmp_path):
+    package = tmp_path / "a32-factory.zip"
+
+    image_zip = tmp_path / "image-a32-test.zip"
+    with zipfile.ZipFile(image_zip, "w") as image:
+        image.writestr("boot.img", b"boot")
+        image.writestr("system.img", b"system")
+        image.writestr("vendor.img", b"vendor")
+        image.writestr("vbmeta.img", b"vbmeta")
+        image.writestr("custom.img", b"unknown")
+
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("image-a32-test.zip", image_zip.read_bytes())
+        archive.writestr("flash-all.bat", b"@echo off")
+        archive.writestr("flash-all.sh", b"#!/bin/sh")
+
+    result = FirmwarePackageInspector().inspect(package)
+
+    assert result["image_evidence"] == {
+        "boot.img": "BOOT_IMAGE_PRESENT",
+        "system.img": "SYSTEM_IMAGE_PRESENT",
+        "vendor.img": "VENDOR_IMAGE_PRESENT",
+        "vbmeta.img": "VBMETA_IMAGE_PRESENT",
+        "custom.img": "UNKNOWN",
+    }

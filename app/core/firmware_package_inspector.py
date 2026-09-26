@@ -38,6 +38,20 @@ class FirmwarePackageInspector:
                 except zipfile.BadZipFile:
                     image_members = []
 
+        image_evidence = {}
+        for member in image_members:
+            name = Path(member).name.lower()
+            if name == "boot.img":
+                image_evidence[member] = "BOOT_IMAGE_PRESENT"
+            elif name == "system.img":
+                image_evidence[member] = "SYSTEM_IMAGE_PRESENT"
+            elif name == "vendor.img":
+                image_evidence[member] = "VENDOR_IMAGE_PRESENT"
+            elif name == "vbmeta.img":
+                image_evidence[member] = "VBMETA_IMAGE_PRESENT"
+            else:
+                image_evidence[member] = "UNKNOWN"
+
         is_factory_structure = (
             nested_image is not None
             and "flash-all.bat" in members
@@ -54,6 +68,7 @@ class FirmwarePackageInspector:
             "members": members,
             "nested_image": nested_image,
             "image_members": image_members,
+            "image_evidence": image_evidence,
             "integrity": "UNKNOWN",
             "verification": "UNKNOWN",
         }

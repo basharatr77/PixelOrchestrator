@@ -471,3 +471,126 @@ def test_firmware_candidate_unknown_device_is_not_verified():
     assert candidate.source_verified is False
     assert candidate.candidate_verified is False
     assert candidate.verification == "UNKNOWN"
+
+def test_google_candidate_normalizer_preserves_exact_metadata():
+    from app.core.firmware_source_resolver import GoogleFirmwareCandidateNormalizer
+
+    normalizer = GoogleFirmwareCandidateNormalizer()
+
+    result = normalizer.normalize(
+        {
+            "source": "GOOGLE",
+            "repository": "FACTORY_IMAGES",
+            "device_codename": "shiba",
+            "build_id": "AQ3A.240829.003",
+            "android_release": "15",
+            "security_patch": "2024-09-01",
+            "release_date": "2024-09-03",
+            "package_url": "https://dl.google.com/example-factory.zip",
+            "package_sha256": "abc123",
+            "vbmeta_digest": "def456",
+        }
+    )
+
+    assert result["source"] == "GOOGLE"
+    assert result["repository"] == "FACTORY_IMAGES"
+    assert result["device_codename"] == "shiba"
+    assert result["build_id"] == "AQ3A.240829.003"
+    assert result["android_release"] == "15"
+    assert result["security_patch"] == "2024-09-01"
+    assert result["release_date"] == "2024-09-03"
+    assert result["package_url"] == "https://dl.google.com/example-factory.zip"
+    assert result["package_sha256"] == "abc123"
+    assert result["vbmeta_digest"] == "def456"
+
+
+def test_google_candidate_normalizer_missing_package_sha256_is_unknown():
+    from app.core.firmware_source_resolver import GoogleFirmwareCandidateNormalizer
+
+    normalizer = GoogleFirmwareCandidateNormalizer()
+
+    result = normalizer.normalize(
+        {
+            "source": "GOOGLE",
+            "repository": "FACTORY_IMAGES",
+            "device_codename": "shiba",
+            "build_id": "AQ3A.240829.003",
+            "android_release": "15",
+            "security_patch": "2024-09-01",
+            "release_date": "2024-09-03",
+            "package_url": "https://dl.google.com/example-factory.zip",
+            "package_sha256": "",
+            "vbmeta_digest": "def456",
+        }
+    )
+
+    assert result["package_sha256"] == "UNKNOWN"
+    assert result["verification"] == "UNKNOWN"
+
+
+def test_google_candidate_normalizer_missing_required_metadata_is_unknown():
+    from app.core.firmware_source_resolver import GoogleFirmwareCandidateNormalizer
+
+    normalizer = GoogleFirmwareCandidateNormalizer()
+
+    result = normalizer.normalize(
+        {
+            "source": "GOOGLE",
+            "repository": "FACTORY_IMAGES",
+            "device_codename": "shiba",
+            "build_id": "",
+            "android_release": "15",
+            "security_patch": "2024-09-01",
+            "release_date": "2024-09-03",
+            "package_url": "https://dl.google.com/example-factory.zip",
+        }
+    )
+
+    assert result["verification"] == "UNKNOWN"
+    assert result["candidate_verified"] is False
+
+
+def test_google_candidate_normalizer_distinguishes_full_ota():
+    from app.core.firmware_source_resolver import GoogleFirmwareCandidateNormalizer
+
+    normalizer = GoogleFirmwareCandidateNormalizer()
+
+    result = normalizer.normalize(
+        {
+            "source": "GOOGLE",
+            "repository": "FULL_OTA",
+            "device_codename": "shiba",
+            "build_id": "AQ3A.240829.003",
+            "android_release": "15",
+            "security_patch": "2024-09-01",
+            "release_date": "2024-09-03",
+            "package_url": "https://dl.google.com/example-ota.zip",
+        }
+    )
+
+    assert result["repository"] == "FULL_OTA"
+    assert result["source"] == "GOOGLE"
+    assert result["verification"] == "UNKNOWN"
+
+
+def test_google_candidate_normalizer_does_not_mark_unverified_candidate_pass():
+    from app.core.firmware_source_resolver import GoogleFirmwareCandidateNormalizer
+
+    normalizer = GoogleFirmwareCandidateNormalizer()
+
+    result = normalizer.normalize(
+        {
+            "source": "GOOGLE",
+            "repository": "FACTORY_IMAGES",
+            "device_codename": "shiba",
+            "build_id": "AQ3A.240829.003",
+            "android_release": "15",
+            "security_patch": "2024-09-01",
+            "release_date": "2024-09-03",
+            "package_url": "https://dl.google.com/example-factory.zip",
+        }
+    )
+
+    assert result["source_verified"] is False
+    assert result["candidate_verified"] is False
+    assert result["verification"] != "PASS"

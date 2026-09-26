@@ -2051,6 +2051,45 @@ def test_main_window_logs_sidebar_has_distinct_workspace():
     finally:
         window.close()
 
+def test_main_window_logs_workspace_displays_bounded_event_log(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    class FakeEventLog:
+        def latest_offset(self):
+            return 150
+
+        def read_from(self, offset=0, limit=100):
+            assert offset == 50
+            assert limit == 100
+            return [
+                {
+                    "offset": 51,
+                    "id": "event-51",
+                    "type": "device.connected",
+                    "ts": 123.45,
+                    "payload": {"device_id": "TEST-001"},
+                }
+            ]
+
+    monkeypatch.setattr("app.gui.main_window.EventLog", FakeEventLog)
+
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    try:
+        assert window.logs_viewer.isReadOnly()
+        assert "device.connected" in window.logs_viewer.toPlainText()
+        assert "event-51" in window.logs_viewer.toPlainText()
+        assert "TEST-001" in window.logs_viewer.toPlainText()
+    finally:
+        window.close()
+
+
 def test_main_window_exposes_operation_result_device_context():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication

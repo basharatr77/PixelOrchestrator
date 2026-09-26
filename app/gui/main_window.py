@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, QLabel, QPushButton, QHBoxLayout, QFrame, QMessageBox, QScrollArea, QLineEdit, QGridLayout, QComboBox, QPlainTextEdit )
 
 from app.gui.ai.service import AIService
+from app.core.event_log import EventLog
 from app.gui.module_adapter import GUIModuleAdapter
 
 
@@ -135,11 +136,18 @@ class MainWindow(QMainWindow):
         logs_title.setObjectName("workspace_title")
         logs_layout.addWidget(logs_title)
 
-        logs_placeholder = QLabel(
-            "Logs workspace is ready. Event log display will be added separately."
-        )
-        logs_layout.addWidget(logs_placeholder)
-        logs_layout.addStretch()
+        self.logs_refresh_button = QPushButton("Refresh")
+        self.logs_refresh_button.setObjectName("logs_refresh_button")
+        self.logs_refresh_button.clicked.connect(self.refresh_event_log_viewer)
+        logs_layout.addWidget(self.logs_refresh_button)
+
+        self.logs_viewer = QPlainTextEdit()
+        self.logs_viewer.setObjectName("logs_viewer")
+        self.logs_viewer.setReadOnly(True)
+        logs_layout.addWidget(self.logs_viewer, 1)
+
+        self.event_log = EventLog()
+        self.refresh_event_log_viewer()
 
         workspace_layout.addWidget(self.logs_workspace, 1)
 
@@ -675,6 +683,26 @@ class MainWindow(QMainWindow):
             "Database",
             "Database workspace is not implemented yet.",
         )
+
+    def refresh_event_log_viewer(self):
+        """Refresh the bounded, read-only EventLog viewer."""
+        latest_offset = self.event_log.latest_offset()
+        start_offset = max(0, latest_offset - 100)
+        events = self.event_log.read_from(start_offset, 100)
+
+        if not events:
+            self.logs_viewer.setPlainText("No events recorded yet.")
+            return
+
+        lines = []
+        for event in events:
+            lines.append(
+                f'[{event["offset"]}] {event["type"]} | '
+                f'{event["id"]} | {event["ts"]}\n'
+                f'{event["payload"]}'
+            )
+
+        self.logs_viewer.setPlainText("\n\n".join(lines))
 
     def open_logs(self):
         """Show the logs workspace."""

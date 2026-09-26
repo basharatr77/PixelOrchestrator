@@ -319,6 +319,10 @@ class MainWindow(QMainWindow):
 
         workspace_layout.addWidget(status)
 
+        self.dashboard_device_count = QLabel("Devices: 0")
+        self.dashboard_device_count.setObjectName("dashboard_device_count")
+        dashboard_layout.addWidget(self.dashboard_device_count)
+
         main_layout.addWidget(sidebar)
         main_layout.addWidget(workspace)
 

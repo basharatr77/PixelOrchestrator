@@ -2225,3 +2225,19 @@ def test_main_window_persists_validation_failure_in_operation_result(monkeypatch
     assert window.operation_result_details.toPlainText() == ""
 
     window.close()
+
+def test_main_window_dashboard_exposes_live_device_count():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    try:
+        assert hasattr(window, "dashboard_device_count")
+        assert window.dashboard_device_count.text() == "Devices: 0"
+    finally:
+        window.close()

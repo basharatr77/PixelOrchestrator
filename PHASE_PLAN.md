@@ -169,9 +169,12 @@ Phase 47 established the deterministic device allocation boundary required befor
 
 ## 48 — GUI DEVICE OPERATIONS & UX
 
-Status: PLANNED.
+Status: IN PROGRESS.
 
-Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling.
+Completed checkpoint: `f8c0a72` - Add bounded EventLog viewer to GUI.
+Validation: targeted Logs test **1 passed**; GUI/module suite **61 passed**; full regression **449 passed**; compileall passed; `git diff --check` passed.
+
+Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. The first verified checkpoint is the bounded, read-only EventLog viewer.
 
 ## 49 — PRODUCTION HARDENING / SECURITY / OBSERVABILITY
 
@@ -187,9 +190,9 @@ Reproducible packaging, deployment, release validation and production distributi
 
 ## NEXT IMPLEMENTATION PHASE
 
-**Phase 48 - GUI Device Operations & UX** is the next implementation phase.
+**Phase 48 - GUI Device Operations & UX** is the current implementation phase.
 
-Phase 48 is planned as the production-facing GUI layer around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling.
+Phase 48 is the current production-facing GUI layer around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling.
 
 Before any Phase 48 production code change, define an explicit RED-first checkpoint and preserve unrelated working-tree changes.
 

@@ -101,3 +101,41 @@ def test_adb_transport_disconnect():
     transport = ADBTransport("PIXEL_8")
 
     assert transport.disconnect() is True
+
+def test_adb_transport_get_firmware_identity(monkeypatch):
+    properties = {
+        "ro.product.device": "a32",
+        "ro.build.id": "AQ3A.240829.003",
+        "ro.build.version.release": "15",
+        "ro.build.version.security_patch": "2024-09-01",
+    }
+
+    def fake_run(cmd, **kwargs):
+        prop = cmd[-1]
+
+        assert cmd[:4] == [
+            "adb",
+            "-s",
+            "A52",
+            "shell",
+        ]
+
+        return FakeResult(
+            stdout=properties[prop],
+        )
+
+    monkeypatch.setattr(
+        "app.core.adb_transport.subprocess.run",
+        fake_run,
+    )
+
+    transport = ADBTransport("A52")
+
+    identity = transport.get_firmware_identity()
+
+    assert identity == {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }

@@ -61,3 +61,28 @@ class ADBTransport(Transport):
             "model": getprop("ro.product.model"),
             "android_version": getprop("ro.build.version.release"),
         }
+
+    def get_firmware_identity(self):
+        def getprop(prop):
+            result = subprocess.run(
+                [
+                    "adb",
+                    "-s",
+                    self.serial,
+                    "shell",
+                    "getprop",
+                    prop,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=5,
+            )
+
+            return result.stdout.strip()
+
+        return {
+            "device_codename": getprop("ro.product.device"),
+            "build_id": getprop("ro.build.id"),
+            "android_release": getprop("ro.build.version.release"),
+            "security_patch": getprop("ro.build.version.security_patch"),
+        }

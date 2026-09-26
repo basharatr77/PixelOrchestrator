@@ -3,6 +3,7 @@ from pathlib import Path
 import zipfile
 
 from app.core.firmware_package_inspector import FirmwarePackageInspector
+from app.core.firmware_compatibility import FirmwareCompatibilityChecker
 
 
 def test_factory_package_inspection_extracts_verifiable_evidence(tmp_path):
@@ -218,3 +219,135 @@ def test_factory_package_inspection_malformed_build_metadata_is_unknown(tmp_path
         "security_patch": "UNKNOWN",
     }
     assert result["build_identity_source"] == "UNKNOWN"
+
+def test_firmware_package_compatibility_matches_real_device_identity():
+    package_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+    device_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+
+    result = FirmwareCompatibilityChecker().compare(
+        package_identity,
+        device_identity,
+    )
+
+    assert result["verification"] == "PASS"
+    assert result["reason"] == "PACKAGE_DEVICE_IDENTITY_MATCH"
+
+def test_firmware_package_compatibility_rejects_conflicting_build_identity():
+    package_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+    device_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.250101.001",
+        "android_release": "15",
+        "security_patch": "2025-01-01",
+    }
+
+    result = FirmwareCompatibilityChecker().compare(
+        package_identity,
+        device_identity,
+    )
+
+    assert result["verification"] == "FAIL"
+    assert result["reason"] == "PACKAGE_DEVICE_IDENTITY_CONFLICT"
+
+def test_firmware_package_compatibility_rejects_conflicting_device_codename():
+    package_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+    device_identity = {
+        "device_codename": "other-device",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+
+    result = FirmwareCompatibilityChecker().compare(
+        package_identity,
+        device_identity,
+    )
+
+    assert result["verification"] == "FAIL"
+    assert result["reason"] == "PACKAGE_DEVICE_IDENTITY_CONFLICT"
+
+def test_firmware_package_compatibility_requires_complete_identity_evidence():
+    package_identity = {
+        "device_codename": "a32",
+        "build_id": "UNKNOWN",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+    device_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+
+    result = FirmwareCompatibilityChecker().compare(
+        package_identity,
+        device_identity,
+    )
+
+    assert result["verification"] == "UNKNOWN"
+    assert result["reason"] == "INSUFFICIENT_IDENTITY_EVIDENCE"
+
+def test_firmware_package_compatibility_rejects_conflicting_android_release():
+    package_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+    device_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "14",
+        "security_patch": "2024-09-01",
+    }
+
+    result = FirmwareCompatibilityChecker().compare(
+        package_identity,
+        device_identity,
+    )
+
+    assert result["verification"] == "FAIL"
+    assert result["reason"] == "PACKAGE_DEVICE_IDENTITY_CONFLICT"
+
+def test_firmware_package_compatibility_rejects_conflicting_security_patch():
+    package_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2024-09-01",
+    }
+    device_identity = {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "15",
+        "security_patch": "2025-01-01",
+    }
+
+    result = FirmwareCompatibilityChecker().compare(
+        package_identity,
+        device_identity,
+    )
+
+    assert result["verification"] == "FAIL"
+    assert result["reason"] == "PACKAGE_DEVICE_IDENTITY_CONFLICT"

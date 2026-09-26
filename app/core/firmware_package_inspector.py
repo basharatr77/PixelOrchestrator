@@ -46,25 +46,39 @@ class FirmwarePackageInspector:
                                     key, value = line.split("=", 1)
                                     values[key.strip()] = value.strip()
 
+                            device_codename = values.get("board", "").strip()
+                            build_id = values.get("build_id", "").strip()
+                            android_release = values.get("android_version", "").strip()
+                            security_patch = values.get("security_patch", "").strip()
+
+                            if not device_codename:
+                                device_codename = "UNKNOWN"
+                            if not build_id:
+                                build_id = "UNKNOWN"
+                            if not android_release.isdigit():
+                                android_release = "UNKNOWN"
+                            if (
+                                len(security_patch) != 10
+                                or security_patch[4] != "-"
+                                or security_patch[7] != "-"
+                                or not security_patch.replace("-", "").isdigit()
+                            ):
+                                security_patch = "UNKNOWN"
+
                             build_identity = {
-                                "device_codename": values.get(
-                                    "board",
-                                    "UNKNOWN",
-                                ),
-                                "build_id": values.get(
-                                    "build_id",
-                                    "UNKNOWN",
-                                ),
-                                "android_release": values.get(
-                                    "android_version",
-                                    "UNKNOWN",
-                                ),
-                                "security_patch": values.get(
-                                    "security_patch",
-                                    "UNKNOWN",
-                                ),
+                                "device_codename": device_codename,
+                                "build_id": build_id,
+                                "android_release": android_release,
+                                "security_patch": security_patch,
                             }
-                            build_identity_source = "android-info.txt"
+
+                            if all(
+                                value == "UNKNOWN"
+                                for value in build_identity.values()
+                            ):
+                                build_identity_source = "UNKNOWN"
+                            else:
+                                build_identity_source = "android-info.txt"
 
                 except zipfile.BadZipFile:
                     image_members = []

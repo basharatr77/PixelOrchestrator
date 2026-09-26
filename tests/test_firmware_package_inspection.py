@@ -132,3 +132,89 @@ def test_factory_package_inspection_extracts_build_identity_evidence(tmp_path):
         "security_patch": "2024-09-01",
     }
     assert result["build_identity_source"] == "android-info.txt"
+
+def test_factory_package_inspection_missing_build_metadata_is_unknown(tmp_path):
+    package = tmp_path / "a32-factory.zip"
+
+    image_zip = tmp_path / "image-a32-test.zip"
+    with zipfile.ZipFile(image_zip, "w") as image:
+        image.writestr("boot.img", b"boot")
+
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("image-a32-test.zip", image_zip.read_bytes())
+        archive.writestr("flash-all.bat", b"@echo off")
+        archive.writestr("flash-all.sh", b"#!/bin/sh")
+
+    result = FirmwarePackageInspector().inspect(package)
+
+    assert result["build_identity"] == {
+        "device_codename": "UNKNOWN",
+        "build_id": "UNKNOWN",
+        "android_release": "UNKNOWN",
+        "security_patch": "UNKNOWN",
+    }
+    assert result["build_identity_source"] == "UNKNOWN"
+
+def test_factory_package_inspection_incomplete_build_metadata_is_unknown(tmp_path):
+    package = tmp_path / "a32-factory.zip"
+
+    image_zip = tmp_path / "image-a32-test.zip"
+    with zipfile.ZipFile(image_zip, "w") as image:
+        image.writestr(
+            "android-info.txt",
+            "\n".join(
+                [
+                    "board=a32",
+                    "build_id=AQ3A.240829.003",
+                ]
+            ).encode(),
+        )
+        image.writestr("boot.img", b"boot")
+
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("image-a32-test.zip", image_zip.read_bytes())
+        archive.writestr("flash-all.bat", b"@echo off")
+        archive.writestr("flash-all.sh", b"#!/bin/sh")
+
+    result = FirmwarePackageInspector().inspect(package)
+
+    assert result["build_identity"] == {
+        "device_codename": "a32",
+        "build_id": "AQ3A.240829.003",
+        "android_release": "UNKNOWN",
+        "security_patch": "UNKNOWN",
+    }
+    assert result["build_identity_source"] == "android-info.txt"
+
+def test_factory_package_inspection_malformed_build_metadata_is_unknown(tmp_path):
+    package = tmp_path / "a32-factory.zip"
+
+    image_zip = tmp_path / "image-a32-test.zip"
+    with zipfile.ZipFile(image_zip, "w") as image:
+        image.writestr(
+            "android-info.txt",
+            "\n".join(
+                [
+                    "board=",
+                    "build_id=",
+                    "android_version=not-a-version",
+                    "security_patch=not-a-date",
+                ]
+            ).encode(),
+        )
+        image.writestr("boot.img", b"boot")
+
+    with zipfile.ZipFile(package, "w") as archive:
+        archive.writestr("image-a32-test.zip", image_zip.read_bytes())
+        archive.writestr("flash-all.bat", b"@echo off")
+        archive.writestr("flash-all.sh", b"#!/bin/sh")
+
+    result = FirmwarePackageInspector().inspect(package)
+
+    assert result["build_identity"] == {
+        "device_codename": "UNKNOWN",
+        "build_id": "UNKNOWN",
+        "android_release": "UNKNOWN",
+        "security_patch": "UNKNOWN",
+    }
+    assert result["build_identity_source"] == "UNKNOWN"

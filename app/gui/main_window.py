@@ -319,7 +319,8 @@ class MainWindow(QMainWindow):
 
         workspace_layout.addWidget(status)
 
-        self.dashboard_device_count = QLabel("Devices: 0")
+        device_count = len(self.device_registry.snapshot()) if self.device_registry is not None else 0
+        self.dashboard_device_count = QLabel(f"Devices: {device_count}")
         self.dashboard_device_count.setObjectName("dashboard_device_count")
         dashboard_layout.addWidget(self.dashboard_device_count)
 

@@ -2241,3 +2241,28 @@ def test_main_window_dashboard_exposes_live_device_count():
         assert window.dashboard_device_count.text() == "Devices: 0"
     finally:
         window.close()
+
+def test_main_window_dashboard_shows_registered_device_count():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    registry = DeviceRegistry()
+    registry.register(
+        Device(
+            device_id="test:dashboard-device",
+            module_type=ModuleType.COMMON,
+        )
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    try:
+        assert window.dashboard_device_count.text() == "Devices: 1"
+    finally:
+        window.close()

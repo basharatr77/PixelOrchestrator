@@ -44,6 +44,44 @@ class FastbootTransport(Transport):
             "stderr": result.stderr,
         }
 
+    def get_firmware_identity(self):
+        result = subprocess.run(
+            [
+                "fastboot",
+                "-s",
+                self.serial,
+                "getvar",
+                "all",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+
+        if result.returncode != 0:
+            return {}
+
+        output = result.stdout + result.stderr
+        identity = {}
+
+        for line in output.splitlines():
+            line = line.strip()
+
+            if line.startswith("(bootloader)"):
+                line = line[len("(bootloader)"):].strip()
+
+            if ":" not in line:
+                continue
+
+            key, value = line.split(":", 1)
+            key = key.strip()
+            value = value.strip()
+
+            if key in {"product", "variant", "secure", "unlocked"}:
+                identity[key] = value
+
+        return identity
+
     def get_device_info(self):
         result = subprocess.run(
             [

@@ -97,3 +97,97 @@ def test_fastboot_transport_disconnect():
     transport = FastbootTransport("RF8T206R8EP")
 
     assert transport.disconnect() is True
+
+
+def test_fastboot_transport_reads_required_firmware_identity(monkeypatch):
+    def fake_run(cmd, **kwargs):
+        assert cmd == [
+            "fastboot",
+            "-s",
+            "RF8T206R8EP",
+            "getvar",
+            "all",
+        ]
+
+        return FakeResult(
+            stderr=(
+                "(bootloader) product: a32\n"
+                "(bootloader) variant: global\n"
+                "(bootloader) secure: yes\n"
+                "(bootloader) unlocked: no\n"
+            ),
+        )
+
+    monkeypatch.setattr(
+        "app.core.fastboot_transport.subprocess.run",
+        fake_run,
+    )
+
+    transport = FastbootTransport("RF8T206R8EP")
+
+    identity = transport.get_firmware_identity()
+
+    assert identity == {
+        "product": "a32",
+        "variant": "global",
+        "secure": "yes",
+        "unlocked": "no",
+    }
+
+
+def test_fastboot_transport_rejects_failed_firmware_identity_read(monkeypatch):
+    def fake_run(cmd, **kwargs):
+        assert cmd == [
+            "fastboot",
+            "-s",
+            "RF8T206R8EP",
+            "getvar",
+            "all",
+        ]
+
+        return FakeResult(
+            returncode=1,
+            stderr="FAILED (remote: 'unknown command')\n",
+        )
+
+    monkeypatch.setattr(
+        "app.core.fastboot_transport.subprocess.run",
+        fake_run,
+    )
+
+    transport = FastbootTransport("RF8T206R8EP")
+
+    identity = transport.get_firmware_identity()
+
+    assert identity == {}
+
+
+def test_fastboot_transport_rejects_partial_identity_on_failed_command(monkeypatch):
+    def fake_run(cmd, **kwargs):
+        assert cmd == [
+            "fastboot",
+            "-s",
+            "RF8T206R8EP",
+            "getvar",
+            "all",
+        ]
+
+        return FakeResult(
+            returncode=1,
+            stderr=(
+                "(bootloader) product: a32\n"
+                "(bootloader) variant: global\n"
+                "FAILED (remote: 'verification failed')\n"
+            ),
+        )
+
+    monkeypatch.setattr(
+        "app.core.fastboot_transport.subprocess.run",
+        fake_run,
+    )
+
+    transport = FastbootTransport("RF8T206R8EP")
+
+    identity = transport.get_firmware_identity()
+
+    assert identity == {}

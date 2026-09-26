@@ -351,3 +351,22 @@ def test_firmware_package_compatibility_rejects_conflicting_security_patch():
 
     assert result["verification"] == "FAIL"
     assert result["reason"] == "PACKAGE_DEVICE_IDENTITY_CONFLICT"
+
+
+def test_google_firmware_source_resolver_returns_official_candidate():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceResolver
+
+    resolver = GoogleFirmwareSourceResolver()
+
+    result = resolver.find_candidates(
+        {
+            "device_codename": "shiba",
+            "build_id": "AQ3A.240829.003",
+            "android_release": "15",
+            "security_patch": "2024-09-01",
+        }
+    )
+
+    assert result["source"] == "GOOGLE"
+    assert result["repository"] in {"FACTORY_IMAGES", "FULL_OTA"}
+    assert result["availability"] == "OFFICIAL_SOURCE"

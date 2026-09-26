@@ -183,10 +183,9 @@ A phase is complete only when:
 ---
 
 ## CURRENT PROJECT AUTHORITY
-
 Effective repository checkpoint: **Phase 48 IN PROGRESS**.
-Latest checkpoint commit: `f8c0a72` - Add bounded EventLog viewer to GUI.
-Validation at this checkpoint: targeted Logs test **1 passed**; GUI/module suite **61 passed**; full regression **449 passed**; compileall passed; `git diff --check` passed.
+Latest checkpoint commit: `e9c1c24` - Wire dashboard device count to registry.
+Validation at this checkpoint: dashboard device-count targeted test **1 passed**; GUI/module suite **64 passed**; full regression **452 passed**; compileall passed; `git diff --check` passed.
 
 **Phase 48 - GUI Device Operations & UX is the CURRENT implementation phase.**
 Phase 49 - Production Hardening / Security / Observability is planned.

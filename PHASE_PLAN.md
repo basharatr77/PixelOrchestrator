@@ -171,10 +171,17 @@ Phase 47 established the deterministic device allocation boundary required befor
 
 Status: IN PROGRESS.
 
-Completed checkpoint: `f8c0a72` - Add bounded EventLog viewer to GUI.
-Validation: targeted Logs test **1 passed**; GUI/module suite **61 passed**; full regression **449 passed**; compileall passed; `git diff --check` passed.
+Completed checkpoints:
+- `f8c0a72` - Add bounded EventLog viewer to GUI.
+- `7ea1b1c` - Add Settings workspace to GUI.
+- `c7563d0` - Add operational dashboard device count.
+- `e9c1c24` - Wire dashboard device count to registry.
 
-Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. The first verified checkpoint is the bounded, read-only EventLog viewer.
+Latest verified checkpoint: `e9c1c24` - Wire dashboard device count to registry.
+Validation at latest checkpoint: dashboard device-count targeted test **1 passed**; GUI/module suite **64 passed**; full regression **452 passed**; compileall passed; `git diff --check` passed.
+
+Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. Phase 48 remains in progress.
+
 
 ## 49 — PRODUCTION HARDENING / SECURITY / OBSERVABILITY
 

@@ -11,17 +11,17 @@
 
 ### Status
 
-**COMPLETE**
+**IN PROGRESS**
 
-### Commit
+### Latest Completed Checkpoint
 
-`f8c0a72` - Add bounded EventLog viewer to GUI
+`e9c1c24` - Wire dashboard device count to registry
 
 ### Validation
 
-- Targeted Logs test: **1 passed**
-- Full GUI/module suite: **61 passed**
-- Full regression: **449 passed**
+- Dashboard device-count wiring targeted test: **1 passed**
+- Full GUI/module suite: **64 passed**
+- Full regression: **452 passed**
 - `python -m compileall -q app tests`: passed
 - `git diff --check`: passed
 
@@ -104,8 +104,8 @@ Completed phases must not be reopened solely because an older document contains 
 
 ## NEXT DOCUMENTATION ACTION
 
-Documentation synchronization is complete for the current Phase 48 checkpoint. Future documentation updates must preserve the latest verified implementation checkpoint.
+Documentation synchronization for the `e9c1c24` Phase 48 checkpoint is now the active documentation checkpoint. Future documentation updates must preserve the latest verified implementation checkpoint.
 
 ## NEXT IMPLEMENTATION DECISION
 
-Phase 48 Logs ? EventLog viewer foundation is complete at commit `f8c0a72`. The next Phase 48 implementation step must be explicitly defined and RED-first before production code changes begin.
+Phase 48 remains IN PROGRESS. The completed checkpoint is `e9c1c24` - Wire dashboard device count to registry. The next Phase 48 implementation step must be explicitly defined and RED-first before production code changes begin.

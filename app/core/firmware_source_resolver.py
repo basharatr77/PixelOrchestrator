@@ -59,6 +59,67 @@ class GoogleFirmwareCandidateNormalizer:
         return result
 
 
+
+class GoogleFirmwareSourceReader:
+    """Read and classify official Google firmware source evidence.
+
+    This reader does not download firmware or invent candidate metadata.
+    """
+
+    GOOGLE_FACTORY_IMAGES = "https://developers.google.com/android/images"
+    GOOGLE_FULL_OTA = "https://developers.google.com/android/ota"
+
+    def read_source(self, source_url):
+        source_url = str(source_url or "").strip()
+
+        if source_url == self.GOOGLE_FACTORY_IMAGES:
+            return {
+                "source": "GOOGLE",
+                "repository": "FACTORY_IMAGES",
+                "official_source": True,
+                "evidence_reference": source_url,
+                "verification": "UNKNOWN",
+            }
+
+        if source_url == self.GOOGLE_FULL_OTA:
+            return {
+                "source": "GOOGLE",
+                "repository": "FULL_OTA",
+                "official_source": True,
+                "evidence_reference": source_url,
+                "verification": "UNKNOWN",
+            }
+
+        return {
+            "source": "UNKNOWN",
+            "repository": "UNKNOWN",
+            "official_source": False,
+            "evidence_reference": source_url,
+            "verification": "UNKNOWN",
+        }
+
+    def read_candidate(self, candidate):
+        candidate = candidate if isinstance(candidate, dict) else {}
+
+        result = {
+            "source": candidate.get("source", "UNKNOWN"),
+            "repository": candidate.get("repository", "UNKNOWN"),
+            "device_codename": candidate.get("device_codename", "UNKNOWN"),
+            "build_id": candidate.get("build_id", "UNKNOWN"),
+            "android_release": candidate.get("android_release", "UNKNOWN"),
+            "security_patch": candidate.get("security_patch", "UNKNOWN"),
+            "release_date": candidate.get("release_date", "UNKNOWN"),
+            "package_url": candidate.get("package_url", "UNKNOWN"),
+            "package_sha256": candidate.get("package_sha256", "UNKNOWN"),
+            "vbmeta_digest": candidate.get("vbmeta_digest", "UNKNOWN"),
+            "source_verified": False,
+            "candidate_verified": False,
+            "verification": "UNKNOWN",
+        }
+
+        return result
+
+
 class GoogleFirmwareSourceResolver:
     """Resolve official Google firmware source families.
 

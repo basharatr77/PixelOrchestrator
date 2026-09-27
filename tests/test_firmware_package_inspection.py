@@ -841,3 +841,48 @@ def test_firmware_source_adapter_never_invents_package_sha256():
     assert result["package_sha256"] == "UNKNOWN"
     assert result["candidate_verified"] is False
     assert result["verification"] == "UNKNOWN"
+
+def test_google_adapter_implements_generic_source_adapter_contract():
+    from app.core.firmware_source_resolver import (
+        FirmwareSourceAdapter,
+        GoogleFirmwareSourceReader,
+    )
+
+    reader = GoogleFirmwareSourceReader()
+
+    assert isinstance(reader, FirmwareSourceAdapter)
+
+
+def test_google_adapter_preserves_generic_unknown_source_contract():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+    result = reader.identify_source("https://example.com/firmware")
+
+    assert result["source"] == "UNKNOWN"
+    assert result["official_source"] is False
+    assert result["verification"] == "UNKNOWN"
+
+
+def test_google_adapter_candidate_normalization_uses_generic_contract():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.normalize_candidate({
+        "source": "GOOGLE",
+        "repository": "FACTORY_IMAGES",
+        "device_codename": "shiba",
+        "build_id": "UNKNOWN",
+        "android_release": "UNKNOWN",
+        "security_patch": "UNKNOWN",
+        "release_date": "UNKNOWN",
+        "package_url": "UNKNOWN",
+    })
+
+    assert result["source"] == "GOOGLE"
+    assert result["repository"] == "FACTORY_IMAGES"
+    assert result["device_codename"] == "shiba"
+    assert result["package_sha256"] == "UNKNOWN"
+    assert result["candidate_verified"] is False
+    assert result["verification"] == "UNKNOWN"

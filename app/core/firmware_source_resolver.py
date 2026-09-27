@@ -19,6 +19,55 @@ class FirmwareCandidate:
     verification: str
 
 
+class FirmwareSourceAdapter:
+    """Common contract for OEM firmware source adapters."""
+
+    def identify_source(self, source_url):
+        return {
+            "source": "UNKNOWN",
+            "repository": "UNKNOWN",
+            "official_source": False,
+            "evidence_reference": str(source_url or "").strip(),
+            "verification": "UNKNOWN",
+        }
+
+    def fetch_candidates(self, source):
+        return []
+
+    def normalize_candidate(self, candidate):
+        candidate = candidate if isinstance(candidate, dict) else {}
+
+        fields = (
+            "source",
+            "repository",
+            "device_codename",
+            "build_id",
+            "android_release",
+            "security_patch",
+            "release_date",
+            "package_url",
+        )
+
+        result = {
+            field: str(candidate.get(field, "")).strip() or "UNKNOWN"
+            for field in fields
+        }
+
+        result["package_sha256"] = (
+            str(candidate.get("package_sha256", "")).strip()
+            or "UNKNOWN"
+        )
+        result["vbmeta_digest"] = (
+            str(candidate.get("vbmeta_digest", "")).strip()
+            or "UNKNOWN"
+        )
+        result["source_verified"] = False
+        result["candidate_verified"] = False
+        result["verification"] = "UNKNOWN"
+
+        return result
+
+
 class GoogleFirmwareCandidateNormalizer:
     """Normalize Google firmware candidate metadata without verifying it."""
 
@@ -62,8 +111,12 @@ class GoogleFirmwareCandidateNormalizer:
 
 
 
-class GoogleFirmwareSourceReader:
+class GoogleFirmwareSourceReader(FirmwareSourceAdapter):
     """Read and classify official Google firmware source evidence.
+
+    This adapter reuses the generic firmware source contract while
+    preserving Google-specific source reading behavior.
+
 
     This reader does not download firmware or invent candidate metadata.
     """
@@ -251,51 +304,3 @@ class GoogleFirmwareSourceResolver:
                 }
             ],
         }
-
-class FirmwareSourceAdapter:
-    """Common contract for OEM firmware source adapters."""
-
-    def identify_source(self, source_url):
-        return {
-            "source": "UNKNOWN",
-            "repository": "UNKNOWN",
-            "official_source": False,
-            "evidence_reference": str(source_url or "").strip(),
-            "verification": "UNKNOWN",
-        }
-
-    def fetch_candidates(self, source):
-        return []
-
-    def normalize_candidate(self, candidate):
-        candidate = candidate if isinstance(candidate, dict) else {}
-
-        fields = (
-            "source",
-            "repository",
-            "device_codename",
-            "build_id",
-            "android_release",
-            "security_patch",
-            "release_date",
-            "package_url",
-        )
-
-        result = {
-            field: str(candidate.get(field, "")).strip() or "UNKNOWN"
-            for field in fields
-        }
-
-        result["package_sha256"] = (
-            str(candidate.get("package_sha256", "")).strip()
-            or "UNKNOWN"
-        )
-        result["vbmeta_digest"] = (
-            str(candidate.get("vbmeta_digest", "")).strip()
-            or "UNKNOWN"
-        )
-        result["source_verified"] = False
-        result["candidate_verified"] = False
-        result["verification"] = "UNKNOWN"
-
-        return result

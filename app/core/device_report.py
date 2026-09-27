@@ -1,5 +1,8 @@
 """Canonical device report builder."""
 
+import json
+from pathlib import Path
+
 from app.core.module_contract import Device
 
 
@@ -18,3 +21,13 @@ def build_device_report(device: Device) -> dict:
         "properties": dict(device.properties),
         "capabilities": list(device.capabilities or ()),
     }
+
+
+def export_device_report(device: Device, output_path: str | Path) -> Path:
+    """Export a canonical device report as JSON."""
+    path = Path(output_path)
+    path.write_text(
+        json.dumps(build_device_report(device), indent=2),
+        encoding="utf-8",
+    )
+    return path

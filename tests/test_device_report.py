@@ -39,3 +39,22 @@ def test_device_report_builder_rejects_non_device():
         assert str(exc) == "device must be a canonical Device."
     else:
         raise AssertionError("Expected TypeError for non-Device input.")
+
+def test_device_report_export_writes_json_file(tmp_path):
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.core.device_report import export_device_report
+
+    device = Device(
+        device_id="adb:EXPORTTEST",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="EXPORT-MODEL",
+        serial="EXPORTTEST",
+        transport="adb",
+    )
+
+    output_path = tmp_path / "device_report.json"
+    export_device_report(device, output_path)
+
+    assert output_path.exists()
+    assert '"device_id": "adb:EXPORTTEST"' in output_path.read_text()

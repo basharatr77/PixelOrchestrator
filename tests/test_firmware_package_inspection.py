@@ -786,3 +786,58 @@ def test_google_source_reader_never_invents_package_sha256():
     assert result[0]["package_sha256"] == "UNKNOWN"
     assert result[0]["candidate_verified"] is False
     assert result[0]["verification"] == "UNKNOWN"
+
+def test_firmware_source_adapter_contract_exists():
+    from app.core.firmware_source_resolver import FirmwareSourceAdapter
+
+    adapter = FirmwareSourceAdapter()
+
+    assert hasattr(adapter, "identify_source")
+    assert hasattr(adapter, "fetch_candidates")
+    assert hasattr(adapter, "normalize_candidate")
+
+
+def test_firmware_source_adapter_unknown_source_stays_unknown():
+    from app.core.firmware_source_resolver import FirmwareSourceAdapter
+
+    adapter = FirmwareSourceAdapter()
+
+    result = adapter.identify_source("https://example.com/firmware")
+
+    assert result["source"] == "UNKNOWN"
+    assert result["official_source"] is False
+    assert result["verification"] == "UNKNOWN"
+
+
+def test_firmware_source_adapter_missing_candidate_metadata_stays_unknown():
+    from app.core.firmware_source_resolver import FirmwareSourceAdapter
+
+    adapter = FirmwareSourceAdapter()
+
+    result = adapter.normalize_candidate({})
+
+    assert result["candidate_verified"] is False
+    assert result["verification"] == "UNKNOWN"
+
+
+def test_firmware_source_adapter_never_invents_package_sha256():
+    from app.core.firmware_source_resolver import FirmwareSourceAdapter
+
+    adapter = FirmwareSourceAdapter()
+
+    result = adapter.normalize_candidate(
+        {
+            "source": "TEST",
+            "repository": "OFFICIAL",
+            "device_codename": "test",
+            "build_id": "TEST.BUILD",
+            "android_release": "15",
+            "security_patch": "2026-01-01",
+            "release_date": "2026-01-02",
+            "package_url": "https://example.com/test.zip",
+        }
+    )
+
+    assert result["package_sha256"] == "UNKNOWN"
+    assert result["candidate_verified"] is False
+    assert result["verification"] == "UNKNOWN"

@@ -704,11 +704,15 @@ class MainWindow(QMainWindow):
             )
             return
 
+        from app.core.device_report import build_device_report
+
+        report = build_device_report(device)
+
         self.operation_result_operation.setText("Operation: device.generate_report")
         self.operation_result_status.setText("Status: Success")
-        self.operation_result_message.setText("Message: Device report generation started.")
+        self.operation_result_message.setText("Message: Device report generated.")
         self.operation_result_details.setPlainText(
-            f"Device: {self.selected_device_id}"
+            str(report)
         )
 
     def _show_workspace(self, workspace_id):

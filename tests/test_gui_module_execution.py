@@ -2298,3 +2298,46 @@ def test_main_window_exposes_device_report_generation_method():
         assert callable(window.generate_device_report)
     finally:
         window.close()
+
+def test_generate_device_report_uses_canonical_report_builder(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:REPORTTEST",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="REPORT-MODEL",
+        serial="REPORTTEST",
+        transport="adb",
+    )
+    registry.register(device)
+
+    called = {}
+
+    def fake_build_device_report(received_device):
+        called["device"] = received_device
+        return {"device_id": received_device.device_id}
+
+    monkeypatch.setattr(
+        "app.core.device_report.build_device_report",
+        fake_build_device_report,
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    try:
+        window.selected_device_id = device.device_id
+        window.generate_device_report()
+
+        assert called["device"] is device
+    finally:
+        window.close()

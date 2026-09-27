@@ -2282,3 +2282,19 @@ def test_main_window_exposes_device_report_action():
         assert window.device_report_button.text() == "Generate Device Report"
     finally:
         window.close()
+
+def test_main_window_exposes_device_report_generation_method():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+    window.show()
+    app.processEvents()
+
+    try:
+        assert hasattr(window, "generate_device_report")
+        assert callable(window.generate_device_report)
+    finally:
+        window.close()

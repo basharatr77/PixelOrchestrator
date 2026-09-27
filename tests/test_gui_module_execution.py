@@ -2341,3 +2341,52 @@ def test_generate_device_report_uses_canonical_report_builder(monkeypatch):
         assert called["device"] is device
     finally:
         window.close()
+
+def test_generate_device_report_exports_json_file(monkeypatch, tmp_path):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:EXPORTGUI",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="EXPORT-GUI-MODEL",
+        serial="EXPORTGUI",
+        transport="adb",
+    )
+    registry.register(device)
+
+    output_path = tmp_path / "device_report.json"
+    called = {}
+
+    def fake_export_device_report(received_device, received_path):
+        called["device"] = received_device
+        called["path"] = received_path
+
+    monkeypatch.setattr(
+        "app.core.device_report.export_device_report",
+        fake_export_device_report,
+    )
+    monkeypatch.setattr(
+        "PyQt6.QtWidgets.QFileDialog.getSaveFileName",
+        lambda *args, **kwargs: (str(output_path), "JSON Files (*.json)"),
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    try:
+        window.selected_device_id = device.device_id
+        window.generate_device_report()
+
+        assert called["device"] is device
+        assert called["path"] == output_path
+    finally:
+        window.close()

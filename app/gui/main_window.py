@@ -704,9 +704,24 @@ class MainWindow(QMainWindow):
             )
             return
 
-        from app.core.device_report import build_device_report
+        from PyQt6.QtWidgets import QFileDialog
+
+        from app.core.device_report import build_device_report, export_device_report
 
         report = build_device_report(device)
+
+        output_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Device Report",
+            f"{device.device_id.replace(':', '_')}_report.json",
+            "JSON Files (*.json)",
+        )
+
+        if not output_path:
+            return
+
+        output_path = Path(output_path)
+        export_device_report(device, output_path)
 
         self.operation_result_operation.setText("Operation: device.generate_report")
         self.operation_result_status.setText("Status: Success")

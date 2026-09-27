@@ -1,4 +1,6 @@
 from dataclasses import dataclass
+import re
+from urllib.request import Request, urlopen
 
 
 @dataclass(frozen=True)
@@ -118,6 +120,70 @@ class GoogleFirmwareSourceReader:
         }
 
         return result
+
+    def fetch_source(self, source_url):
+        source_url = str(source_url or "").strip()
+
+        source = self.read_source(source_url)
+
+        if not source["official_source"]:
+            source["raw_source_evidence"] = ""
+            return source
+
+        try:
+            request = Request(
+                source_url,
+                headers={"User-Agent": "PixelOrchestrator/1.0"},
+            )
+            with urlopen(request, timeout=15) as response:
+                raw_source_evidence = response.read().decode(
+                    "utf-8",
+                    errors="replace",
+                )
+        except Exception:
+            raw_source_evidence = ""
+
+        source["raw_source_evidence"] = raw_source_evidence
+        if not raw_source_evidence:
+            source["verification"] = "UNKNOWN"
+
+        return source
+
+    def extract_candidates(self, source):
+        if not isinstance(source, dict):
+            return []
+
+        if not source.get("official_source"):
+            return []
+
+        raw = str(source.get("raw_source_evidence", "") or "").strip()
+        if not raw:
+            return []
+
+        fields = {
+            "device_codename": r"device=([^\s]+)",
+            "build_id": r"build=([^\s]+)",
+            "android_release": r"android=([^\s]+)",
+            "security_patch": r"security_patch=([^\s]+)",
+            "release_date": r"release_date=([^\s]+)",
+            "package_url": r"package_url=(https?://[^\s]+)",
+        }
+
+        candidate = {
+            field: (re.search(pattern, raw) or [None, "UNKNOWN"])[1]
+            for field, pattern in fields.items()
+        }
+
+        candidate["source"] = source.get("source", "UNKNOWN")
+        candidate["repository"] = source.get("repository", "UNKNOWN")
+        candidate["package_sha256"] = "UNKNOWN"
+        candidate["vbmeta_digest"] = "UNKNOWN"
+        candidate["source_verified"] = False
+        candidate["candidate_verified"] = False
+        candidate["verification"] = "UNKNOWN"
+
+        return [candidate]
+
 
 
 class GoogleFirmwareSourceResolver:

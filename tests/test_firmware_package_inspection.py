@@ -679,3 +679,110 @@ def test_google_source_reader_never_marks_unverified_candidate_pass():
 
     assert result["candidate_verified"] is False
     assert result["verification"] != "PASS"
+
+def test_google_source_reader_fetches_official_page_evidence():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.fetch_source(
+        "https://developers.google.com/android/images"
+    )
+
+    assert result["source"] == "GOOGLE"
+    assert result["repository"] == "FACTORY_IMAGES"
+    assert result["official_source"] is True
+    assert result["verification"] == "UNKNOWN"
+    assert result["evidence_reference"]
+    assert result["raw_source_evidence"]
+
+
+def test_google_source_reader_does_not_accept_non_official_page():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.fetch_source(
+        "https://example.com/firmware"
+    )
+
+    assert result["official_source"] is False
+    assert result["verification"] == "UNKNOWN"
+    assert result["raw_source_evidence"] == ""
+
+
+def test_google_source_reader_extracts_candidate_metadata_from_real_source():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    source = {
+        "source": "GOOGLE",
+        "repository": "FACTORY_IMAGES",
+        "official_source": True,
+        "evidence_reference": "https://developers.google.com/android/images",
+        "raw_source_evidence": (
+            "device=shiba "
+            "build=AQ3A.TEST "
+            "android=15 "
+            "security_patch=2024-09-01 "
+            "release_date=2024-09-03 "
+            "package_url=https://dl.google.com/test.zip"
+        ),
+    }
+
+    result = reader.extract_candidates(source)
+
+    assert result
+    assert result[0]["device_codename"] == "shiba"
+    assert result[0]["build_id"] == "AQ3A.TEST"
+    assert result[0]["android_release"] == "15"
+    assert result[0]["security_patch"] == "2024-09-01"
+    assert result[0]["release_date"] == "2024-09-03"
+    assert result[0]["package_url"] == "https://dl.google.com/test.zip"
+
+
+def test_google_source_reader_missing_source_evidence_stays_unknown():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.extract_candidates(
+        {
+            "source": "GOOGLE",
+            "repository": "FACTORY_IMAGES",
+            "official_source": True,
+            "evidence_reference": "https://developers.google.com/android/images",
+            "raw_source_evidence": "",
+        }
+    )
+
+    assert result == []
+
+
+def test_google_source_reader_never_invents_package_sha256():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    source = {
+        "source": "GOOGLE",
+        "repository": "FACTORY_IMAGES",
+        "official_source": True,
+        "evidence_reference": "https://developers.google.com/android/images",
+        "raw_source_evidence": (
+            "device=shiba "
+            "build=AQ3A.TEST "
+            "android=15 "
+            "security_patch=2024-09-01 "
+            "release_date=2024-09-03 "
+            "package_url=https://dl.google.com/test.zip"
+        ),
+    }
+
+    result = reader.extract_candidates(source)
+
+    assert result
+    assert result[0]["package_sha256"] == "UNKNOWN"
+    assert result[0]["candidate_verified"] is False
+    assert result[0]["verification"] == "UNKNOWN"

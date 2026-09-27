@@ -594,3 +594,88 @@ def test_google_candidate_normalizer_does_not_mark_unverified_candidate_pass():
     assert result["source_verified"] is False
     assert result["candidate_verified"] is False
     assert result["verification"] != "PASS"
+
+def test_google_source_reader_requires_official_source_reference():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.read_source(
+        "https://developers.google.com/android/images"
+    )
+
+    assert result["source"] == "GOOGLE"
+    assert result["repository"] == "FACTORY_IMAGES"
+    assert result["official_source"] is True
+    assert result["evidence_reference"]
+
+
+def test_google_source_reader_rejects_non_official_source():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.read_source(
+        "https://example.com/firmware"
+    )
+
+    assert result["official_source"] is False
+    assert result["verification"] == "UNKNOWN"
+
+
+def test_google_source_reader_does_not_invent_missing_candidate_metadata():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.read_candidate(
+        {
+            "device_codename": "shiba",
+            "build_id": "",
+            "android_release": "",
+            "security_patch": "",
+            "release_date": "",
+            "package_url": "",
+        }
+    )
+
+    assert result["candidate_verified"] is False
+    assert result["verification"] == "UNKNOWN"
+
+
+def test_google_source_reader_preserves_factory_and_full_ota_source_families():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    factory = reader.read_source(
+        "https://developers.google.com/android/images"
+    )
+    ota = reader.read_source(
+        "https://developers.google.com/android/ota"
+    )
+
+    assert factory["repository"] == "FACTORY_IMAGES"
+    assert ota["repository"] == "FULL_OTA"
+    assert factory["source"] == "GOOGLE"
+    assert ota["source"] == "GOOGLE"
+
+
+def test_google_source_reader_never_marks_unverified_candidate_pass():
+    from app.core.firmware_source_resolver import GoogleFirmwareSourceReader
+
+    reader = GoogleFirmwareSourceReader()
+
+    result = reader.read_candidate(
+        {
+            "device_codename": "shiba",
+            "build_id": "AQ3A.240829.003",
+            "android_release": "15",
+            "security_patch": "2024-09-01",
+            "release_date": "2024-09-03",
+            "package_url": "https://dl.google.com/example.zip",
+        }
+    )
+
+    assert result["candidate_verified"] is False
+    assert result["verification"] != "PASS"

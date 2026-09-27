@@ -226,6 +226,7 @@ class MainWindow(QMainWindow):
         self.device_report_button = QPushButton("Generate Device Report")
         self.device_report_button.setObjectName("device_report_button")
         device_operations_layout.addWidget(self.device_report_button)
+        self.device_report_button.clicked.connect(self.generate_device_report)
 
         # Dynamic module/action workspace.
         self.operations_panel = QFrame()
@@ -682,6 +683,33 @@ class MainWindow(QMainWindow):
             )
         else:
             self.operation_result_details.clear()
+
+    def generate_device_report(self):
+        """Generate a device report for the currently selected device."""
+        if self.device_registry is None:
+            self.operation_result_status.setText("Status: Failed")
+            self.operation_result_message.setText("Message: No device registry is configured.")
+            return
+
+        if self.selected_device_id is None:
+            self.operation_result_status.setText("Status: Failed")
+            self.operation_result_message.setText("Message: No device is selected.")
+            return
+
+        device = self.device_registry.get(self.selected_device_id)
+        if device is None:
+            self.operation_result_status.setText("Status: Failed")
+            self.operation_result_message.setText(
+                f"Message: Selected device not found: {self.selected_device_id}"
+            )
+            return
+
+        self.operation_result_operation.setText("Operation: device.generate_report")
+        self.operation_result_status.setText("Status: Success")
+        self.operation_result_message.setText("Message: Device report generation started.")
+        self.operation_result_details.setPlainText(
+            f"Device: {self.selected_device_id}"
+        )
 
     def _show_workspace(self, workspace_id):
         """Show one registered workspace and hide the others."""

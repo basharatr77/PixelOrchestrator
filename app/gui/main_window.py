@@ -223,6 +223,10 @@ class MainWindow(QMainWindow):
         device_operations_layout = QVBoxLayout(self.device_operations_group)
         device_operations_layout.setContentsMargins(0, 0, 0, 0)
 
+        self.device_report_button = QPushButton("Generate Device Report")
+        self.device_report_button.setObjectName("device_report_button")
+        device_operations_layout.addWidget(self.device_report_button)
+
         # Dynamic module/action workspace.
         self.operations_panel = QFrame()
         self.operations_panel.setObjectName("operations_panel")

@@ -119,8 +119,27 @@ def execute_transport_request(data, device_registry=None, ownership=None, agent_
                 f"Device '{device_id}' is not registered."
             )
 
-    transport = _transport_for_request(data)
     mode = data.get("mode").upper()
+
+    if operation == "get_device_info" and device_registry is not None:
+        device = device_registry.get(device_id)
+        if device is not None:
+            return {
+                "type": "transport_response",
+                "request_id": request_id,
+                "success": True,
+                "result": {
+                    "device_id": device.device_id,
+                    "serial": device.serial,
+                    "model": device.model,
+                    "state": device.state.value,
+                    "transport": device.transport,
+                    "properties": dict(device.properties),
+                    "capabilities": list(device.capabilities or ()),
+                },
+            }
+
+    transport = _transport_for_request(data)
 
     if operation == "execute":
         command = data.get("command")

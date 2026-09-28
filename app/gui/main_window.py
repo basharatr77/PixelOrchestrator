@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import ( QApplication, QMainWindow, QWidget, QVBoxLayout, Q
 from app.gui.ai.service import AIService
 from app.core.event_log import EventLog
 from app.gui.module_adapter import GUIModuleAdapter
+from app.gui.settings import GuiSettings
 
 
 class MainWindow(QMainWindow):
@@ -162,11 +163,29 @@ class MainWindow(QMainWindow):
         settings_title.setObjectName("workspace_title")
         settings_layout.addWidget(settings_title)
 
-        settings_placeholder = QLabel(
-            "Settings workspace is ready. Configuration controls will be added here."
-        )
-        settings_placeholder.setWordWrap(True)
-        settings_layout.addWidget(settings_placeholder)
+        settings_theme_label = QLabel("Theme")
+        settings_layout.addWidget(settings_theme_label)
+
+        self.settings = GuiSettings()
+
+        self.settings_theme_combo = QComboBox()
+        self.settings_theme_combo.addItems(["System", "Light", "Dark"])
+        self.settings_theme_combo.setCurrentText(self.settings.theme)
+        settings_layout.addWidget(self.settings_theme_combo)
+
+        settings_actions = QHBoxLayout()
+
+        self.settings_save_button = QPushButton("Save")
+        self.settings_reset_button = QPushButton("Reset")
+
+        self.settings_save_button.clicked.connect(self.save_settings)
+        self.settings_reset_button.clicked.connect(self.reset_settings)
+
+        settings_actions.addWidget(self.settings_save_button)
+        settings_actions.addWidget(self.settings_reset_button)
+        settings_actions.addStretch()
+
+        settings_layout.addLayout(settings_actions)
         settings_layout.addStretch()
 
         workspace_layout.addWidget(self.settings_workspace, 1)
@@ -556,6 +575,7 @@ class MainWindow(QMainWindow):
 
     def execute_module_action(self, module_id, action_id):
         """Execute a dynamically rendered module action."""
+        validation_detail = None
         try:
             module = self.module_adapter.registry.get(module_id)
 
@@ -606,6 +626,18 @@ class MainWindow(QMainWindow):
                     raise ValueError(
                         f"Selected device not found: {self.selected_device_id}"
                     )
+
+                if action.capability_id:
+                    capabilities = getattr(device, "capabilities", None)
+                    if (
+                        capabilities is not None
+                        and action.capability_id not in capabilities
+                    ):
+                        validation_detail = (
+                            f"Required capability not available: "
+                            f"{action.capability_id}"
+                        )
+                        raise ValueError(validation_detail)
 
             result = self.module_adapter.execute_action(
                 module_id,
@@ -659,6 +691,11 @@ class MainWindow(QMainWindow):
                 f"Message: {exc}"
             )
             self.operation_result_details.clear()
+
+            if validation_detail:
+                self.operation_result_details.setPlainText(
+                    validation_detail
+                )
 
             QMessageBox.critical(
                 self,
@@ -806,6 +843,16 @@ class MainWindow(QMainWindow):
     def open_settings(self):
         """Show the settings workspace."""
         self._show_workspace("settings")
+
+    def save_settings(self):
+        """Persist the selected GUI settings."""
+        self.settings.theme = self.settings_theme_combo.currentText()
+        self.settings.save()
+
+    def reset_settings(self):
+        """Reset GUI settings to defaults."""
+        self.settings.reset()
+        self.settings_theme_combo.setCurrentText(self.settings.theme)
 
     def open_ai_assistant(self):
         """Open the AI Assistant interaction."""

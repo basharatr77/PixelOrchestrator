@@ -2390,3 +2390,92 @@ def test_generate_device_report_exports_json_file(monkeypatch, tmp_path):
         assert called["path"] == output_path
     finally:
         window.close()
+
+def test_generate_device_report_cancel_does_not_export(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:CANCELGUI",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="CANCEL-GUI-MODEL",
+        serial="CANCELGUI",
+        transport="adb",
+    )
+    registry.register(device)
+
+    called = {"export": False}
+
+    def fake_export_device_report(received_device, received_path):
+        called["export"] = True
+
+    monkeypatch.setattr(
+        "app.core.device_report.export_device_report",
+        fake_export_device_report,
+    )
+    monkeypatch.setattr(
+        "PyQt6.QtWidgets.QFileDialog.getSaveFileName",
+        lambda *args, **kwargs: ("", ""),
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    try:
+        window.selected_device_id = device.device_id
+        window.generate_device_report()
+
+        assert called["export"] is False
+    finally:
+        window.close()
+
+def test_generate_device_report_shows_saved_path(monkeypatch, tmp_path):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:PATHGUI",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="PATH-GUI-MODEL",
+        serial="PATHGUI",
+        transport="adb",
+    )
+    registry.register(device)
+
+    output_path = tmp_path / "device_report.json"
+
+    monkeypatch.setattr(
+        "PyQt6.QtWidgets.QFileDialog.getSaveFileName",
+        lambda *args, **kwargs: (str(output_path), "JSON Files (*.json)"),
+    )
+    monkeypatch.setattr(
+        "app.core.device_report.export_device_report",
+        lambda *args, **kwargs: None,
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    try:
+        window.selected_device_id = device.device_id
+        window.generate_device_report()
+
+        assert str(output_path) in window.operation_result_message.text()
+    finally:
+        window.close()

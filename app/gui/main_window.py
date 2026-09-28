@@ -725,7 +725,9 @@ class MainWindow(QMainWindow):
 
         self.operation_result_operation.setText("Operation: device.generate_report")
         self.operation_result_status.setText("Status: Success")
-        self.operation_result_message.setText("Message: Device report generated.")
+        self.operation_result_message.setText(
+            f"Message: Device report saved to: {output_path}"
+        )
         self.operation_result_details.setPlainText(
             str(report)
         )

@@ -721,7 +721,13 @@ class MainWindow(QMainWindow):
             return
 
         output_path = Path(output_path)
-        export_device_report(device, output_path)
+        try:
+            export_device_report(device, output_path)
+        except OSError as exc:
+            self.operation_result_operation.setText("Operation: device.generate_report")
+            self.operation_result_status.setText("Status: Failed")
+            self.operation_result_message.setText(f"Message: {exc}")
+            return
 
         self.operation_result_operation.setText("Operation: device.generate_report")
         self.operation_result_status.setText("Status: Success")

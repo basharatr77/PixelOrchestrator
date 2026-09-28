@@ -2479,3 +2479,73 @@ def test_generate_device_report_shows_saved_path(monkeypatch, tmp_path):
         assert str(output_path) in window.operation_result_message.text()
     finally:
         window.close()
+
+def test_generate_device_report_without_selected_device_shows_error():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow(device_registry=DeviceRegistry())
+    window.show()
+    app.processEvents()
+
+    try:
+        window.selected_device_id = None
+        window.generate_device_report()
+
+        assert window.operation_result_status.text() == "Status: Failed"
+        assert "No device is selected." in window.operation_result_message.text()
+    finally:
+        window.close()
+
+
+def test_generate_device_report_export_failure_shows_error(monkeypatch, tmp_path):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:REPORTERROR",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="REPORT-ERROR-MODEL",
+        serial="REPORTERROR",
+        transport="adb",
+    )
+    registry.register(device)
+
+    output_path = tmp_path / "device_report.json"
+
+    monkeypatch.setattr(
+        "PyQt6.QtWidgets.QFileDialog.getSaveFileName",
+        lambda *args, **kwargs: (str(output_path), "JSON Files (*.json)"),
+    )
+
+    def fail_export(*args, **kwargs):
+        raise OSError("Unable to write device report.")
+
+    monkeypatch.setattr(
+        "app.core.device_report.export_device_report",
+        fail_export,
+    )
+
+    window = MainWindow(device_registry=registry)
+    window.show()
+    app.processEvents()
+
+    try:
+        window.selected_device_id = device.device_id
+        window.generate_device_report()
+
+        assert window.operation_result_status.text() == "Status: Failed"
+        assert "Unable to write device report." in window.operation_result_message.text()
+    finally:
+        window.close()

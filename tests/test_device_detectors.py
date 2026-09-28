@@ -62,6 +62,8 @@ def test_adb_detector_returns_canonical_device(monkeypatch):
     assert device.properties == {
         "brand": "Google",
         "android_version": "14",
+        "security_patch": "",
+        "build_id": "",
     }
 
 
@@ -87,3 +89,29 @@ def test_fastboot_detector_returns_canonical_device(monkeypatch):
     assert device.state is DeviceState.FASTBOOT
     assert device.serial == "PIXEL_8"
     assert device.transport == "fastboot"
+
+def test_adb_detector_collects_build_id(monkeypatch):
+    def fake_check_output(cmd, text=True, timeout=5):
+        if cmd == ["adb", "devices"]:
+            return "List of devices attached\nPIXEL_8\tdevice\n"
+
+        props = {
+            "ro.product.manufacturer": "Google",
+            "ro.product.model": "Pixel 8",
+            "ro.build.version.release": "14",
+            "ro.build.version.security_patch": "2026-01-05",
+            "ro.build.id": "AP1A.240505.004",
+        }
+        if len(cmd) == 6 and cmd[-2] == "getprop":
+            return props.get(cmd[-1], "")
+
+        raise AssertionError(f"Unexpected command: {cmd}")
+
+    monkeypatch.setattr(
+        "app.agents.device_agent.adb_detector.subprocess.check_output",
+        fake_check_output,
+    )
+
+    device = scan_adb()[0]
+
+    assert device.properties["build_id"] == "AP1A.240505.004"

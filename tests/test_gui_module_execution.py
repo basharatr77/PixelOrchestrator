@@ -2549,3 +2549,109 @@ def test_generate_device_report_export_failure_shows_error(monkeypatch, tmp_path
         assert "Unable to write device report." in window.operation_result_message.text()
     finally:
         window.close()
+
+def test_main_window_resets_build_information_when_device_not_found():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:BUILDSTALE",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Build Stale Test",
+        serial="BUILDSTALE",
+        transport="adb",
+        properties={"build_id": "STALE-BUILD"},
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.selected_device_id = device.device_id
+    window._update_device_details()
+    assert window.device_build_id.text() == "Build: STALE-BUILD"
+
+    registry.remove(device.device_id)
+    window._update_device_details()
+
+    try:
+        assert window.device_build_id.text() == "Build: Unknown"
+    finally:
+        window.close()
+
+def test_main_window_shows_unknown_build_when_build_id_missing():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:BUILDUNKNOWN",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Build Unknown Test",
+        serial="BUILDUNKNOWN",
+        transport="adb",
+        properties={
+            "brand": "Google",
+            "android_version": "15",
+        },
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.selected_device_id = device.device_id
+    window._update_device_details()
+    window.show()
+    app.processEvents()
+
+    try:
+        assert window.device_build_id.text() == "Build: Unknown"
+    finally:
+        window.close()
+
+def test_main_window_shows_device_build_information():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="adb:BUILDINFO",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Build Test",
+        serial="BUILD123",
+        transport="adb",
+        properties={
+            "brand": "Google",
+            "android_version": "15",
+            "build_id": "AP3A.241005.015",
+        },
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+    window.selected_device_id = device.device_id
+    window._update_device_details()
+    window.show()
+    app.processEvents()
+
+    try:
+        assert hasattr(window, "device_build_id")
+        assert window.device_build_id.text() == "Build: AP3A.241005.015"
+    finally:
+        window.close()

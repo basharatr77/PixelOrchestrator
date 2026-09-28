@@ -59,6 +59,11 @@ def scan_adb():
                 "ro.build.version.release",
             )
 
+            security_patch = getprop(
+                serial,
+                "ro.build.version.security_patch",
+            )
+
             devices.append(
                 Device(
                     device_id=f"adb:{serial}",
@@ -70,6 +75,7 @@ def scan_adb():
                     properties={
                         "brand": brand,
                         "android_version": android_version,
+                        "security_patch": security_patch,
                     },
                 )
             )

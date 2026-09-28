@@ -35,6 +35,7 @@ class MainWindow(QMainWindow):
         self.device_brand = QLabel("Brand: Unknown")
         self.device_android_version = QLabel("Android: Unknown")
         self.device_build_id = QLabel("Build: Unknown")
+        self.device_security_patch = QLabel("??? Security Patch: Unknown")
         self.device_selector = QComboBox()
         self.device_selector.currentIndexChanged.connect(self._on_device_selected)
         self._populate_device_selector()
@@ -218,6 +219,7 @@ class MainWindow(QMainWindow):
         device_metadata_layout.addWidget(self.device_brand)
         device_metadata_layout.addWidget(self.device_android_version)
         device_metadata_layout.addWidget(self.device_build_id)
+        device_metadata_layout.addWidget(self.device_security_patch)
         device_workspace_layout.addWidget(self.device_metadata_group)
 
         self.device_operations_group = QFrame()
@@ -503,6 +505,7 @@ class MainWindow(QMainWindow):
             self.device_brand.setText("Brand: Unknown")
             self.device_android_version.setText("Android: Unknown")
             self.device_build_id.setText("Build: Unknown")
+            self.device_security_patch.setText("??? Security Patch: Unknown")
             return
 
         device = self.device_registry.get(self.selected_device_id)
@@ -516,6 +519,7 @@ class MainWindow(QMainWindow):
             self.device_brand.setText("Brand: Unknown")
             self.device_android_version.setText("Android: Unknown")
             self.device_build_id.setText("Build: Unknown")
+            self.device_security_patch.setText("??? Security Patch: Unknown")
             return
 
         model = getattr(device, "model", None) or "Unknown"
@@ -543,6 +547,8 @@ class MainWindow(QMainWindow):
         self.device_android_version.setText(f"Android: {android_version}")
         build_id = properties.get("build_id") or "Unknown"
         self.device_build_id.setText(f"Build: {build_id}")
+        security_patch = properties.get("security_patch") or "Unknown"
+        self.device_security_patch.setText(f"??? Security Patch: {security_patch}")
 
     def refresh_device_selector(self):
         self._populate_device_selector()

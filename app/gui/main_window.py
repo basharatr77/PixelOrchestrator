@@ -167,6 +167,7 @@ class MainWindow(QMainWindow):
         settings_layout.addWidget(settings_theme_label)
 
         self.settings = GuiSettings()
+        self._apply_gui_theme(self.settings.theme)
 
         self.settings_theme_combo = QComboBox()
         self.settings_theme_combo.addItems(["System", "Light", "Dark"])
@@ -844,15 +845,35 @@ class MainWindow(QMainWindow):
         """Show the settings workspace."""
         self._show_workspace("settings")
 
+    def _apply_gui_theme(self, theme):
+        """Apply and expose the selected GUI theme."""
+        valid_themes = getattr(
+            self.settings,
+            "VALID_THEMES",
+            {"System", "Light", "Dark"},
+        )
+        default_theme = getattr(
+            self.settings,
+            "DEFAULT_THEME",
+            "System",
+        )
+
+        if theme not in valid_themes:
+            theme = default_theme
+
+        self.setProperty("gui_theme", theme)
+
     def save_settings(self):
         """Persist the selected GUI settings."""
         self.settings.theme = self.settings_theme_combo.currentText()
         self.settings.save()
+        self._apply_gui_theme(self.settings.theme)
 
     def reset_settings(self):
         """Reset GUI settings to defaults."""
         self.settings.reset()
         self.settings_theme_combo.setCurrentText(self.settings.theme)
+        self._apply_gui_theme(self.settings.theme)
 
     def open_ai_assistant(self):
         """Open the AI Assistant interaction."""

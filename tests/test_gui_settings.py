@@ -95,3 +95,84 @@ def test_main_window_reset_button_restores_system_theme(tmp_path, monkeypatch):
 
     assert window.settings_theme_combo.currentText() == "System"
     assert GuiSettings(settings_path).theme == "System"
+from PyQt6.QtWidgets import QApplication
+
+from app.gui.main_window import MainWindow
+from app.gui.settings import GuiSettings
+
+
+def test_main_window_applies_saved_dark_theme(tmp_path, monkeypatch):
+    settings_path = tmp_path / "settings.ini"
+
+    settings = GuiSettings(settings_path)
+    settings.theme = "Dark"
+    settings.save()
+
+    monkeypatch.setattr(
+        "app.gui.main_window.GuiSettings",
+        lambda: GuiSettings(settings_path),
+    )
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+
+    assert window.property("gui_theme") == "Dark"
+from PyQt6.QtWidgets import QApplication
+
+from app.gui.main_window import MainWindow
+from app.gui.settings import GuiSettings
+
+
+def test_main_window_applies_saved_light_theme(tmp_path, monkeypatch):
+    settings_path = tmp_path / "settings.ini"
+
+    settings = GuiSettings(settings_path)
+    settings.theme = "Light"
+    settings.save()
+
+    monkeypatch.setattr(
+        "app.gui.main_window.GuiSettings",
+        lambda: GuiSettings(settings_path),
+    )
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+
+    assert window.property("gui_theme") == "Light"
+
+
+def test_main_window_save_applies_selected_theme(tmp_path, monkeypatch):
+    settings_path = tmp_path / "settings.ini"
+
+    monkeypatch.setattr(
+        "app.gui.main_window.GuiSettings",
+        lambda: GuiSettings(settings_path),
+    )
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+
+    window.settings_theme_combo.setCurrentText("Dark")
+    window.settings_save_button.click()
+
+    assert window.property("gui_theme") == "Dark"
+
+
+def test_main_window_reset_applies_system_theme(tmp_path, monkeypatch):
+    settings_path = tmp_path / "settings.ini"
+
+    settings = GuiSettings(settings_path)
+    settings.theme = "Dark"
+    settings.save()
+
+    monkeypatch.setattr(
+        "app.gui.main_window.GuiSettings",
+        lambda: GuiSettings(settings_path),
+    )
+
+    app = QApplication.instance() or QApplication([])
+    window = MainWindow()
+
+    window.settings_reset_button.click()
+
+    assert window.property("gui_theme") == "System"

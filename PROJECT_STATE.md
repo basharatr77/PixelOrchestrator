@@ -20,10 +20,12 @@
 ### Validation
 
 - Dashboard device-count wiring targeted test: **1 passed**
-- Full GUI/module suite: **64 passed**
-- Full regression: **452 passed**
+- Combined GUI Settings + GUI/module suite: **89 passed**
 - `python -m compileall -q app tests`: passed
-- `git diff --check`: passed
+- `git diff --check`: no errors; existing LF?CRLF warnings only
+- Full regression: **527 passed, 1 intermittent firmware-source test failure**
+- Isolated rerun of the failing firmware-source test: **1 passed**
+- No reproducible Phase 48 regression identified
 
 ## PHASE 46 RESULT
 
@@ -104,8 +106,8 @@ Completed phases must not be reopened solely because an older document contains 
 
 ## NEXT DOCUMENTATION ACTION
 
-Documentation synchronization for the `491db96` Phase 48 checkpoint is now complete. Future documentation updates must preserve the latest verified implementation checkpoint.
+Documentation synchronization for the Phase 48-D2/D3 verification is now complete. The implementation checkpoint remains `491db96`; the D2/D3 changes are currently uncommitted working-tree changes and must be verified before closure.
 
 ## NEXT IMPLEMENTATION DECISION
 
-Phase 48 remains IN PROGRESS. The completed checkpoint is `491db96` - Add persistent GUI settings controls. The next Phase 48 implementation step must be explicitly defined and RED-first before production code changes begin.
+Phase 48 remains IN PROGRESS pending final Phase 48-D closure. The verified D2/D3 GUI changes must be reviewed, tested and committed as a new Phase 48 checkpoint before Phase 49 is considered.

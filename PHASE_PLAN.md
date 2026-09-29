@@ -177,12 +177,16 @@ Completed checkpoints:
 - `c7563d0` - Add operational dashboard device count.
 - `e9c1c24` - Wire dashboard device count to registry.
 - `491db96` - Add persistent GUI settings controls.
+- Working Phase 48-D2/D3 verification - GUI theme contract and integration hardening.
 
-Latest verified checkpoint: `491db96` - Add persistent GUI settings controls.
-Validation at latest checkpoint:
-- Combined GUI Settings + GUI/module suite: **85 passed**.
+Latest verified implementation checkpoint: `491db96` - Add persistent GUI settings controls.
+Current Phase 48-D verification:
+- Combined GUI Settings + GUI/module suite: **89 passed**.
 - `python -m compileall -q app tests`: passed.
 - `git diff --check`: no errors; existing LF?CRLF warnings only.
+- Full regression: **527 passed, 1 intermittent firmware-source test failure**.
+- Isolated rerun of the failing firmware-source test: **1 passed**.
+- The isolated pass confirms no reproducible Phase 48 regression from that full-suite failure.
 
 Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. Phase 48 remains in progress.
 

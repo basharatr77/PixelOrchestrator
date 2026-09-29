@@ -15,7 +15,7 @@
 
 ### Latest Completed Checkpoint
 
-`e9c1c24` - Wire dashboard device count to registry
+`491db96` - Add persistent GUI settings controls
 
 ### Validation
 
@@ -104,8 +104,8 @@ Completed phases must not be reopened solely because an older document contains 
 
 ## NEXT DOCUMENTATION ACTION
 
-Documentation synchronization for the `e9c1c24` Phase 48 checkpoint is now the active documentation checkpoint. Future documentation updates must preserve the latest verified implementation checkpoint.
+Documentation synchronization for the `491db96` Phase 48 checkpoint is now complete. Future documentation updates must preserve the latest verified implementation checkpoint.
 
 ## NEXT IMPLEMENTATION DECISION
 
-Phase 48 remains IN PROGRESS. The completed checkpoint is `e9c1c24` - Wire dashboard device count to registry. The next Phase 48 implementation step must be explicitly defined and RED-first before production code changes begin.
+Phase 48 remains IN PROGRESS. The completed checkpoint is `491db96` - Add persistent GUI settings controls. The next Phase 48 implementation step must be explicitly defined and RED-first before production code changes begin.

@@ -22,7 +22,7 @@
 | 45 | COMPLETE | Agent Registry / Remote Device Ownership (actual implementation) |
 | 46 | COMPLETE THROUGH 46-H | Agent Persistence / Identity / Security / Recovery (actual implementation) |
 | 47 | COMPLETE | Self-Healing / Auto-Repair Workflows |
-| 48 | PLANNED | GUI Device Operations & UX |
+| 48 | IN PROGRESS | GUI Device Operations & UX |
 | 49 | PLANNED | Production Hardening / Security / Observability |
 | 50 | PLANNED | Release / Packaging / Deployment |
 
@@ -176,9 +176,13 @@ Completed checkpoints:
 - `7ea1b1c` - Add Settings workspace to GUI.
 - `c7563d0` - Add operational dashboard device count.
 - `e9c1c24` - Wire dashboard device count to registry.
+- `491db96` - Add persistent GUI settings controls.
 
-Latest verified checkpoint: `e9c1c24` - Wire dashboard device count to registry.
-Validation at latest checkpoint: dashboard device-count targeted test **1 passed**; GUI/module suite **64 passed**; full regression **452 passed**; compileall passed; `git diff --check` passed.
+Latest verified checkpoint: `491db96` - Add persistent GUI settings controls.
+Validation at latest checkpoint:
+- Combined GUI Settings + GUI/module suite: **85 passed**.
+- `python -m compileall -q app tests`: passed.
+- `git diff --check`: no errors; existing LF?CRLF warnings only.
 
 Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. Phase 48 remains in progress.
 

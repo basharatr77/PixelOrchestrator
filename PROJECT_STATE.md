@@ -11,7 +11,7 @@
 
 ### Status
 
-**IN PROGRESS**
+**COMPLETE**
 
 ### Latest Completed Checkpoint
 
@@ -64,7 +64,7 @@ Ephemeral:
 | 45 | COMPLETE | Actual implementation: Agent Registry / Remote Device Ownership |
 | 46 | COMPLETE THROUGH 46-H | Actual implementation: Agent Persistence / Identity / Security / Recovery |
 | 47 | COMPLETE | Self-Healing / Auto-Repair Workflows |
-| 48 | IN PROGRESS | GUI Device Operations & UX |
+| 48 | COMPLETE | GUI Device Operations & UX |
 | 49 | PLANNED | Production Hardening / Security / Observability |
 | 50 | PLANNED | Release / Packaging / Deployment |
 
@@ -97,17 +97,27 @@ These historical roadmap labels must remain documented rather than silently rewr
 
 Phase 47 is COMPLETE. The final implementation checkpoint is commit `0181018` (Add deterministic device allocation boundary), with 391 full regression tests passed.
 
-**Phase 48 - GUI Device Operations & UX is IN PROGRESS.**
+**Phase 48 - GUI Device Operations & UX is COMPLETE at `fd98d35`.**
 
 Phase 49 - Production Hardening / Security / Observability remains planned.
 Phase 50 - Release / Packaging / Deployment remains planned.
 
 Completed phases must not be reopened solely because an older document contains stale current-checkpoint wording. Phase mapping must be taken from the reconciled repository state.
 
-## NEXT DOCUMENTATION ACTION
+## PHASE 48 CLOSURE
 
-Documentation synchronization for the Phase 48-D2/D3 verification is now complete. The implementation checkpoint remains `491db96`; the D2/D3 changes are currently uncommitted working-tree changes and must be verified before closure.
+Phase 48-D4 closure is complete. The final implementation checkpoint is `fd98d35` - Complete Phase 48-D GUI hardening.
+
+Final recorded validation:
+- Combined GUI Settings + GUI/module suite: **89 passed**.
+- `python -m compileall -q app tests`: passed.
+- `git diff --check`: no errors; existing LF/CRLF warnings only.
+- Full regression: **527 passed, 1 intermittent firmware-source test failure**.
+- Isolated rerun of the failing firmware-source test: **1 passed**.
+- No reproducible Phase 48 regression identified.
+
+Phase 48 is now CLOSED and must not be reopened without new evidence and an explicit new contract.
 
 ## NEXT IMPLEMENTATION DECISION
 
-Phase 48 remains IN PROGRESS pending final Phase 48-D closure. The verified D2/D3 GUI changes must be reviewed, tested and committed as a new Phase 48 checkpoint before Phase 49 is considered.
+**Phase 49 - Production Hardening / Security / Observability** is the next implementation phase. Before code changes, define the Phase 49 contract and RED-first checkpoint while preserving unrelated working-tree changes.

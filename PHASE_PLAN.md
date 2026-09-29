@@ -22,7 +22,7 @@
 | 45 | COMPLETE | Agent Registry / Remote Device Ownership (actual implementation) |
 | 46 | COMPLETE THROUGH 46-H | Agent Persistence / Identity / Security / Recovery (actual implementation) |
 | 47 | COMPLETE | Self-Healing / Auto-Repair Workflows |
-| 48 | IN PROGRESS | GUI Device Operations & UX |
+| 48 | COMPLETE | GUI Device Operations & UX |
 | 49 | PLANNED | Production Hardening / Security / Observability |
 | 50 | PLANNED | Release / Packaging / Deployment |
 
@@ -169,7 +169,7 @@ Phase 47 established the deterministic device allocation boundary required befor
 
 ## 48 — GUI DEVICE OPERATIONS & UX
 
-Status: IN PROGRESS.
+Status: COMPLETE.
 
 Completed checkpoints:
 - `f8c0a72` - Add bounded EventLog viewer to GUI.
@@ -177,9 +177,9 @@ Completed checkpoints:
 - `c7563d0` - Add operational dashboard device count.
 - `e9c1c24` - Wire dashboard device count to registry.
 - `491db96` - Add persistent GUI settings controls.
-- Working Phase 48-D2/D3 verification - GUI theme contract and integration hardening.
+- `fd98d35` - Complete Phase 48-D GUI hardening.
 
-Latest verified implementation checkpoint: `491db96` - Add persistent GUI settings controls.
+Latest verified implementation checkpoint: `fd98d35` - Complete Phase 48-D GUI hardening.
 Current Phase 48-D verification:
 - Combined GUI Settings + GUI/module suite: **89 passed**.
 - `python -m compileall -q app tests`: passed.
@@ -188,7 +188,7 @@ Current Phase 48-D verification:
 - Isolated rerun of the failing firmware-source test: **1 passed**.
 - The isolated pass confirms no reproducible Phase 48 regression from that full-suite failure.
 
-Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. Phase 48 remains in progress.
+Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. Phase 48-D closure is complete.
 
 
 ## 49 — PRODUCTION HARDENING / SECURITY / OBSERVABILITY
@@ -205,11 +205,10 @@ Reproducible packaging, deployment, release validation and production distributi
 
 ## NEXT IMPLEMENTATION PHASE
 
-**Phase 48 - GUI Device Operations & UX** is the current implementation phase.
+**Phase 49 - Production Hardening / Security / Observability** is the next implementation phase.
 
-Phase 48 is the current production-facing GUI layer around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling.
+Phase 48 - GUI Device Operations & UX is formally CLOSED at `fd98d35` after final D2/D3 hardening and closure verification.
 
-Before any Phase 48 production code change, define an explicit RED-first checkpoint and preserve unrelated working-tree changes.
+Phase 49 should begin with an explicit contract and RED-first checkpoint while preserving unrelated working-tree changes.
 
-Phase 49 - Production Hardening / Security / Observability remains planned.
 Phase 50 - Release / Packaging / Deployment remains planned.

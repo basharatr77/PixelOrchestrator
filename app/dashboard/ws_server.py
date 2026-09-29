@@ -3,6 +3,8 @@ import json
 
 import websockets
 
+from app.logger import logger
+
 from app.core.adb_transport import ADBTransport
 from app.core.agent_registry import Agent, AgentRegistry
 from app.core.broadcaster import broadcaster
@@ -110,6 +112,11 @@ def execute_transport_request(data, device_registry=None, ownership=None, agent_
             raise ValueError("serial is required for device ownership")
 
         if not ownership.owns(agent_id, device_id):
+            logger.warning(
+                "Remote agent device ownership rejected: %s -> %s",
+                agent_id,
+                device_id,
+            )
             raise PermissionError(
                 f"Agent '{agent_id}' does not have ownership of device '{device_id}'."
             )
@@ -263,6 +270,7 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                         authenticated = False
 
                     if authenticated is not True:
+                        logger.warning("Remote agent authentication failed: %s", agent_id)
                         await ws.send(
                             json.dumps(
                                 {
@@ -275,6 +283,7 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                         continue
 
                     if agent_registry.get(agent_id) is None:
+                        logger.warning("Remote agent authorization rejected: %s", agent_id)
                         await ws.send(
                             json.dumps(
                                 {
@@ -350,7 +359,7 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                 await bus.publish(event)
 
         except Exception:
-            pass
+            logger.exception("Unexpected dashboard WebSocket handler failure")
 
         finally:
             if registered_agent_id is not None:

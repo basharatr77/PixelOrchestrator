@@ -796,3 +796,235 @@ def test_dashboard_handler_rejects_authenticated_unknown_agent_without_registrat
 
     assert agent_registry.get("agent:unknown") is None
     assert claimed == []
+def test_dashboard_handler_logs_unexpected_exception(monkeypatch):
+    bus = StreamBus()
+
+    async def failing_publish(event):
+        raise RuntimeError("unexpected bus failure")
+
+    bus.publish = failing_publish
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "UNEXPECTED_EVENT",
+            "payload": {"value": "test"},
+        })
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    logged = []
+
+    class FakeLogger:
+        def exception(self, message, *args, **kwargs):
+            logged.append((message, args, kwargs))
+
+    monkeypatch.setattr(
+        ws_server,
+        "logger",
+        FakeLogger(),
+        raising=False,
+    )
+
+    handler = ws_server.create_handler(bus)
+
+    asyncio.run(handler(ws))
+
+    assert logged
+    assert "unexpected" in logged[0][0].lower()
+
+def test_dashboard_handler_logs_failed_authentication(monkeypatch):
+    bus = StreamBus()
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:audit-rejected",
+        })
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    class RejectingAuthenticator:
+        def authenticate(self, agent_id, data):
+            return False
+
+    agent_registry = ws_server.AgentRegistry()
+
+    logged = []
+
+    class FakeLogger:
+        def warning(self, message, *args, **kwargs):
+            logged.append((message, args, kwargs))
+
+    monkeypatch.setattr(
+        ws_server,
+        "logger",
+        FakeLogger(),
+        raising=False,
+    )
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        authenticator=RejectingAuthenticator(),
+    )
+
+    asyncio.run(handler(ws))
+
+    assert logged
+    message, args, kwargs = logged[0]
+    assert "authentication" in message.lower()
+    assert "failed" in message.lower()
+    assert "agent:audit-rejected" in args or "agent:audit-rejected" in message
+
+def test_dashboard_handler_logs_unauthorized_agent(monkeypatch):
+    bus = StreamBus()
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:unknown-audit",
+        })
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    class AcceptingAuthenticator:
+        def authenticate(self, agent_id, data):
+            return True
+
+    agent_registry = ws_server.AgentRegistry()
+
+    logged = []
+
+    class FakeLogger:
+        def warning(self, message, *args, **kwargs):
+            logged.append((message, args, kwargs))
+
+    monkeypatch.setattr(
+        ws_server,
+        "logger",
+        FakeLogger(),
+        raising=False,
+    )
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        authenticator=AcceptingAuthenticator(),
+    )
+
+    asyncio.run(handler(ws))
+
+    assert logged
+    message, args, kwargs = logged[0]
+    assert "authorization" in message.lower()
+    assert "agent:unknown-audit" in args or "agent:unknown-audit" in message
+
+def test_dashboard_handler_logs_device_ownership_rejection(monkeypatch):
+    bus = StreamBus()
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:not-owner-audit",
+        }),
+        json.dumps({
+            "type": "transport_request",
+            "request_id": "req:ownership-audit",
+            "operation": "get_device_info",
+            "serial": "DEVICE_AUDIT_001",
+            "mode": "ADB",
+        }),
+    ])
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(ws_server.broadcaster, "register", fake_register)
+    monkeypatch.setattr(ws_server.broadcaster, "unregister", fake_unregister)
+
+    class AcceptingAuthenticator:
+        def authenticate(self, agent_id, data):
+            return True
+
+    agent_registry = ws_server.AgentRegistry()
+    agent_registry.register(
+        ws_server.Agent(agent_id="agent:not-owner-audit")
+    )
+
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+    ownership.assign("agent:other-owner", "device:DEVICE_AUDIT_001")
+
+    logged = []
+
+    class FakeLogger:
+        def warning(self, message, *args, **kwargs):
+            logged.append((message, args, kwargs))
+
+    monkeypatch.setattr(ws_server, "logger", FakeLogger(), raising=False)
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        authenticator=AcceptingAuthenticator(),
+        ownership=ownership,
+    )
+
+    asyncio.run(handler(ws))
+
+    assert logged
+    message, args, kwargs = logged[0]
+    assert "ownership" in message.lower()
+    assert "agent:not-owner-audit" in args or "agent:not-owner-audit" in message

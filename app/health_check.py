@@ -1,13 +1,14 @@
+from pathlib import Path
 import sqlite3
-import os
 
-REGISTRY_DB = "devices.db"
-EVENT_LOG_DB = "event_stream.db"
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+REGISTRY_DB = PROJECT_ROOT / "devices.db"
+EVENT_LOG_DB = PROJECT_ROOT / "event_stream.db"
 
 
 def run_health_check():
-    registry_exists = os.path.exists(REGISTRY_DB)
-    event_log_exists = os.path.exists(EVENT_LOG_DB)
+    registry_exists = Path(REGISTRY_DB).exists()
+    event_log_exists = Path(EVENT_LOG_DB).exists()
 
     devices = []
     event_count = 0

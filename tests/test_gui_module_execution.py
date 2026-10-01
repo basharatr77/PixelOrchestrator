@@ -2655,3 +2655,205 @@ def test_main_window_shows_device_build_information():
         assert window.device_build_id.text() == "Build: AP3A.241005.015"
     finally:
         window.close()
+
+def test_main_window_health_center_refreshes_system_health_on_open(
+    monkeypatch,
+):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QLabel
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    first = {
+        "registry_exists": True,
+        "event_log_exists": True,
+        "device_count": 1,
+        "devices": [("DEVICE_A", "ADB", 10)],
+        "event_count": 3,
+    }
+    second = {
+        "registry_exists": True,
+        "event_log_exists": True,
+        "device_count": 2,
+        "devices": [
+            ("DEVICE_A", "ADB", 10),
+            ("DEVICE_B", "FASTBOOT", 20),
+        ],
+        "event_count": 7,
+    }
+
+    results = iter([first, second])
+
+    monkeypatch.setattr(
+        "app.health_check.run_health_check",
+        lambda: next(results),
+    )
+
+    window = MainWindow(device_registry=DeviceRegistry())
+    window.show()
+    app.processEvents()
+
+    window.open_health_center()
+    app.processEvents()
+
+    system_health = window._workspaces["health"].findChild(
+        QLabel,
+        "system_health",
+    )
+
+    assert system_health is not None
+    assert system_health.property("health_result") == first
+
+    window.open_health_center()
+    app.processEvents()
+
+    assert system_health.property("health_result") == second
+
+    window.close()
+
+
+def test_main_window_health_center_system_health_uses_health_check_result(
+    monkeypatch,
+):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QLabel
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    expected = {
+        "registry_exists": True,
+        "event_log_exists": True,
+        "device_count": 2,
+        "devices": [
+            ("DEVICE_A", "ADB", 10),
+            ("DEVICE_B", "FASTBOOT", 20),
+        ],
+        "event_count": 7,
+    }
+
+    monkeypatch.setattr(
+        "app.health_check.run_health_check",
+        lambda: expected,
+    )
+
+    window = MainWindow(device_registry=DeviceRegistry())
+    window.show()
+    app.processEvents()
+
+    window.open_health_center()
+    app.processEvents()
+
+    system_health = window._workspaces["health"].findChild(
+        QLabel,
+        "system_health",
+    )
+
+    assert system_health is not None
+    assert system_health.property("health_result") == expected
+
+    window.close()
+
+def test_main_window_health_center_exposes_system_health_status():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QLabel
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow(device_registry=DeviceRegistry())
+    window.show()
+    app.processEvents()
+
+    window.open_health_center()
+    app.processEvents()
+
+    system_health = window._workspaces["health"].findChild(
+        QLabel,
+        "system_health",
+    )
+
+    assert system_health is not None
+    assert system_health.text() == "System Health"
+
+    window.close()
+
+def test_main_window_health_center_sidebar_activates_workspace():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication, QPushButton
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow(device_registry=DeviceRegistry())
+    window.show()
+    app.processEvents()
+
+    health_button = next(
+        button
+        for button in window.findChildren(QPushButton)
+        if button.text() == "Health Center"
+    )
+
+    health_button.click()
+    app.processEvents()
+
+    assert window._workspaces["health"].isVisible()
+
+    window.close()
+
+def test_main_window_health_center_exposes_separate_health_areas():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow(device_registry=DeviceRegistry())
+    window.show()
+    app.processEvents()
+
+    window.open_health_center()
+    app.processEvents()
+
+    health = window._workspaces["health"]
+
+    labels = [
+        label.text()
+        for label in health.findChildren(__import__("PyQt6.QtWidgets", fromlist=["QLabel"]).QLabel)
+    ]
+
+    assert "System Health" in labels
+    assert "Device Health" in labels
+    assert "Connection Health" in labels
+    assert "Diagnostics" in labels
+    assert "Alerts & Issues" in labels
+
+    window.close()
+
+def test_main_window_exposes_health_center_workspace():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    window = MainWindow(device_registry=DeviceRegistry())
+    window.show()
+    app.processEvents()
+
+    assert "health" in window._workspaces
+
+    window.open_health_center()
+    app.processEvents()
+
+    assert window._workspaces["health"].isVisible()
+
+    window.close()

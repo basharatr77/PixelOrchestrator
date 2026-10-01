@@ -69,6 +69,7 @@ class MainWindow(QMainWindow):
         ai_button = QPushButton("AI Assistant")
         database_button = QPushButton("Database")
         logs_button = QPushButton("Logs")
+        health_button = QPushButton("Health Center")
         settings_button = QPushButton("Settings")
 
         for button in [
@@ -78,6 +79,7 @@ class MainWindow(QMainWindow):
             ai_button,
             database_button,
             logs_button,
+            health_button,
             settings_button,
         ]:
             button.setMinimumHeight(42)
@@ -103,6 +105,7 @@ class MainWindow(QMainWindow):
         tools_button.clicked.connect(self.open_tools)
         database_button.clicked.connect(self.open_database)
         logs_button.clicked.connect(self.open_logs)
+        health_button.clicked.connect(self.open_health_center)
         settings_button.clicked.connect(self.open_settings)
 
         sidebar_layout.addStretch()
@@ -190,6 +193,44 @@ class MainWindow(QMainWindow):
         settings_layout.addStretch()
 
         workspace_layout.addWidget(self.settings_workspace, 1)
+
+        self.health_workspace = QFrame()
+        self.health_workspace.setObjectName("health_workspace")
+        health_layout = QVBoxLayout(self.health_workspace)
+        health_layout.setContentsMargins(16, 14, 16, 14)
+
+        health_title = QLabel("Health Center")
+        health_title.setObjectName("workspace_title")
+        health_layout.addWidget(health_title)
+
+        health_description = QLabel(
+            "System and device health are managed separately."
+        )
+        health_layout.addWidget(health_description)
+
+        system_health = QLabel("System Health")
+        system_health.setObjectName("system_health")
+        health_layout.addWidget(system_health)
+
+        device_health = QLabel("Device Health")
+        device_health.setObjectName("device_health")
+        health_layout.addWidget(device_health)
+
+        connection_health = QLabel("Connection Health")
+        connection_health.setObjectName("connection_health")
+        health_layout.addWidget(connection_health)
+
+        diagnostics = QLabel("Diagnostics")
+        diagnostics.setObjectName("diagnostics")
+        health_layout.addWidget(diagnostics)
+
+        alerts_issues = QLabel("Alerts & Issues")
+        alerts_issues.setObjectName("alerts_issues")
+        health_layout.addWidget(alerts_issues)
+
+        health_layout.addStretch()
+
+        workspace_layout.addWidget(self.health_workspace, 1)
 
         header = QHBoxLayout()
 
@@ -314,6 +355,7 @@ class MainWindow(QMainWindow):
             "dashboard": self.dashboard_workspace,
             "devices": self.device_workspace,
             "logs": self.logs_workspace,
+            "health": self.health_workspace,
             "settings": self.settings_workspace,
         }
 
@@ -844,6 +886,22 @@ class MainWindow(QMainWindow):
     def open_settings(self):
         """Show the settings workspace."""
         self._show_workspace("settings")
+
+    def open_health_center(self):
+        """Show the Health Center workspace."""
+        from app.health_check import run_health_check
+
+        system_health = self.health_workspace.findChild(
+            QLabel,
+            "system_health",
+        )
+        if system_health is not None:
+            system_health.setProperty(
+                "health_result",
+                run_health_check(),
+            )
+
+        self._show_workspace("health")
 
     def _apply_gui_theme(self, theme):
         """Apply and expose the selected GUI theme."""

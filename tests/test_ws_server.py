@@ -907,6 +907,10 @@ def test_dashboard_handler_logs_failed_authentication(monkeypatch):
     assert "authentication" in message.lower()
     assert "failed" in message.lower()
     assert "agent:audit-rejected" in args or "agent:audit-rejected" in message
+    assert kwargs["extra"] == {
+        "event": "agent_authentication_failed",
+        "agent_id": "agent:audit-rejected",
+    }
 
 def test_dashboard_handler_logs_unauthorized_agent(monkeypatch):
     bus = StreamBus()

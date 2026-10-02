@@ -290,7 +290,14 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                         authenticated = False
 
                     if authenticated is not True:
-                        logger.warning("Remote agent authentication failed: %s", agent_id)
+                        logger.warning(
+                            "Remote agent authentication failed: %s",
+                            agent_id,
+                            extra={
+                                "event": "agent_authentication_failed",
+                                "agent_id": agent_id,
+                            },
+                        )
                         await ws.send(
                             json.dumps(
                                 {

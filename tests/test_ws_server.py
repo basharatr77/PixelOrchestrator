@@ -970,6 +970,10 @@ def test_dashboard_handler_logs_unauthorized_agent(monkeypatch):
     message, args, kwargs = logged[0]
     assert "authorization" in message.lower()
     assert "agent:unknown-audit" in args or "agent:unknown-audit" in message
+    assert kwargs["extra"] == {
+        "event": "agent_authorization_rejected",
+        "agent_id": "agent:unknown-audit",
+    }
 
 def test_dashboard_handler_logs_device_ownership_rejection(monkeypatch):
     bus = StreamBus()

@@ -310,7 +310,14 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                         continue
 
                     if agent_registry.get(agent_id) is None:
-                        logger.warning("Remote agent authorization rejected: %s", agent_id)
+                        logger.warning(
+                            "Remote agent authorization rejected: %s",
+                            agent_id,
+                            extra={
+                                "event": "agent_authorization_rejected",
+                                "agent_id": agent_id,
+                            },
+                        )
                         await ws.send(
                             json.dumps(
                                 {

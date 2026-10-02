@@ -206,7 +206,14 @@ async def handle_transport_request(ws, data, device_registry=None, ownership=Non
             "error": str(exc),
         }
     except Exception:
-        logger.exception("Unexpected transport request failure")
+        logger.exception(
+            "Unexpected transport request failure",
+            extra={
+                "event": "transport_request_failed",
+                "agent_id": agent_id,
+                "request_id": data.get("request_id"),
+            },
+        )
         response = {
             "type": "transport_response",
             "request_id": data.get("request_id"),

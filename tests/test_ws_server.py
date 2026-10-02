@@ -1215,11 +1215,18 @@ def test_handle_transport_request_returns_controlled_error_for_unexpected_except
     def failing_execute(*args):
         raise RuntimeError("internal transport secret")
 
+    logged = []
+
+    class FakeLogger:
+        def exception(self, message, *args, **kwargs):
+            logged.append((message, args, kwargs))
+
     monkeypatch.setattr(
         ws_server,
         "execute_transport_request",
         failing_execute,
     )
+    monkeypatch.setattr(ws_server, "logger", FakeLogger(), raising=False)
 
     ws = FailingWebSocket()
 
@@ -1230,6 +1237,7 @@ def test_handle_transport_request_returns_controlled_error_for_unexpected_except
                 "request_id": "req:error-boundary",
                 "type": "transport_request",
             },
+            agent_id="agent:error-boundary",
         )
     )
 
@@ -1238,3 +1246,11 @@ def test_handle_transport_request_returns_controlled_error_for_unexpected_except
     assert ws.sent[0]["request_id"] == "req:error-boundary"
     assert ws.sent[0]["success"] is False
     assert ws.sent[0]["error"] == "transport request failed"
+    assert logged
+    message, args, kwargs = logged[0]
+    assert "Unexpected transport request failure" in message
+    assert kwargs["extra"] == {
+        "event": "transport_request_failed",
+        "agent_id": "agent:error-boundary",
+        "request_id": "req:error-boundary",
+    }

@@ -193,12 +193,20 @@ async def handle_transport_request(ws, data, device_registry=None, ownership=Non
             ownership,
             agent_id,
         )
-    except Exception as exc:
+    except (ValueError, PermissionError) as exc:
         response = {
             "type": "transport_response",
             "request_id": data.get("request_id"),
             "success": False,
             "error": str(exc),
+        }
+    except Exception:
+        logger.exception("Unexpected transport request failure")
+        response = {
+            "type": "transport_response",
+            "request_id": data.get("request_id"),
+            "success": False,
+            "error": "transport request failed",
         }
 
     await ws.send(json.dumps(response))

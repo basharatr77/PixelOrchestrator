@@ -1139,3 +1139,38 @@ def test_dashboard_handler_rejects_transport_from_stale_agent_connection(monkeyp
         await second_task
 
     asyncio.run(run())
+
+def test_handle_transport_request_returns_controlled_error_for_unexpected_exception(monkeypatch):
+    class FailingWebSocket:
+        def __init__(self):
+            self.sent = []
+
+        async def send(self, message):
+            self.sent.append(json.loads(message))
+
+    def failing_execute(*args):
+        raise RuntimeError("internal transport secret")
+
+    monkeypatch.setattr(
+        ws_server,
+        "execute_transport_request",
+        failing_execute,
+    )
+
+    ws = FailingWebSocket()
+
+    asyncio.run(
+        ws_server.handle_transport_request(
+            ws,
+            {
+                "request_id": "req:error-boundary",
+                "type": "transport_request",
+            },
+        )
+    )
+
+    assert len(ws.sent) == 1
+    assert ws.sent[0]["type"] == "transport_response"
+    assert ws.sent[0]["request_id"] == "req:error-boundary"
+    assert ws.sent[0]["success"] is False
+    assert ws.sent[0]["error"] == "transport request failed"

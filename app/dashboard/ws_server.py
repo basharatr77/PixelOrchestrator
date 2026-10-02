@@ -116,6 +116,11 @@ def execute_transport_request(data, device_registry=None, ownership=None, agent_
                 "Remote agent device ownership rejected: %s -> %s",
                 agent_id,
                 device_id,
+                extra={
+                    "event": "device_ownership_rejected",
+                    "agent_id": agent_id,
+                    "request_id": request_id,
+                },
             )
             raise PermissionError(
                 f"Agent '{agent_id}' does not have ownership of device '{device_id}'."

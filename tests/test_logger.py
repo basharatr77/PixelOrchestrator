@@ -29,3 +29,8 @@ def test_logger_keeps_structured_basic_record_format():
     assert "%(asctime)s" in logger_module.LOG_FORMAT
     assert "%(levelname)s" in logger_module.LOG_FORMAT
     assert "%(message)s" in logger_module.LOG_FORMAT
+
+def test_logger_supports_structured_context_fields():
+    assert "%(event)s" in logger_module.LOG_FORMAT
+    assert "%(agent_id)s" in logger_module.LOG_FORMAT
+    assert "%(request_id)s" in logger_module.LOG_FORMAT

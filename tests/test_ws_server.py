@@ -1029,6 +1029,70 @@ def test_dashboard_handler_logs_device_ownership_rejection(monkeypatch):
     assert "ownership" in message.lower()
     assert "agent:not-owner-audit" in args or "agent:not-owner-audit" in message
 
+def test_dashboard_handler_logs_structured_context_for_device_ownership_rejection(monkeypatch):
+    bus = StreamBus()
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": "agent:structured-audit",
+        }),
+        json.dumps({
+            "type": "transport_request",
+            "request_id": "req:structured-audit",
+            "operation": "get_device_info",
+            "serial": "DEVICE_STRUCTURED_001",
+            "mode": "ADB",
+        }),
+    ])
+
+    class AcceptingAuthenticator:
+        def authenticate(self, agent_id, data):
+            return True
+
+    agent_registry = ws_server.AgentRegistry()
+    agent_registry.register(
+        ws_server.Agent(agent_id="agent:structured-audit")
+    )
+
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    ownership = AgentDeviceOwnership()
+    ownership.assign("agent:other-owner", "device:DEVICE_STRUCTURED_001")
+
+    logged = []
+
+    class FakeLogger:
+        def warning(self, message, *args, **kwargs):
+            logged.append((message, args, kwargs))
+
+    monkeypatch.setattr(ws_server, "logger", FakeLogger(), raising=False)
+
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        authenticator=AcceptingAuthenticator(),
+        ownership=ownership,
+    )
+
+    asyncio.run(handler(ws))
+
+    assert logged
+    message, args, kwargs = logged[0]
+    assert "ownership" in message.lower()
+    assert kwargs["extra"] == {
+        "event": "device_ownership_rejected",
+        "agent_id": "agent:structured-audit",
+        "request_id": "req:structured-audit",
+    }
+
+
 def test_dashboard_handler_rejects_transport_from_stale_agent_connection(monkeypatch):
     bus = StreamBus()
 

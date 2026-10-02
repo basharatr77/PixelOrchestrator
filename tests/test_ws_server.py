@@ -1028,3 +1028,114 @@ def test_dashboard_handler_logs_device_ownership_rejection(monkeypatch):
     message, args, kwargs = logged[0]
     assert "ownership" in message.lower()
     assert "agent:not-owner-audit" in args or "agent:not-owner-audit" in message
+
+def test_dashboard_handler_rejects_transport_from_stale_agent_connection(monkeypatch):
+    bus = StreamBus()
+
+    async def fake_register(socket):
+        pass
+
+    async def fake_unregister(socket):
+        pass
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        fake_register,
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        fake_unregister,
+    )
+
+    agent_registry = ws_server.AgentRegistry()
+    agent_registry.register(
+        ws_server.Agent(agent_id="agent:stale-001")
+    )
+
+    release_first = asyncio.Event()
+    release_second = asyncio.Event()
+
+    class PausedWebSocket(FakeWebSocket):
+        def __init__(self, messages, release_event):
+            super().__init__(messages)
+            self.release_event = release_event
+
+        async def __anext__(self):
+            if self.messages:
+                message = self.messages.pop(0)
+
+                if json.loads(message).get("type") == "transport_request":
+                    await release_first.wait()
+
+                return message
+
+            await self.release_event.wait()
+            raise StopAsyncIteration
+
+    first_ws = PausedWebSocket(
+        [
+            json.dumps({
+                "type": "agent_register",
+                "agent_id": "agent:stale-001",
+            }),
+            json.dumps({
+                "type": "transport_request",
+                "request_id": "stale-request",
+                "operation": "get_device_info",
+                "serial": "STALE_DEVICE",
+                "mode": "ADB",
+            }),
+        ],
+        release_first,
+    )
+
+    second_ws = PausedWebSocket(
+        [
+            json.dumps({
+                "type": "agent_register",
+                "agent_id": "agent:stale-001",
+            }),
+        ],
+        release_second,
+    )
+
+    async def run():
+        handler = ws_server.create_handler(
+            bus,
+            agent_registry=agent_registry,
+            authenticator=AllowingAuthenticator(),
+        )
+
+        first_task = asyncio.create_task(handler(first_ws))
+
+        while not first_ws.sent:
+            await asyncio.sleep(0)
+
+        second_task = asyncio.create_task(handler(second_ws))
+
+        while not second_ws.sent:
+            await asyncio.sleep(0)
+
+        assert agent_registry.is_connection_current(
+            "agent:stale-001",
+            str(id(second_ws)),
+        ) is True
+
+        release_first.set()
+
+        await first_task
+
+        responses = [json.loads(message) for message in first_ws.sent]
+
+        assert any(
+            response.get("type") == "transport_response"
+            and response.get("success") is False
+            for response in responses
+        )
+
+        release_second.set()
+        await second_task
+
+    asyncio.run(run())

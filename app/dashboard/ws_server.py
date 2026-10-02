@@ -336,6 +336,25 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                         )
                         continue
 
+                    if not agent_registry.is_connection_current(
+                        registered_agent_id,
+                        connection_id,
+                    ):
+                        logger.warning(
+                            "Remote agent connection rejected as stale: %s",
+                            registered_agent_id,
+                        )
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "transport_response",
+                                    "request_id": data.get("request_id"),
+                                    "success": False,
+                                    "error": "agent connection is no longer current",
+                                }
+                            )
+                        )
+                        continue
                     await handle_transport_request(
                         ws,
                         data,

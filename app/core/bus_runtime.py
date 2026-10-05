@@ -15,15 +15,20 @@ from app.core.repair_verifier import RepairVerifier
 from app.core.events import Event
 from app.core.registry import create_registry_table, update_registry, read_registry
 from app.core.worker_pool import WorkerPool
+from app.core.task_repository import TaskRepository
 
 
 class BusRuntime:
-    def __init__(self, task_executor=None):
+    def __init__(self, task_executor=None, task_repository=None):
         create_registry_table()
 
         self.bus = StreamBus()
         self.pool = WorkerPool(self.bus, worker_count=3)
         self.task_queue = TaskQueue()
+        self.task_repository = task_repository
+        if self.task_repository is not None:
+            for recovered_task in self.task_repository.recover_all():
+                self.task_queue.add_task(recovered_task)
         self.workflow_executor = WorkflowExecutor(task_queue=self.task_queue)
         self.device_registry = DeviceRegistry()
         self.reconciler = Reconciler(self.device_registry)
@@ -189,6 +194,15 @@ class BusRuntime:
         result = self.execution_worker.run_once()
 
         if result is not None:
+            if (
+                self.task_repository is not None
+                and queued_task is not None
+            ):
+                from app.core.task import Task
+
+                if isinstance(queued_task, Task):
+                    self.task_repository.update(queued_task)
+
             self.bus.publish_now(
                 Event(
                     type="TASK_EXECUTED",

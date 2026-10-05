@@ -428,16 +428,16 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
     return handler
 
 
-async def run_dashboard(bus):
+async def run_dashboard(bus, host="0.0.0.0", port=8765):
     subscribe_dashboard(bus)
 
     handler = create_handler(bus)
 
-    print("?? Dashboard WebSocket Server :8765")
+    print(f"?? Dashboard WebSocket Server :{port}")
 
     async with websockets.serve(
         handler,
-        "0.0.0.0",
-        8765,
+        host,
+        port,
     ):
         await asyncio.Future()

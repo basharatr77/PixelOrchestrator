@@ -3,8 +3,9 @@ import sqlite3
 DB = "devices.db"
 
 
-def create_registry_table():
-    conn = sqlite3.connect(DB)
+def create_registry_table(db=None):
+    database = DB if db is None else db
+    conn = sqlite3.connect(database)
     c = conn.cursor()
 
     c.execute("""
@@ -32,8 +33,9 @@ def create_registry_table():
     conn.close()
 
 
-def update_registry(device, status, offset=0):
-    conn = sqlite3.connect(DB)
+def update_registry(device, status, offset=0, db=None):
+    database = DB if db is None else db
+    conn = sqlite3.connect(database)
     c = conn.cursor()
 
     row = c.execute(
@@ -65,8 +67,9 @@ def update_registry(device, status, offset=0):
     return True
 
 
-def read_registry():
-    conn = sqlite3.connect(DB)
+def read_registry(db=None):
+    database = DB if db is None else db
+    conn = sqlite3.connect(database)
     try:
         rows = conn.execute(
             """

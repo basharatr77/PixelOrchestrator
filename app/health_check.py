@@ -6,15 +6,17 @@ REGISTRY_DB = PROJECT_ROOT / "devices.db"
 EVENT_LOG_DB = PROJECT_ROOT / "event_stream.db"
 
 
-def run_health_check():
-    registry_exists = Path(REGISTRY_DB).exists()
+def run_health_check(database=None):
+    registry_db = REGISTRY_DB if database is None else Path(database)
+
+    registry_exists = Path(registry_db).exists()
     event_log_exists = Path(EVENT_LOG_DB).exists()
 
     devices = []
     event_count = 0
 
     if registry_exists:
-        conn = sqlite3.connect(REGISTRY_DB)
+        conn = sqlite3.connect(registry_db)
         try:
             devices = conn.execute(
                 """

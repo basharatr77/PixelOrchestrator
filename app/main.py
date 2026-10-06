@@ -1,14 +1,22 @@
 import asyncio
 
+from app.config import load_config
 from app.core.bus_runtime import BusRuntime
 from app.dashboard.ws_server import run_dashboard
 
 
 async def main():
-    runtime = BusRuntime()
+    config = load_config()
+    runtime = BusRuntime(database=config["database"])
 
     runtime_task = asyncio.create_task(runtime.run())
-    dashboard_task = asyncio.create_task(run_dashboard(runtime.bus))
+    dashboard_task = asyncio.create_task(
+        run_dashboard(
+            runtime.bus,
+            host=config["host"],
+            port=config["port"],
+        )
+    )
 
     done, pending = await asyncio.wait(
         {runtime_task, dashboard_task},

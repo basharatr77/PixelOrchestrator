@@ -57,3 +57,30 @@ def test_health_check_uses_authoritative_registry_and_event_log(
     assert result["device_count"] == 1
     assert result["devices"] == [("TEST_DEVICE", "ADB", 7)]
     assert result["event_count"] == 1
+
+def test_health_check_uses_configured_registry_database(tmp_path):
+    registry_db = tmp_path / "configured.db"
+
+    conn = sqlite3.connect(registry_db)
+    conn.execute(
+        """
+        CREATE TABLE registry (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            device TEXT,
+            status TEXT,
+            last_offset INTEGER NOT NULL DEFAULT 0
+        )
+        """
+    )
+    conn.execute(
+        "INSERT INTO registry (device, status, last_offset) "
+        "VALUES (?, ?, ?)",
+        ("CONFIGURED_DEVICE", "FASTBOOT", 11),
+    )
+    conn.commit()
+    conn.close()
+
+    result = health_check.run_health_check(database=str(registry_db))
+
+    assert result["device_count"] == 1
+    assert result["devices"] == [("CONFIGURED_DEVICE", "FASTBOOT", 11)]

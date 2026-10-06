@@ -19,8 +19,9 @@ from app.core.task_repository import TaskRepository
 
 
 class BusRuntime:
-    def __init__(self, task_executor=None, task_repository=None):
-        create_registry_table()
+    def __init__(self, task_executor=None, task_repository=None, database=None):
+        self.database = database
+        create_registry_table(db=self.database)
 
         self.bus = StreamBus()
         self.pool = WorkerPool(self.bus, worker_count=3)
@@ -55,7 +56,9 @@ class BusRuntime:
 
         self.lifecycle_consumer = LifecycleConsumer(
             task_queue=self.task_queue,
-            registry_updater=update_registry,
+            registry_updater=lambda device, status, offset=0: update_registry(
+                device, status, offset, db=self.database
+            ),
             device_registry=self.device_registry,
         )
 
@@ -89,7 +92,7 @@ class BusRuntime:
     def _rehydrate_registry(self):
         from app.core.module_contract import Device
 
-        for serial, status, _offset in read_registry():
+        for serial, status, _offset in read_registry(db=self.database):
             state, module_type = self._rehydration_contract(status)
 
             device = Device(

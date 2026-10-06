@@ -10,7 +10,7 @@ def test_main_cancels_runtime_when_dashboard_fails(monkeypatch):
     runtime_cancelled = asyncio.Event()
 
     class FakeRuntime:
-        def __init__(self):
+        def __init__(self, database=None):
             self.bus = object()
 
         async def run(self):
@@ -21,7 +21,7 @@ def test_main_cancels_runtime_when_dashboard_fails(monkeypatch):
                 runtime_cancelled.set()
                 raise
 
-    async def failing_dashboard(bus):
+    async def failing_dashboard(bus, host="0.0.0.0", port=8765):
         raise RuntimeError("dashboard startup failed")
 
     async def scenario():

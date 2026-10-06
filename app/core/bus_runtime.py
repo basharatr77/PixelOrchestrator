@@ -27,6 +27,8 @@ class BusRuntime:
         self.pool = WorkerPool(self.bus, worker_count=3)
         self.task_queue = TaskQueue()
         self.task_repository = task_repository
+        if self.task_repository is None and database is not None:
+            self.task_repository = TaskRepository(database)
         if self.task_repository is not None:
             for recovered_task in self.task_repository.recover_all():
                 self.task_queue.add_task(recovered_task)

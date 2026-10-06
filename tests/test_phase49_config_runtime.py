@@ -2,7 +2,9 @@ import asyncio
 import sqlite3
 import pytest
 from app import main
+import app.core.bus_runtime as bus_runtime_module
 from app.core.bus_runtime import BusRuntime
+from app.core.task_repository import TaskRepository
 
 
 def test_main_uses_configured_dashboard_host_and_port(monkeypatch):
@@ -86,3 +88,35 @@ def test_main_uses_configured_database(monkeypatch):
         asyncio.run(main.main())
 
     assert captured["database"] == "configured.db"
+def test_configured_database_task_repository(tmp_path, monkeypatch):
+    database = tmp_path / "configured-runtime.db"
+
+    runtime = BusRuntime(database=str(database))
+
+    assert isinstance(runtime.task_repository, TaskRepository)
+    assert runtime.task_repository.db_path == str(database)
+    task_tables = sqlite3.connect(database).execute(
+        "SELECT name FROM sqlite_master "
+        "WHERE type='table' AND name='tasks'"
+    ).fetchall()
+    assert task_tables == [("tasks",)]
+
+    explicit_repository = TaskRepository(tmp_path / "explicit-tasks.db")
+    injected_runtime = BusRuntime(
+        task_repository=explicit_repository,
+        database=str(database),
+    )
+    assert injected_runtime.task_repository is explicit_repository
+
+    monkeypatch.setattr(
+        bus_runtime_module,
+        "create_registry_table",
+        lambda db=None: None,
+    )
+    monkeypatch.setattr(
+        bus_runtime_module,
+        "read_registry",
+        lambda db=None: [],
+    )
+    legacy_runtime = BusRuntime()
+    assert legacy_runtime.task_repository is None

@@ -155,7 +155,15 @@ def test_dashboard_handler_replays_from_last_offset(monkeypatch):
 
 
 def test_dashboard_handler_publishes_inbound_event(monkeypatch):
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
     bus = StreamBus()
+    agent_registry = ws_server.AgentRegistry()
+    agent_id = "agent-lifecycle-source"
+    serial = "PIXEL_8"
+    agent_registry.register(ws_server.Agent(agent_id=agent_id))
+    ownership = AgentDeviceOwnership()
+    ownership.assign(agent_id, f"device:{serial}")
 
     published = []
 
@@ -166,9 +174,13 @@ def test_dashboard_handler_publishes_inbound_event(monkeypatch):
 
     ws = FakeWebSocket([
         json.dumps({
+            "type": "agent_register",
+            "agent_id": agent_id,
+        }),
+        json.dumps({
             "type": "DEVICE_MODE_CHANGED",
             "payload": {
-                "serial": "PIXEL_8",
+                "serial": serial,
                 "mode": "FASTBOOT",
             },
         })
@@ -191,7 +203,12 @@ def test_dashboard_handler_publishes_inbound_event(monkeypatch):
         fake_unregister,
     )
 
-    handler = ws_server.create_handler(bus)
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        ownership=ownership,
+        authenticator=AllowingAuthenticator(),
+    )
 
     asyncio.run(handler(ws))
 
@@ -848,6 +865,158 @@ def test_dashboard_handler_logs_unexpected_exception(monkeypatch):
     assert logged
     assert "unexpected" in logged[0][0].lower()
 
+
+def test_transport_timeout_does_not_log_command_payload(monkeypatch):
+    import subprocess
+    import sys
+
+    sensitive_marker = "synthetic-sensitive-command-value"
+    logged = []
+
+    def timeout_execute(self, command):
+        raise subprocess.TimeoutExpired(
+            cmd=["adb", "-s", self.serial, "shell", command],
+            timeout=10,
+        )
+
+    class CapturingLogger:
+        def exception(self, message, *args, **kwargs):
+            exception = sys.exc_info()[1]
+            logged.append(
+                (
+                    type(exception).__name__ if exception else None,
+                    sensitive_marker in str(exception),
+                )
+            )
+
+        def error(self, message, *args, **kwargs):
+            logged.append((message % args if args else message, False))
+
+    monkeypatch.setattr(ws_server.ADBTransport, "execute", timeout_execute)
+    monkeypatch.setattr(ws_server, "logger", CapturingLogger())
+
+    ws = FakeWebSocket()
+    request = {
+        "request_id": "request-secret-log-test",
+        "operation": "execute",
+        "serial": "test-device",
+        "mode": "ADB",
+        "command": f"echo {sensitive_marker}",
+    }
+
+    asyncio.run(ws_server.handle_transport_request(ws, request))
+
+    response = json.loads(ws.sent[0])
+    assert response["success"] is False
+    assert response["error"] == "transport request failed"
+    assert any("TimeoutExpired" in entry for entry, _contains_marker in logged)
+    assert not any(contains_marker for _entry, contains_marker in logged)
+
+
+def test_unauthenticated_lifecycle_event_cannot_mutate_runtime_state(
+    monkeypatch,
+    tmp_path,
+):
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+    from app.core.agent_registry import AgentRegistry
+    from app.core.bus_runtime import BusRuntime
+    from app.core.registry import read_registry
+
+    database = tmp_path / "unauthenticated-event.db"
+    runtime = BusRuntime(database=str(database))
+    runtime.setup()
+    serial = "UNAUTHENTICATED-EVENT-DEVICE"
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        lambda socket: asyncio.sleep(0),
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        lambda socket: asyncio.sleep(0),
+    )
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "DEVICE_CONNECTED",
+            "payload": {
+                "serial": serial,
+                "mode": "ADB",
+            },
+        })
+    ])
+    handler = ws_server.create_handler(
+        runtime.bus,
+        agent_registry=AgentRegistry(),
+        device_registry=runtime.device_registry,
+        ownership=AgentDeviceOwnership(),
+    )
+
+    async def run():
+        await handler(ws)
+
+        if not runtime.bus.queue.empty():
+            offset, event = runtime.bus.queue.get_nowait()
+            try:
+                await runtime.bus.dispatch(offset, event)
+            finally:
+                runtime.bus.queue.task_done()
+
+    asyncio.run(run())
+
+    device_id = f"device:{serial}"
+    assert not runtime.device_registry.contains(device_id)
+    assert read_registry(db=str(database)) == []
+    assert runtime.task_queue.is_empty()
+
+
+def test_agent_cannot_publish_lifecycle_event_for_unowned_device(monkeypatch):
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+
+    bus = StreamBus()
+    agent_registry = ws_server.AgentRegistry()
+    agent_id = "agent-unowned-event-source"
+    agent_registry.register(ws_server.Agent(agent_id=agent_id))
+    ownership = AgentDeviceOwnership()
+
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "register",
+        lambda socket: asyncio.sleep(0),
+    )
+    monkeypatch.setattr(
+        ws_server.broadcaster,
+        "unregister",
+        lambda socket: asyncio.sleep(0),
+    )
+
+    ws = FakeWebSocket([
+        json.dumps({
+            "type": "agent_register",
+            "agent_id": agent_id,
+        }),
+        json.dumps({
+            "type": "DEVICE_CONNECTED",
+            "payload": {
+                "serial": "OTHER-AGENT-DEVICE",
+                "mode": "ADB",
+            },
+        }),
+    ])
+    handler = ws_server.create_handler(
+        bus,
+        agent_registry=agent_registry,
+        ownership=ownership,
+        authenticator=AllowingAuthenticator(),
+    )
+
+    asyncio.run(handler(ws))
+
+    assert bus.queue.empty()
+
+
 def test_dashboard_handler_logs_failed_authentication(monkeypatch):
     bus = StreamBus()
 
@@ -1226,7 +1395,7 @@ def test_handle_transport_request_returns_controlled_error_for_unexpected_except
     logged = []
 
     class FakeLogger:
-        def exception(self, message, *args, **kwargs):
+        def error(self, message, *args, **kwargs):
             logged.append((message, args, kwargs))
 
     monkeypatch.setattr(
@@ -1257,6 +1426,8 @@ def test_handle_transport_request_returns_controlled_error_for_unexpected_except
     assert logged
     message, args, kwargs = logged[0]
     assert "Unexpected transport request failure" in message
+    assert args == ("RuntimeError",)
+    assert "internal transport secret" not in repr(logged)
     assert kwargs["extra"] == {
         "event": "transport_request_failed",
         "agent_id": "agent:error-boundary",

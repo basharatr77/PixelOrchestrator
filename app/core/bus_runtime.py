@@ -192,7 +192,16 @@ class BusRuntime:
         return result
 
     def execute_once(self, task=None):
+        from app.core.task import Task
+
         if task is not None:
+            if (
+                self.task_repository is not None
+                and isinstance(task, Task)
+                and self.task_repository.get(task.id) is None
+            ):
+                self.task_repository.save(task)
+
             self.task_queue.add_task(task)
 
         queued_task = self.task_queue.peek_task()
@@ -203,8 +212,6 @@ class BusRuntime:
                 self.task_repository is not None
                 and queued_task is not None
             ):
-                from app.core.task import Task
-
                 if isinstance(queued_task, Task):
                     self.task_repository.update(queued_task)
 
@@ -260,19 +267,19 @@ class BusRuntime:
             await asyncio.sleep(3)
 
     async def run(self):
-        self.setup()
-
-        await self.pool.start()
-
-        self.execution_task = asyncio.create_task(
-            self.execution_loop()
-        )
-
-        self.detector_task = asyncio.create_task(
-            self.detector_loop()
-        )
-
         try:
+            self.setup()
+
+            await self.pool.start()
+
+            self.execution_task = asyncio.create_task(
+                self.execution_loop()
+            )
+
+            self.detector_task = asyncio.create_task(
+                self.detector_loop()
+            )
+
             while True:
                 await asyncio.sleep(3600)
 

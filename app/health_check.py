@@ -14,32 +14,42 @@ def run_health_check(database=None):
 
     devices = []
     event_count = 0
+    registry_error = None
+    event_log_error = None
 
     if registry_exists:
-        conn = sqlite3.connect(registry_db)
         try:
-            devices = conn.execute(
-                """
-                SELECT device, status, last_offset
-                FROM registry
-                ORDER BY id
-                """
-            ).fetchall()
-        finally:
-            conn.close()
+            conn = sqlite3.connect(registry_db)
+            try:
+                devices = conn.execute(
+                    """
+                    SELECT device, status, last_offset
+                    FROM registry
+                    ORDER BY id
+                    """
+                ).fetchall()
+            finally:
+                conn.close()
+        except sqlite3.Error as exc:
+            registry_error = type(exc).__name__
 
     if event_log_exists:
-        conn = sqlite3.connect(EVENT_LOG_DB)
         try:
-            event_count = conn.execute(
-                "SELECT COUNT(*) FROM event_log"
-            ).fetchone()[0]
-        finally:
-            conn.close()
+            conn = sqlite3.connect(EVENT_LOG_DB)
+            try:
+                event_count = conn.execute(
+                    "SELECT COUNT(*) FROM event_log"
+                ).fetchone()[0]
+            finally:
+                conn.close()
+        except sqlite3.Error as exc:
+            event_log_error = type(exc).__name__
 
     return {
         "registry_exists": registry_exists,
+        "registry_error": registry_error,
         "event_log_exists": event_log_exists,
+        "event_log_error": event_log_error,
         "device_count": len(devices),
         "devices": devices,
         "event_count": event_count,

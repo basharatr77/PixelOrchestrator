@@ -1,9 +1,14 @@
 """Task execution layer for PixelOrchestrator."""
 
+import logging
+
 from app.core.device_registry import DeviceRegistry
 from app.core.module_registry import ModuleRegistry
-from app.core.task import Task
+from app.core.task import Task, TaskStatus
 from app.core.retry_policy import RetryPolicy
+
+
+logger = logging.getLogger(__name__)
 
 
 class TaskExecutor:
@@ -84,11 +89,21 @@ class TaskExecutor:
 
     def _report_progress(self, task, progress, message=""):
         if self.progress_callback is not None:
-            self.progress_callback(
-                task,
-                progress,
-                message,
-            )
+            try:
+                self.progress_callback(
+                    task,
+                    progress,
+                    message,
+                )
+            except Exception as exc:
+                logger.warning(
+                    "Task progress callback failed",
+                    extra={
+                        "task_id": task.id,
+                        "progress": progress,
+                        "failure_type": type(exc).__name__,
+                    },
+                )
 
     def _execute_canonical(self, task):
         from app.core.module_contract import ActionResult
@@ -171,6 +186,15 @@ class TaskExecutor:
                     message=f"Task execution failed: {exc}",
                     error_code="EXECUTION_ERROR",
                 )
+
+            if task.status is TaskStatus.CANCELLED:
+                cancellation_result = ActionResult(
+                    success=False,
+                    message="Task was cancelled while its action was executing.",
+                    error_code="TASK_CANCELLED",
+                )
+                task.result = cancellation_result
+                return cancellation_result
 
             if result.success:
                 self._report_progress(

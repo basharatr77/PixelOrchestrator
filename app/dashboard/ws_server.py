@@ -22,6 +22,12 @@ DASHBOARD_EVENT_TYPES = (
     "TASK_EXECUTED",
 )
 
+AGENT_LIFECYCLE_EVENT_TYPES = frozenset({
+    "DEVICE_CONNECTED",
+    "DEVICE_MODE_CHANGED",
+    "DEVICE_DISCONNECTED",
+})
+
 
 def _event_to_dict(event, offset=None):
     data = {
@@ -131,7 +137,11 @@ def execute_transport_request(data, device_registry=None, ownership=None, agent_
                 f"Device '{device_id}' is not registered."
             )
 
-    mode = data.get("mode").upper()
+    mode = data.get("mode")
+    if not isinstance(mode, str) or not mode.strip():
+        raise ValueError("mode is required")
+
+    mode = mode.upper()
 
     if operation == "get_device_info" and device_registry is not None:
         device = device_registry.get(device_id)
@@ -205,9 +215,10 @@ async def handle_transport_request(ws, data, device_registry=None, ownership=Non
             "success": False,
             "error": str(exc),
         }
-    except Exception:
-        logger.exception(
-            "Unexpected transport request failure",
+    except Exception as exc:
+        logger.error(
+            "Unexpected transport request failure: %s",
+            type(exc).__name__,
             extra={
                 "event": "transport_request_failed",
                 "agent_id": agent_id,
@@ -401,8 +412,56 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
 
                 event_type = data.get("type")
 
-                if not event_type:
+                if not isinstance(event_type, str) or not event_type:
                     continue
+
+                if event_type in AGENT_LIFECYCLE_EVENT_TYPES:
+                    if (
+                        registered_agent_id is None
+                        or not agent_registry.is_connection_current(
+                            registered_agent_id,
+                            connection_id,
+                        )
+                    ):
+                        logger.warning(
+                            "Remote lifecycle event rejected: "
+                            "agent connection is not authenticated/current",
+                            extra={
+                                "event": "lifecycle_event_rejected",
+                                "agent_id": registered_agent_id,
+                            },
+                        )
+                        continue
+
+                    if ownership is not None:
+                        payload = data.get("payload")
+                        serial = (
+                            payload.get("serial")
+                            if isinstance(payload, dict)
+                            else None
+                        )
+                        device_id = (
+                            f"device:{serial}"
+                            if isinstance(serial, str) and serial.strip()
+                            else None
+                        )
+
+                        if (
+                            device_id is None
+                            or not ownership.owns(
+                                registered_agent_id,
+                                device_id,
+                            )
+                        ):
+                            logger.warning(
+                                "Remote lifecycle event rejected: "
+                                "agent does not own the device",
+                                extra={
+                                    "event": "lifecycle_event_rejected",
+                                    "agent_id": registered_agent_id,
+                                },
+                            )
+                            continue
 
                 event = Event(
                     type=event_type,

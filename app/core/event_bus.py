@@ -12,6 +12,8 @@ class StreamBus:
         self.log = EventLog()
         self.consumer_store = ConsumerStore()
         self.running = False
+        self._dispatch_locks = {}
+        self._failed_offsets = {}
 
     def subscribe(self, group_id, event_type, handler):
         self.handlers[(group_id, event_type)].append(handler)
@@ -32,23 +34,44 @@ class StreamBus:
             if etype != event.type:
                 continue
 
-            last_offset = self.consumer_store.get_offset(
-                group_id, etype
-            )
+            key = (group_id, etype)
+            lock = self._dispatch_locks.setdefault(key, asyncio.Lock())
 
-            if offset <= last_offset:
-                continue
-
-            try:
-                for handler in handlers:
-                    if asyncio.iscoroutinefunction(handler):
-                        await handler(event, offset, group_id)
-                    else:
-                        handler(event, offset, group_id)
-
-                self.consumer_store.commit(
-                    group_id, etype, offset
+            async with lock:
+                last_offset = self.consumer_store.get_offset(
+                    group_id, etype
                 )
 
-            except Exception as e:
-                print("Handler error:", e)
+                if offset <= last_offset:
+                    continue
+
+                failed_offset = self._failed_offsets.get(key)
+                if failed_offset is not None and offset > failed_offset:
+                    continue
+
+                try:
+                    for handler in handlers:
+                        if asyncio.iscoroutinefunction(handler):
+                            await handler(event, offset, group_id)
+                        else:
+                            handler(event, offset, group_id)
+
+                    self.consumer_store.commit(
+                        group_id, etype, offset
+                    )
+                    if self._failed_offsets.get(key) == offset:
+                        del self._failed_offsets[key]
+
+                except asyncio.CancelledError:
+                    self._failed_offsets[key] = min(
+                        offset,
+                        self._failed_offsets.get(key, offset),
+                    )
+                    raise
+
+                except Exception as e:
+                    self._failed_offsets[key] = min(
+                        offset,
+                        self._failed_offsets.get(key, offset),
+                    )
+                    print("Handler error:", e)

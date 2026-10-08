@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 
 from app.core.websocket_transport import WebSocketTransport
@@ -669,7 +669,7 @@ def test_websocket_transport_real_local_server_error_to_client_exception(
                     )
                 except RuntimeError as exc:
                     assert str(exc) == (
-                        "simulated remote transport failure"
+                        "transport request failed"
                     )
                 else:
                     raise AssertionError(

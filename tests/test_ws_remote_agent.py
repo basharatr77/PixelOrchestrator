@@ -739,3 +739,81 @@ def test_agent_device_ownership_persists_release(tmp_path):
 
     assert fresh_ownership.owner_of("device:PIXEL_01") is None
     assert fresh_ownership.owns("agent-001", "device:PIXEL_01") is False
+
+def test_persisted_ownership_survives_restart_and_authorizes_remote_agent(tmp_path):
+    import asyncio
+    import json
+
+    from app.core.agent_device_ownership import AgentDeviceOwnership
+    from app.core.agent_ownership_repository import AgentOwnershipRepository
+    from app.core.agent_registry import AgentRegistry
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import Device, DeviceState, ModuleType
+
+    db_path = tmp_path / "ownership.db"
+    agent_id = "agent-restart-owner-001"
+    serial = "RESTART-OWNED-001"
+    device_id = f"device:{serial}"
+
+    repository = AgentOwnershipRepository(db_path)
+
+    ownership = AgentDeviceOwnership(repository=repository)
+    ownership.assign(agent_id, device_id)
+
+    fresh_ownership = AgentDeviceOwnership(
+        repository=AgentOwnershipRepository(db_path)
+    )
+
+    agent_registry = AgentRegistry()
+    agent_registry.register(ws_server.Agent(agent_id=agent_id))
+
+    device_registry = DeviceRegistry()
+    device_registry.register(
+        Device(
+            device_id=device_id,
+            module_type=ModuleType.COMMON,
+            state=DeviceState.ADB,
+            serial=serial,
+        )
+    )
+
+    async def run():
+        bus = StreamBus()
+
+        ws = FakeWebSocket([
+            json.dumps({
+                "type": "agent_register",
+                "agent_id": agent_id,
+            }),
+            json.dumps({
+                "type": "transport_request",
+                "request_id": "request-after-restart-001",
+                "operation": "get_device_info",
+                "serial": serial,
+                "mode": "ADB",
+            }),
+        ])
+
+        handler = ws_server.create_handler(
+            bus,
+            agent_registry=agent_registry,
+            device_registry=device_registry,
+            ownership=fresh_ownership,
+            authenticator=AllowingAuthenticator(),
+        )
+
+        await handler(ws)
+
+        assert json.loads(ws.sent[0]) == {
+            "type": "agent_register_response",
+            "success": True,
+            "agent_id": agent_id,
+        }
+
+        response = json.loads(ws.sent[1])
+
+        assert response["type"] == "transport_response"
+        assert response["request_id"] == "request-after-restart-001"
+        assert response["success"] is True
+
+    asyncio.run(run())

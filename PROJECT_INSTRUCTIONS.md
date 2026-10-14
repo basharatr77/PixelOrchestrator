@@ -182,16 +182,16 @@ A phase is complete only when:
 
 ---
 
-Effective repository checkpoint: **Phase 49 CLOSURE READY (pending final Git commit)**.
-Current branch/HEAD: `main` at `bd7a5f90c2d6cbd99b1198b17837aad720869a34`; 4 commits ahead and 0 behind `origin/main` (verified locally).
+Effective repository checkpoint: **Phase 49 CLOSED**.
+Current branch/HEAD: `main` at `a816761`; 5 commits ahead and 0 behind `origin/main` (verified locally).
 
 Verified Phase 49 work in the working tree covers runtime task persistence/recovery, transport validation, ownership synchronization, startup cleanup, synchronous-action cancellation, event-bus offset recovery, secret-safe transport logging, WebSocket lifecycle authorization, health-check SQLite failure isolation and progress-callback failure isolation. Allocator/task synchronization, Diagnostics/Alerts contract and ordinary action exception/retry audits found no additional gap. These are not official numbered roadmap checkpoints.
-Latest final-audit evidence (2026-10-15): relevant Phase 49 and related regressions **68 passed** across 25 test files; `python -m compileall -q app tests` passed. The full repository test suite passed: **572 passed** in 60.94 seconds (excluding 2 environment-specific files). `git -c core.whitespace=cr-at-eol diff --check` passed with exit code 0; Git emitted LF/CRLF conversion warnings. Repository-wide architecture/reference audit **completed (2026-10-15)**: active runtime `BusRuntime` → `StreamBus`; orphaned modules in `app/core/`, `architecture/`, `core/` documented; 23 unsafe `architecture/workflow/*` module-level imports documented. Phase 49 changes pending final Git commit.
-Phase 49 closure: **All gates satisfied (pending final Git commit).**
+Latest final-audit evidence (2026-10-15): relevant Phase 49 and related regressions **68 passed** across 25 test files; `python -m compileall -q app tests` passed. The full repository test suite passed: **572 passed** in 60.94 seconds (excluding 2 environment-specific files). `git -c core.whitespace=cr-at-eol diff --check` passed with exit code 0; Git emitted LF/CRLF conversion warnings. Repository-wide architecture/reference audit **completed (2026-10-15)**: active runtime `BusRuntime` → `StreamBus`; orphaned modules in `app/core/`, `architecture/`, `core/` documented; 23 unsafe `architecture/workflow/*` module-level imports documented. Phase 49 changes committed in a816761.
+Phase 49 closure: **CLOSED (commit a816761).**
 - Fresh test verification: 68 targeted + 572 full = 640+ passed (2026-10-15).
 - Compile check: passed.
 - Architecture/reference audit: completed (2026-10-15).
-- Git commit: pending final approval.
+- Git commit: completed (a816761)
 - Git push: not performed.
 
 No Phase 50 implementation has started; Phase 50 remains planned.

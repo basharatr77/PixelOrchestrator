@@ -193,7 +193,7 @@ Production-facing GUI around the stable backend, including device operations, di
 
 ## 49 â€” PRODUCTION HARDENING / SECURITY / OBSERVABILITY
 
-Status: IN PROGRESS - CLOSURE PENDING.
+Status: CLOSED (2026-10-15, commit a816761).
 
 Production error handling, secrets/configuration, crash recovery, performance, concurrency, security and observability.
 
@@ -212,16 +212,15 @@ Audits of allocator/task synchronization, the Diagnostics/Alerts contract and or
   - Orphaned modules: `event_store.py`, `event_broker.py`, `replay.py`, `redis_bus.py`.
   - Orphaned folders: `architecture/` (30+ files), `core/` (root, 10 files).
   - Unsafe imports: 23 `architecture/workflow/*` modules with module-level `asyncio.run()`.
-- Phase 49 implementation changes: pending final Git commit (approval pending).
-Closure decision: **All gates satisfied (pending final Git commit).**
+- Phase 49 implementation changes: committed in a816761.
+Closure decision: **Phase 49 is CLOSED (commit a816761).**
 - Fresh test verification: 68 targeted + 572 full = 640+ passed (2026-10-15).
 - Compile check: passed.
 - Architecture/reference audit: completed (2026-10-15).
-- Git commit: pending final approval.
+- Git commit: completed (a816761)
 - Git push: not performed.
 
 Phase 50 remains planned and not started.
-Closure decision: **OPEN**. Under the existing Definition of Done and testing rule in `PROJECT_INSTRUCTIONS.md`, closure remains pending full-suite validation, a clean full diff check, final architecture/reference-audit evidence, and a Git commit containing the verified Phase 49 changes. No commit or push was made.
 
 ## 50 â€” RELEASE / PACKAGING / DEPLOYMENT
 
@@ -231,7 +230,7 @@ Reproducible packaging, deployment, release validation and production distributi
 
 ## NEXT IMPLEMENTATION PHASE
 
-Phase 49 remains the active phase; its closure gates are not yet satisfied.
+Phase 49 is CLOSED. Phase 50 is the next planned phase.
 
 Phase 48 - GUI Device Operations & UX is formally CLOSED at `fd98d35` after final D2/D3 hardening and closure verification.
 

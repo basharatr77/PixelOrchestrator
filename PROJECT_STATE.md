@@ -39,7 +39,7 @@ Verified work in the current working tree:
 - Health-check SQLite failure isolation and progress-callback failure isolation.
 - Allocator/task synchronization, Diagnostics/Alerts contract, and ordinary action exception/retry audits found no additional gap.
 
-This list describes implementation/audit areas, not official numbered Phase 49 checkpoints. The implementation changes after the latest committed checkpoint remain in the working tree and are not included in `HEAD`.
+checkpoint are now committed in a816761.
 
 - Targeted Phase 49 regression evidence: **68 passed** across 25 test files (fresh, 2026-10-15).
 - Compile check: met (`python -m compileall -q app tests`).
@@ -53,12 +53,12 @@ This list describes implementation/audit areas, not official numbered Phase 49 c
   - Unsafe imports documented: 23 `architecture/workflow/*` modules with module-level `asyncio.run()`.
   - No remediation performed (deferred to future phase).
 - Repository-wide architecture/reference audit completed (2026-10-15); see detailed findings above.
-- Verified implementation checkpoint has a Git commit: pending final approval.
-**Closure decision: All gates satisfied (pending final Git commit).**
+- Verified implementation checkpoint has a Git commit: completed (a816761).
+**Closure decision: Phase 49 is CLOSED.**
 - Fresh test verification: 68 targeted + 572 full = 640+ passed (2026-10-15).
 - Compile check: passed.
 - Architecture/reference audit: completed (2026-10-15).
-- Git commit: pending final approval.
+- Git commit: completed (a816761)
 - Git push: not performed.
 
 Phase 50 remains planned and not started.

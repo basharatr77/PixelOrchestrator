@@ -7,6 +7,7 @@ from app.core.module_contract import (
     ModuleManifest,
     ModuleType,
 )
+from app.core.device_registry import DeviceRegistry
 from app.gui.module_adapter import GUIModuleAdapter
 
 
@@ -86,11 +87,12 @@ def test_adapter_returns_failure_for_unknown_module_action():
 def test_dynamic_gui_button_click_invokes_correct_module_action():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     captured = []
 
@@ -669,7 +671,7 @@ def test_main_window_shows_success_message_for_successful_action():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     captured = []
 
@@ -704,7 +706,7 @@ def test_main_window_shows_warning_for_failed_action():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     captured = []
 
@@ -739,7 +741,7 @@ def test_main_window_shows_critical_for_action_exception():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     captured = []
 
@@ -804,7 +806,7 @@ def test_main_window_rejects_dangerous_action_when_confirmation_is_no():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.module_adapter.registry.register(TestDangerousModule())
 
     captured = []
@@ -839,7 +841,7 @@ def test_main_window_executes_dangerous_action_when_confirmation_is_yes():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.module_adapter.registry.register(TestDangerousModule())
 
     captured = []
@@ -865,14 +867,13 @@ def test_main_window_executes_dangerous_action_when_confirmation_is_yes():
         )
         app.processEvents()
 
-        assert captured == [
-            (
-                "test_dangerous",
-                "dangerous_action",
-                None,
-                {},
-            )
-        ]
+        assert len(captured) == 1
+        module_id, action_id, device, kwargs = captured[0]
+        assert module_id == "test_dangerous"
+        assert action_id == "dangerous_action"
+        assert device is None
+        assert isinstance(kwargs.get("approval_token"), str)
+        assert kwargs["approval_token"]
     finally:
         QMessageBox.question = original_question
         window.close()
@@ -884,7 +885,7 @@ def test_main_window_dangerous_confirmation_dialog_contract():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.module_adapter.registry.register(TestDangerousModule())
 
     captured = {}
@@ -1060,11 +1061,12 @@ def test_main_window_shows_selected_device_state_and_transport():
 def test_main_window_action_button_exposes_capability_id():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.module_adapter.registry.register(TestExecutableModule())
     window.refresh_module_action_ui()
 
@@ -1078,11 +1080,12 @@ def test_main_window_action_button_exposes_capability_id():
 def test_main_window_action_button_exposes_real_capability_id():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     button = window.module_action_buttons["common"]["device_info"]
 
@@ -1097,7 +1100,7 @@ def test_main_window_exposes_professional_device_operations_workspace():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -1116,7 +1119,7 @@ def test_main_window_exposes_structured_device_information_fields():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     assert isinstance(window.device_model, QLabel)
     assert isinstance(window.device_serial, QLabel)
@@ -1128,11 +1131,12 @@ def test_main_window_exposes_structured_device_information_fields():
 def test_main_window_places_structured_device_information_in_workspace():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -1155,11 +1159,12 @@ def test_main_window_places_structured_device_information_in_workspace():
 def test_main_window_groups_device_identity_information():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -1172,11 +1177,12 @@ def test_main_window_groups_device_identity_information():
 def test_main_window_identity_group_has_visible_heading():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -1189,11 +1195,12 @@ def test_main_window_identity_group_has_visible_heading():
 def test_main_window_groups_connection_status_information():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -1207,11 +1214,12 @@ def test_main_window_groups_connection_status_information():
 def test_main_window_device_workspace_has_visual_hierarchy_groups():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -1235,7 +1243,7 @@ def test_main_window_exposes_operation_result_workspace():
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -1312,7 +1320,7 @@ def test_main_window_displays_failed_operation_result_with_error_code(monkeypatc
 
     app = QApplication.instance() or QApplication([])
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     result = ActionResult(
         success=False,
@@ -1777,7 +1785,7 @@ def test_main_window_shows_error_code_for_failed_action():
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     def capture(*args, **kwargs):
         return ActionResult(
@@ -1874,7 +1882,7 @@ def test_main_window_primary_sidebar_buttons_are_wired():
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
 
     try:
         from PyQt6.QtWidgets import QPushButton
@@ -2002,7 +2010,7 @@ def test_main_window_sidebar_switches_between_distinct_workspaces():
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -2031,7 +2039,7 @@ def test_main_window_settings_sidebar_has_distinct_workspace():
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -2058,7 +2066,7 @@ def test_main_window_logs_sidebar_has_distinct_workspace():
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -2081,6 +2089,7 @@ def test_main_window_logs_sidebar_has_distinct_workspace():
 def test_main_window_logs_workspace_displays_bounded_event_log(monkeypatch):
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
@@ -2104,7 +2113,7 @@ def test_main_window_logs_workspace_displays_bounded_event_log(monkeypatch):
 
     monkeypatch.setattr("app.gui.main_window.EventLog", FakeEventLog)
 
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -2229,10 +2238,11 @@ def test_main_window_persists_validation_failure_in_operation_result(monkeypatch
 def test_main_window_dashboard_exposes_live_device_count():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -2270,10 +2280,11 @@ def test_main_window_dashboard_shows_registered_device_count():
 def test_main_window_exposes_device_report_action():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -2286,10 +2297,11 @@ def test_main_window_exposes_device_report_action():
 def test_main_window_exposes_device_report_generation_method():
     import app.gui.qt_bootstrap
     from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
     from app.gui.main_window import MainWindow
 
     app = QApplication.instance() or QApplication([])
-    window = MainWindow()
+    window = MainWindow(device_registry=DeviceRegistry())
     window.show()
     app.processEvents()
 
@@ -2655,6 +2667,163 @@ def test_main_window_shows_device_build_information():
         assert window.device_build_id.text() == "Build: AP3A.241005.015"
     finally:
         window.close()
+
+def test_scan_adb_includes_security_patch(monkeypatch):
+    import subprocess
+
+    from app.agents.device_agent.adb_detector import scan_adb
+
+    def fake_check_output(command, **kwargs):
+        if command == ["adb", "devices"]:
+            return "List of devices attached\nPATCH123	device\n"
+        if command[-2:] == ["getprop", "ro.product.manufacturer"]:
+            return "Google"
+        if command[-2:] == ["getprop", "ro.product.model"]:
+            return "Pixel Test"
+        if command[-2:] == ["getprop", "ro.build.version.release"]:
+            return "15"
+        if command[-2:] == ["getprop", "ro.build.version.security_patch"]:
+            return "2026-08-05"
+        raise AssertionError(command)
+
+    monkeypatch.setattr(subprocess, "check_output", fake_check_output)
+
+    devices = scan_adb()
+
+    assert len(devices) == 1
+    assert devices[0].properties["security_patch"] == "2026-08-05"
+
+def test_device_details_show_security_patch():
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.module_contract import Device, DeviceState, ModuleType
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    device = Device(
+        device_id="adb:PATCH123",
+        module_type=ModuleType.ADB,
+        state=DeviceState.ADB,
+        model="Pixel Test",
+        serial="PATCH123",
+        transport="adb",
+        properties={
+            "brand": "Google",
+            "android_version": "15",
+            "build_id": "AP1A.240805.005",
+            "security_patch": "2026-08-05",
+        },
+    )
+
+    registry = type(
+        "Registry",
+        (),
+        {
+            "snapshot": lambda self: [device],
+            "get": lambda self, device_id: device if device_id == device.device_id else None,
+        },
+    )()
+
+    window = MainWindow(device_registry=registry)
+
+    window.selected_device_id = device.device_id
+    window._update_device_details()
+
+    assert window.device_security_patch.text() == "Security Patch: 2026-08-05"
+
+def test_main_window_rejects_direct_action_execution_when_capability_is_missing(monkeypatch):
+    import app.gui.qt_bootstrap
+    from PyQt6.QtWidgets import QApplication
+    from app.core.device_registry import DeviceRegistry
+    from app.core.module_contract import (
+        Action,
+        ActionResult,
+        Capability,
+        Device,
+        ModuleContract,
+        ModuleManifest,
+        ModuleType,
+    )
+    from app.gui.main_window import MainWindow
+
+    app = QApplication.instance() or QApplication([])
+
+    registry = DeviceRegistry()
+    device = Device(
+        device_id="test:direct-capability-missing",
+        module_type=ModuleType.COMMON,
+        capabilities=(),
+    )
+    registry.register(device)
+
+    window = MainWindow(device_registry=registry)
+
+    action = Action(
+        id="test_direct_capability_action",
+        name="Capability Protected Action",
+        capability_id="required_capability",
+        requires_device=True,
+    )
+
+    class TestDirectCapabilityModule(ModuleContract):
+        manifest = ModuleManifest(
+            id="test_direct_capability",
+            name="Test Direct Capability",
+            version="1.0.0",
+            module_type=ModuleType.COMMON,
+            capabilities=(
+                Capability(
+                    id="required_capability",
+                    name="Required Capability",
+                ),
+            ),
+            actions=(action,),
+        )
+
+        def detect(self):
+            return []
+
+        def execute(self, action_id, device=None, **kwargs):
+            return ActionResult(
+                success=True,
+                message="This action must not execute.",
+            )
+
+    window.module_adapter.registry.register(TestDirectCapabilityModule())
+    window.refresh_module_action_ui()
+
+    window.device_selector.setCurrentIndex(0)
+    app.processEvents()
+
+    executed = []
+
+    monkeypatch.setattr(
+        window.module_adapter,
+        "execute_action",
+        lambda *args, **kwargs: executed.append((args, kwargs)),
+    )
+
+    window.execute_module_action(
+        "test_direct_capability",
+        "test_direct_capability_action",
+    )
+
+    assert executed == []
+    assert window.operation_result_status.text() == "Status: Failed"
+    assert "CAPABILITY" in (
+        window.operation_result_details.toPlainText().upper()
+    )
+
+    window.close()
+
+
+
+
+
+
+
+
 
 def test_main_window_health_center_refreshes_system_health_on_open(
     monkeypatch,

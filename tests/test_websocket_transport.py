@@ -965,3 +965,73 @@ def test_websocket_transport_real_local_concurrent_request_response_isolation(
                 )
 
     asyncio.run(scenario())
+
+def test_websocket_transport_sends_configured_agent_token():
+    async def scenario():
+        transport = WebSocketTransport(
+            "ws://127.0.0.1:8765",
+            agent_id="agent-test-001",
+            agent_token="test-secret-token",
+        )
+        websocket = FakeWebSocket([
+            json.dumps({
+                "type": "agent_register_response",
+                "success": True,
+                "agent_id": "agent-test-001",
+            }),
+        ])
+        transport._websocket = websocket
+
+        assert await transport._register_agent() is True
+        assert websocket.sent == [{
+            "type": "agent_register",
+            "agent_id": "agent-test-001",
+            "token": "test-secret-token",
+        }]
+
+    asyncio.run(scenario())
+
+
+def test_websocket_transport_rejects_empty_agent_id():
+    try:
+        WebSocketTransport(
+            "ws://127.0.0.1:8765",
+            agent_id=" ",
+        )
+    except ValueError as exc:
+        assert str(exc) == "agent_id must be a non-empty string"
+    else:
+        raise AssertionError("Expected ValueError")
+
+
+def test_websocket_transport_rejects_empty_agent_token():
+    try:
+        WebSocketTransport(
+            "ws://127.0.0.1:8765",
+            agent_token=" ",
+        )
+    except ValueError as exc:
+        assert str(exc) == "agent_token must be a non-empty string"
+    else:
+        raise AssertionError("Expected ValueError")
+
+
+def test_websocket_transport_omits_token_when_not_configured():
+    async def scenario():
+        transport = WebSocketTransport("ws://127.0.0.1:8765")
+        websocket = FakeWebSocket([
+            json.dumps({
+                "type": "agent_register_response",
+                "success": True,
+                "agent_id": transport._agent_id,
+            }),
+        ])
+        transport._websocket = websocket
+
+        assert await transport._register_agent() is True
+        assert websocket.sent == [{
+            "type": "agent_register",
+            "agent_id": transport._agent_id,
+        }]
+
+    asyncio.run(scenario())

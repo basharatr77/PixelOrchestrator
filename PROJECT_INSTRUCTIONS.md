@@ -1,4 +1,4 @@
-﻿# PixelOrchestrator â€” Project Instructions
+﻿# PixelOrchestrator Ã¢â‚¬â€ Project Instructions
 
 ## 1. Primary Rule
 
@@ -182,14 +182,19 @@ A phase is complete only when:
 
 ---
 
-## CURRENT PROJECT AUTHORITY
-Effective repository checkpoint: **Phase 48 IN PROGRESS**.
-Latest checkpoint commit: `e9c1c24` - Wire dashboard device count to registry.
-Validation at this checkpoint: dashboard device-count targeted test **1 passed**; GUI/module suite **64 passed**; full regression **452 passed**; compileall passed; `git diff --check` passed.
+Effective repository checkpoint: **Phase 49 CLOSURE READY (pending final Git commit)**.
+Current branch/HEAD: `main` at `bd7a5f90c2d6cbd99b1198b17837aad720869a34`; 4 commits ahead and 0 behind `origin/main` (verified locally).
 
-**Phase 48 - GUI Device Operations & UX is the CURRENT implementation phase.**
-Phase 49 - Production Hardening / Security / Observability is planned.
-Phase 50 - Release / Packaging / Deployment is planned.
+Verified Phase 49 work in the working tree covers runtime task persistence/recovery, transport validation, ownership synchronization, startup cleanup, synchronous-action cancellation, event-bus offset recovery, secret-safe transport logging, WebSocket lifecycle authorization, health-check SQLite failure isolation and progress-callback failure isolation. Allocator/task synchronization, Diagnostics/Alerts contract and ordinary action exception/retry audits found no additional gap. These are not official numbered roadmap checkpoints.
+Latest final-audit evidence (2026-10-15): relevant Phase 49 and related regressions **68 passed** across 25 test files; `python -m compileall -q app tests` passed. The full repository test suite passed: **572 passed** in 60.94 seconds (excluding 2 environment-specific files). `git -c core.whitespace=cr-at-eol diff --check` passed with exit code 0; Git emitted LF/CRLF conversion warnings. Repository-wide architecture/reference audit **completed (2026-10-15)**: active runtime `BusRuntime` → `StreamBus`; orphaned modules in `app/core/`, `architecture/`, `core/` documented; 23 unsafe `architecture/workflow/*` module-level imports documented. Phase 49 changes pending final Git commit.
+Phase 49 closure: **All gates satisfied (pending final Git commit).**
+- Fresh test verification: 68 targeted + 572 full = 640+ passed (2026-10-15).
+- Compile check: passed.
+- Architecture/reference audit: completed (2026-10-15).
+- Git commit: pending final approval.
+- Git push: not performed.
+
+No Phase 50 implementation has started; Phase 50 remains planned.
 
 Authority order for continuation:
 1. `PROJECT_STATE.md` - exact active implementation checkpoint.
@@ -217,7 +222,7 @@ Tests:
 
 Next:
 
-    Phase 36 â€” Device Detection & Registry
+    Phase 36 Ã¢â‚¬â€ Device Detection & Registry
 
 ---
 
@@ -400,7 +405,7 @@ All new device-related architecture must build on the canonical contract unless 
 
 Current completed phase:
 
-    Phase 35 â€” Canonical Device Identity & Transport State
+    Phase 35 Ã¢â‚¬â€ Canonical Device Identity & Transport State
 
 Current commit:
 
@@ -408,7 +413,7 @@ Current commit:
 
 Next phase:
 
-    Phase 36 â€” Device Detection & Registry
+    Phase 36 Ã¢â‚¬â€ Device Detection & Registry
 
 The first action of Phase 36 is inspection and architecture mapping, not immediate modification.
 
@@ -424,7 +429,7 @@ The Phase 40-B queue contract is considered complete without an additional B-B c
 
 Next implementation checkpoint:
 
-    Phase 40-C â€” Task Execution Layer
+    Phase 40-C Ã¢â‚¬â€ Task Execution Layer
 
 When continuing Phase 40, inspect the canonical Task contract and existing legacy TaskExecutor/ExecutionWorker boundaries before modifying execution behavior. Preserve the existing 150-test regression baseline and do not stage unrelated working-tree changes.
 
@@ -479,7 +484,7 @@ Next:
     cancellation, progress-event, and failure-handling boundaries
     before implementing the next checkpoint.
 
-## Phase 40-D â€” Workflow Definition Contract
+## Phase 40-D Ã¢â‚¬â€ Workflow Definition Contract
 
 Status: COMPLETE
 
@@ -506,9 +511,9 @@ Decision:
 - DAG cycle/readiness semantics are deferred to the next Phase 40 boundary.
 
 Next:
-- Phase 40-E â€” DAG dependency validation/execution readiness.
+- Phase 40-E Ã¢â‚¬â€ DAG dependency validation/execution readiness.
 
-## Phase 40-E â€” DAG Dependency Validation / Execution Readiness
+## Phase 40-E Ã¢â‚¬â€ DAG Dependency Validation / Execution Readiness
 
 Status: COMPLETE
 
@@ -539,16 +544,16 @@ Decision:
 - Retry, cancellation, progress, and failure orchestration remain separate boundaries.
 
 Next:
-- Phase 40-F-B â€” Retry Execution Semantics.
+- Phase 40-F-B Ã¢â‚¬â€ Retry Execution Semantics.
 - Define and test TaskExecutor retry behavior while preserving canonical Task lifecycle correctness.
 - Preserve the 184-test baseline and do not stage unrelated working-tree changes.
 
-## Phase 40-F-A â€” Retry Policy Contract
+## Phase 40-F-A Ã¢â‚¬â€ Retry Policy Contract
 
 Status: COMPLETE
 
 Implementation commit:
-- `bf52f7f` â€” `Implement Phase 40-F-A retry policy contract`
+- `bf52f7f` Ã¢â‚¬â€ `Implement Phase 40-F-A retry policy contract`
 
 Verification:
 - RetryPolicy tests: 8 passed
@@ -567,7 +572,7 @@ Decisions:
 
 ---
 
-## Phase 40-F-B ï¿½ Retry Execution Semantics
+## Phase 40-F-B Ã¯Â¿Â½ Retry Execution Semantics
 
 Status: COMPLETE
 
@@ -611,7 +616,7 @@ Repository continuity remains based on:
 
 ---
 
-## Phase 40-F-C â€” Cancellation Execution Semantics
+## Phase 40-F-C Ã¢â‚¬â€ Cancellation Execution Semantics
 
 Status: COMPLETE
 
@@ -656,7 +661,7 @@ Repository continuity remains based on:
 
 ---
 
-## Phase 40-G-A â€” Progress Event Contract
+## Phase 40-G-A Ã¢â‚¬â€ Progress Event Contract
 
 Status: COMPLETE
 
@@ -696,7 +701,7 @@ Architectural decisions:
 
 Next:
 
-    Phase 40-G-B â€” Progress Event Publication Boundary.
+    Phase 40-G-B Ã¢â‚¬â€ Progress Event Publication Boundary.
 
     Inspect the canonical TaskExecutor/ExecutionWorker/BusRuntime
     boundary and define the smallest safe mechanism for publishing
@@ -953,9 +958,9 @@ Repository continuity remains based on:
     PHASE_PLAN.md
     PROJECT_INSTRUCTIONS.md
 
-## Phase 40-I-E — Workflow Terminal Tracking / Cleanup Audit
+## Phase 40-I-E â€” Workflow Terminal Tracking / Cleanup Audit
 
-Status: COMPLETE — no production cleanup change required.
+Status: COMPLETE â€” no production cleanup change required.
 
 Findings:
 
@@ -1121,9 +1126,9 @@ Repository continuity remains based on:
 
 ---
 
-## Phase 40-J — Failure / Cancellation Propagation Contract
+## Phase 40-J â€” Failure / Cancellation Propagation Contract
 
-Status: COMPLETE — failure/cancellation propagation contract verified with no production change required.
+Status: COMPLETE â€” failure/cancellation propagation contract verified with no production change required.
 
 Scope:
 
@@ -1176,9 +1181,9 @@ Continuity rule:
     Phase 40 checkpoints without new evidence.
 
 
-## Phase 40-K — Workflow Lifecycle / Cleanup Boundary Audit
+## Phase 40-K â€” Workflow Lifecycle / Cleanup Boundary Audit
 
-Status: COMPLETE — lifecycle and cleanup contract verified; no production change required.
+Status: COMPLETE â€” lifecycle and cleanup contract verified; no production change required.
 
 Scope:
 
@@ -1237,9 +1242,9 @@ Continuity rule:
     Phase 40 checkpoints without new evidence.
 
 
-## Phase 40-L — Workflow Registration / Re-entry Boundary Audit
+## Phase 40-L â€” Workflow Registration / Re-entry Boundary Audit
 
-Status: COMPLETE — workflow registration and re-entry contract verified; no production change required.
+Status: COMPLETE â€” workflow registration and re-entry contract verified; no production change required.
 
 Scope:
 
@@ -1356,11 +1361,11 @@ Continuity rule:
 
 ---
 
-## Phase 41-L-M — Multi-Consumer-Group Recovery Failure Isolation
+## Phase 41-L-M â€” Multi-Consumer-Group Recovery Failure Isolation
 
 Status:
 
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 
@@ -1411,11 +1416,11 @@ Continuity rule:
     checkpoints without new evidence.
 ---
 
-## Phase 41-L-N — Replay Batch / Limit Boundary Audit
+## Phase 41-L-N â€” Replay Batch / Limit Boundary Audit
 
 Status:
 
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 
@@ -1468,11 +1473,11 @@ Continuity rule:
     checkpoints without new evidence.
 ---
 
-## Phase 41-L-O — Replay Payload / Event Fidelity Audit
+## Phase 41-L-O â€” Replay Payload / Event Fidelity Audit
 
 Status:
 
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 
@@ -1533,11 +1538,11 @@ Continuity rule:
     checkpoints without new evidence.
 ---
 
-## Phase 41-L-P — Replay Boundary Input / Offset Semantics Audit
+## Phase 41-L-P â€” Replay Boundary Input / Offset Semantics Audit
 
 Status:
 
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 
@@ -1591,9 +1596,9 @@ Continuity rule:
     Preserve unrelated working-tree changes. Do not reopen completed
     checkpoints without new evidence.
 
-## Phase 41-L-Q — Replay-to-Event Reconstruction Fidelity
+## Phase 41-L-Q â€” Replay-to-Event Reconstruction Fidelity
 Status:
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 - Persisted replay records contain sufficient fidelity to reconstruct the canonical Event representation.
@@ -1655,9 +1660,9 @@ Continuity rule:
     Preserve unrelated working-tree changes. Do not reopen completed
     checkpoints without new evidence.
 
-## Phase 41-L-R — Replay-to-Event Reconstruction Dispatch & Recovery Retry Audit
+## Phase 41-L-R â€” Replay-to-Event Reconstruction Dispatch & Recovery Retry Audit
 Status:
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 - Reconstructed canonical Event objects can be dispatched through StreamBus.
@@ -1727,9 +1732,9 @@ Closure recorded manually after contract verification.
 Continuity rule:
     Preserve unrelated working-tree changes. Do not reopen completed
     checkpoints without new evidence.
-## Phase 41-L-S-A — Replay/Live-Log Boundary Isolation
+## Phase 41-L-S-A â€” Replay/Live-Log Boundary Isolation
 Status:
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 - EventReplayer reads persisted EventLog records without mutating the source.
@@ -1775,9 +1780,9 @@ Closure recorded manually after contract verification.
 Continuity rule:
     Preserve unrelated working-tree changes. Do not reopen completed
     checkpoints without new evidence.
-## Phase 41-L-S-B — Replay Boundary Under Concurrent Append
+## Phase 41-L-S-B â€” Replay Boundary Under Concurrent Append
 Status:
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 - Bounded replay returns the correct ordered batch according to the requested limit.
@@ -1827,9 +1832,9 @@ Closure recorded manually after contract verification.
 Continuity rule:
     Preserve unrelated working-tree changes. Do not reopen completed
     checkpoints without new evidence.
-## Phase 41-L-S-C — Replay Limit/Append Boundary
+## Phase 41-L-S-C â€” Replay Limit/Append Boundary
 Status:
-    COMPLETE — no production change required.
+    COMPLETE â€” no production change required.
 
 Contract verified:
 - Bounded replay respects the requested limit exactly.
@@ -1926,7 +1931,7 @@ Do not reopen Phase 42-C without new evidence.
 Next checkpoint: Phase 42-D ? Device Allocation / Reservation Contract.
 ---
 
-## PHASE 42 — DEVICE FARM / MULTI-DEVICE ORCHESTRATION — FINAL CLOSURE
+## PHASE 42 â€” DEVICE FARM / MULTI-DEVICE ORCHESTRATION â€” FINAL CLOSURE
 
 Phase 42 is CLOSED.
 
@@ -1964,7 +1969,7 @@ Working-tree preservation:
     Unrelated modified/untracked files must remain untouched.
 
 Next phase:
-    PHASE 43 — Worker Pool & Distributed Execution
+    PHASE 43 â€” Worker Pool & Distributed Execution
 
 Resume procedure:
     Read PROJECT_STATE.md first, then PHASE_PLAN.md and this file.
@@ -1974,7 +1979,7 @@ Resume procedure:
 
 ---
 
-## PHASE 44-I — WEBSOCKET REMOTE TRANSPORT — CURRENT CHECKPOINT
+## PHASE 44-I â€” WEBSOCKET REMOTE TRANSPORT â€” CURRENT CHECKPOINT
 
 Status:
     IN PROGRESS
@@ -2002,7 +2007,7 @@ Concurrency decision:
     not supported safely.
 
 Next checkpoint:
-    44-I-X — continue Phase 44 remote-device transport boundary audit.
+    44-I-X â€” continue Phase 44 remote-device transport boundary audit.
 
 Do not reopen completed 44-I checkpoints without new evidence.
 

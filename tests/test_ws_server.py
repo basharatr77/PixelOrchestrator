@@ -111,6 +111,7 @@ def test_dashboard_handler_replays_from_last_offset(monkeypatch):
         json.dumps({
             "type": "dashboard_connect",
             "last_offset": 25,
+            "token": "expected-token",
         })
     ])
 
@@ -136,16 +137,19 @@ def test_dashboard_handler_replays_from_last_offset(monkeypatch):
 
     monkeypatch.setattr(
         ws_server.broadcaster,
-        "register",
+        "register_dashboard",
         fake_register,
     )
     monkeypatch.setattr(
         ws_server.broadcaster,
-        "unregister",
+        "unregister_dashboard",
         fake_unregister,
     )
 
-    handler = ws_server.create_handler(bus)
+    handler = ws_server.create_handler(
+        bus,
+        dashboard_token="expected-token",
+    )
 
     asyncio.run(handler(ws))
 
@@ -309,7 +313,7 @@ def test_stream_bus_dispatch_broadcasts_dashboard_event(monkeypatch):
 
         monkeypatch.setattr(
             ws_server.broadcaster,
-            "broadcast",
+            "broadcast_dashboard",
             fake_broadcast,
         )
 
@@ -360,7 +364,7 @@ def test_stream_bus_dispatch_broadcasts_dashboard_event(monkeypatch):
 
         monkeypatch.setattr(
             ws_server.broadcaster,
-            "broadcast",
+            "broadcast_dashboard",
             fake_broadcast,
         )
 

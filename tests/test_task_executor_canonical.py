@@ -1,8 +1,9 @@
-﻿import pytest
+import pytest
 
 from app.core.module_contract import (
     Action,
     ActionResult,
+    Capability,
     Device,
     DeviceState,
     ModuleContract,
@@ -530,3 +531,113 @@ def test_canonical_task_retries_execution_exception():
     assert task.attempts == 2
     assert task.status is TaskStatus.COMPLETED
 
+
+
+@pytest.mark.parametrize(
+    ("action_options", "capabilities", "device_changes", "expected_error"),
+    [
+        (
+            {"enabled": False},
+            (),
+            {},
+            "ACTION_DISABLED",
+        ),
+        (
+            {"capability_id": "usb"},
+            (),
+            {},
+            "CAPABILITY_NOT_FOUND",
+        ),
+        (
+            {"capability_id": "usb"},
+            (Capability(id="usb", name="USB", enabled=False),),
+            {},
+            "CAPABILITY_DISABLED",
+        ),
+        (
+            {"allowed_transports": ("adb",)},
+            (),
+            {"transport": "fastboot"},
+            "TRANSPORT_NOT_ALLOWED",
+        ),
+        (
+            {"allowed_states": ("adb",)},
+            (),
+            {"state": DeviceState.CONNECTED},
+            "STATE_NOT_ALLOWED",
+        ),
+        (
+            {"allowed_states": ("adb",)},
+            (),
+            {"state": "connected"},
+            "INVALID_DEVICE_STATE",
+        ),
+        (
+            {"dangerous": True},
+            (),
+            {},
+            "DANGEROUS_ACTION_REQUIRES_APPROVAL",
+        ),
+    ],
+)
+def test_canonical_executor_rejects_unauthorized_actions(
+    action_options,
+    capabilities,
+    device_changes,
+    expected_error,
+):
+    from app.core.module_contract import Capability
+
+    if action_options.get("capability_id") == "usb" and not capabilities:
+        if expected_error == "CAPABILITY_NOT_FOUND":
+            capabilities = ()
+
+    action = Action(
+        id="protected",
+        name="Protected action",
+        requires_device=True,
+        **action_options,
+    )
+
+    class AuthorizationSpyModule(ModuleContract):
+        def __init__(self):
+            self.execute_calls = 0
+            self.manifest = ModuleManifest(
+                id="authorization_spy",
+                name="Authorization spy",
+                version="1.0.0",
+                module_type=ModuleType.COMMON,
+                capabilities=capabilities,
+                actions=(action,),
+            )
+
+        def detect(self):
+            return []
+
+        def execute(self, action_id, device=None, **kwargs):
+            self.execute_calls += 1
+            return ActionResult(success=True, message="unexpected execution")
+
+    module = AuthorizationSpyModule()
+    device_registry = FakeDeviceRegistry()
+
+    for name, value in device_changes.items():
+        setattr(device_registry.device, name, value)
+
+    executor = TaskExecutor(
+        module_registry=FakeModuleRegistry(module),
+        device_registry=device_registry,
+    )
+    task = Task(
+        device_id="device:PIXEL_8",
+        module_id="authorization_spy",
+        action_id="protected",
+    )
+
+    result = executor.execute(task)
+
+    assert result.success is False
+    assert result.error_code == expected_error
+    assert task.status == TaskStatus.FAILED
+    assert task.attempts == 1
+    assert module.execute_calls == 0

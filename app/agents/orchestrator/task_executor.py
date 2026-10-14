@@ -157,6 +157,34 @@ class TaskExecutor:
                 task.fail(result)
                 return result
 
+        from app.core.action_authorization import validate_action_authorization
+
+        if getattr(action, "dangerous", False):
+            task.start()
+            result = ActionResult(
+                success=False,
+                message=(
+                    f"Dangerous action '{task.action_id}' requires explicit "
+                    "approval before execution."
+                ),
+                error_code="DANGEROUS_ACTION_REQUIRES_APPROVAL",
+            )
+            task.fail(result)
+            return result
+
+        get_capabilities = getattr(module, "get_capabilities", None)
+        capabilities = get_capabilities() if callable(get_capabilities) else []
+
+        rejection = validate_action_authorization(
+            action,
+            capabilities,
+            device,
+        )
+        if rejection is not None:
+            task.start()
+            task.fail(rejection)
+            return rejection
+
         while True:
             task.start()
 

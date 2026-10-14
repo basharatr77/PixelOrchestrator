@@ -171,3 +171,84 @@ def test_disallowed_device_state_is_rejected():
 
     assert result.success is False
     assert result.error_code == "STATE_NOT_ALLOWED"
+
+
+def test_unknown_action_is_rejected_before_module_execute():
+    adapter = GUIModuleAdapter()
+    module = AuthorizationModule()
+    adapter.registry.register(module)
+
+    result = adapter.execute_action("auth_test", "unknown_action")
+
+    assert result.success is False
+    assert result.error_code == "ACTION_NOT_FOUND"
+
+
+def test_missing_capability_is_rejected_before_module_execute(monkeypatch):
+    adapter = GUIModuleAdapter()
+    module = AuthorizationModule()
+    adapter.registry.register(module)
+
+    action = module.manifest.actions[0]
+    monkeypatch.setattr(
+        module,
+        "get_actions",
+        lambda: [
+            Action(
+                id=action.id,
+                name=action.name,
+                capability_id="missing_cap",
+                enabled=True,
+            )
+        ],
+    )
+    monkeypatch.setattr(module, "get_capabilities", lambda: [])
+
+    result = adapter.execute_action("auth_test", action.id)
+
+    assert result.success is False
+    assert result.error_code == "CAPABILITY_NOT_FOUND"
+
+
+def test_invalid_device_state_is_rejected_before_module_execute():
+    from app.core.module_contract import Device, DeviceState
+
+    adapter = GUIModuleAdapter()
+    module = AuthorizationModule()
+    module.manifest = ModuleManifest(
+        id="invalid_state_test",
+        name="Invalid State Test",
+        version="1.0.0",
+        module_type=ModuleType.COMMON,
+        capabilities=(
+            Capability(id="invalid_state_cap", name="Invalid State Capability"),
+        ),
+        actions=(
+            Action(
+                id="invalid_state_action",
+                name="Invalid State Action",
+                capability_id="invalid_state_cap",
+                requires_device=True,
+                allowed_states=("adb",),
+            ),
+        ),
+    )
+    adapter.registry.register(module)
+
+    device = Device(
+        device_id="test-invalid-state",
+        module_type=ModuleType.COMMON,
+        state=DeviceState.ADB,
+        transport="adb",
+    )
+    device.state = "INVALID_STATE"
+
+    result = adapter.execute_action(
+        "invalid_state_test",
+        "invalid_state_action",
+        device=device,
+    )
+
+    assert result.success is False
+    assert result.error_code == "INVALID_DEVICE_STATE"
+    assert result.message

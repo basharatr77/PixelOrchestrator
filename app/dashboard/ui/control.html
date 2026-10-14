@@ -62,29 +62,91 @@ body {
 </div>
 
 <script>
-let ws = new WebSocket("ws://127.0.0.1:8765");
+const statusEl = document.getElementById("status");
+const eventsEl = document.getElementById("events");
+const devicesEl = document.getElementById("devices");
 
-ws.onopen = () => {
-  document.getElementById("status").innerText = "CONNECTED 🚀";
-};
+let authenticated = false;
+let pendingMessages = [];
+let closingAfterAuthFailure = false;
 
-ws.onmessage = (msg) => {
-  let data = JSON.parse(msg.data);
+const dashboardToken = window.prompt(
+  "Paste your PixelOrchestrator dashboard token:"
+);
 
-  // event stream
-  let ev = document.createElement("div");
+function renderDashboardMessage(data) {
+  const ev = document.createElement("div");
   ev.className = "event";
   ev.innerText = JSON.stringify(data);
-  document.getElementById("events").prepend(ev);
+  eventsEl.prepend(ev);
 
-  // device panel
   if (data.type === "DEVICE_CONNECTED") {
-    let d = document.createElement("div");
+    const d = document.createElement("div");
     d.className = "device";
-    d.innerText = "📱 " + data.payload;
-    document.getElementById("devices").appendChild(d);
+    d.innerText = "Device: " + String(data.payload ?? "");
+    devicesEl.appendChild(d);
   }
-};
+}
+
+if (!dashboardToken || !dashboardToken.trim()) {
+  statusEl.innerText = "Authentication cancelled — token required.";
+} else {
+  const ws = new WebSocket("ws://127.0.0.1:8000");
+
+  ws.onopen = () => {
+    statusEl.innerText = "Authenticating...";
+    ws.send(JSON.stringify({
+      type: "dashboard_connect",
+      token: dashboardToken,
+      last_offset: 0
+    }));
+  };
+
+  ws.onmessage = (msg) => {
+    let data;
+
+    try {
+      data = JSON.parse(msg.data);
+    } catch {
+      statusEl.innerText = "Invalid server response.";
+      return;
+    }
+
+    if (data.type === "dashboard_connect_response") {
+      if (data.success !== true) {
+        closingAfterAuthFailure = true;
+        statusEl.innerText = "Authentication failed: " +
+          String(data.error || "access denied");
+        pendingMessages = [];
+        ws.close();
+        return;
+      }
+
+      authenticated = true;
+      statusEl.innerText = "Authenticated";
+      pendingMessages.forEach(renderDashboardMessage);
+      pendingMessages = [];
+      return;
+    }
+
+    if (authenticated) {
+      renderDashboardMessage(data);
+    } else {
+      pendingMessages.push(data);
+    }
+  };
+
+  ws.onerror = () => {
+    statusEl.innerText = "WebSocket connection error.";
+  };
+
+  ws.onclose = () => {
+    authenticated = false;
+    if (!closingAfterAuthFailure) {
+      statusEl.innerText = "Disconnected.";
+    }
+  };
+}
 </script>
 
 </body>

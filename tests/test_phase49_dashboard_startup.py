@@ -27,7 +27,7 @@ def test_run_dashboard_uses_supplied_host_and_port(monkeypatch):
     monkeypatch.setattr(
         ws_server,
         "create_handler",
-        lambda bus: object(),
+        lambda bus, **kwargs: object(),
     )
     monkeypatch.setattr(ws_server.websockets, "serve", fake_serve)
 

@@ -15,6 +15,8 @@ async def main():
             runtime.bus,
             host=config["host"],
             port=config["port"],
+            database=config["database"],
+            device_registry=getattr(runtime, "device_registry", None),
         )
     )
 

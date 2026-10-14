@@ -13,7 +13,7 @@ def test_main_passes_runtime_to_dashboard(monkeypatch):
         async def run(self):
             return None
 
-    async def fake_dashboard(bus, host="0.0.0.0", port=8765):
+    async def fake_dashboard(bus, host="0.0.0.0", port=8765, **kwargs):
         captured["bus"] = bus
 
     monkeypatch.setattr(app_main, "BusRuntime", FakeRuntime)

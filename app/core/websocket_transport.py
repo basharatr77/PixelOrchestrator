@@ -1,4 +1,4 @@
-﻿import asyncio
+import asyncio
 import json
 import threading
 import uuid
@@ -10,7 +10,15 @@ from app.core.transport import Transport
 class WebSocketTransport(Transport):
     """Synchronous Transport facade over an async WebSocket connection."""
 
-    def __init__(self, uri, serial=None, mode=None, timeout=10):
+    def __init__(
+        self,
+        uri,
+        serial=None,
+        mode=None,
+        timeout=10,
+        agent_id=None,
+        agent_token=None,
+    ):
         if not isinstance(uri, str) or not uri.strip():
             raise ValueError("uri is required")
 
@@ -23,6 +31,15 @@ class WebSocketTransport(Transport):
             not isinstance(mode, str) or not mode.strip()
         ):
             raise ValueError("mode must be a non-empty string")
+        if agent_id is not None and (
+            not isinstance(agent_id, str) or not agent_id.strip()
+        ):
+            raise ValueError("agent_id must be a non-empty string")
+
+        if agent_token is not None and (
+            not isinstance(agent_token, str) or not agent_token.strip()
+        ):
+            raise ValueError("agent_token must be a non-empty string")
 
         self.uri = uri
         self.serial = serial
@@ -33,7 +50,8 @@ class WebSocketTransport(Transport):
         self._thread = None
         self._thread_ready = threading.Event()
         self._websocket = None
-        self._agent_id = str(uuid.uuid4())
+        self._agent_id = agent_id or str(uuid.uuid4())
+        self._agent_token = agent_token
         self._registered = False
         self._request_lock = threading.Lock()
 
@@ -100,6 +118,8 @@ class WebSocketTransport(Transport):
             "type": "agent_register",
             "agent_id": self._agent_id,
         }
+        if self._agent_token is not None:
+            request["token"] = self._agent_token
 
         try:
             await self._websocket.send(json.dumps(request))

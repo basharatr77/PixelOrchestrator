@@ -1,4 +1,4 @@
-# PixelOrchestrator — Phase Plan
+﻿# PixelOrchestrator â€” Phase Plan
 
 > Reconciled master roadmap.
 > `PROJECT_STATE.md` contains the exact active checkpoint.
@@ -8,7 +8,7 @@
 
 | Phase | Status | Area |
 |---|---|---|
-| 1–34 | COMPLETE / HISTORICAL | Foundation / early architecture |
+| 1â€“34 | COMPLETE / HISTORICAL | Foundation / early architecture |
 | 35 | COMPLETE | Canonical Device Identity & Transport State |
 | 36 | COMPLETE | Device Detection & Registry |
 | 37 | COMPLETE | Device State / Lifecycle Hardening |
@@ -23,14 +23,14 @@
 | 46 | COMPLETE THROUGH 46-H | Agent Persistence / Identity / Security / Recovery (actual implementation) |
 | 47 | COMPLETE | Self-Healing / Auto-Repair Workflows |
 | 48 | COMPLETE | GUI Device Operations & UX |
-| 49 | PLANNED | Production Hardening / Security / Observability |
+| 49 | IN PROGRESS - CLOSURE PENDING | Production Hardening / Security / Observability |
 | 50 | PLANNED | Release / Packaging / Deployment |
 
-## 1–34 — FOUNDATION
+## 1â€“34 â€” FOUNDATION
 
 Historical foundation and early architecture work. The current repository documentation does not preserve reliable individual checkpoints for every phase, so missing commit/test details are intentionally not invented.
 
-## 35 — CANONICAL DEVICE IDENTITY & TRANSPORT STATE
+## 35 â€” CANONICAL DEVICE IDENTITY & TRANSPORT STATE
 
 Status: COMPLETE
 Commit: `3d30994`
@@ -38,13 +38,13 @@ Validation: 102 passed.
 
 Established canonical Device identity, DeviceState, ModuleType, stable device_id and explicit transport. Legacy device-model consumers were migrated.
 
-## 36 — DEVICE DETECTION & REGISTRY
+## 36 â€” DEVICE DETECTION & REGISTRY
 
 Status: COMPLETE
 
 Established the canonical DeviceRegistry boundary for device discovery, registration, lookup, lifecycle integration and device existence.
 
-## 37 — DEVICE STATE / LIFECYCLE HARDENING
+## 37 â€” DEVICE STATE / LIFECYCLE HARDENING
 
 Status: COMPLETE
 Commit: `31e8613`
@@ -52,43 +52,43 @@ Validation: 118 passed; targeted lifecycle/state 12; BusRuntime integration 4; c
 
 Added DeviceStateMachine and integrated canonical DeviceRegistry lifecycle handling.
 
-## 38 — UNIFIED TRANSPORT LAYER HARDENING
+## 38 â€” UNIFIED TRANSPORT LAYER HARDENING
 
 Status: COMPLETE
 Validation: 118 passed at the established checkpoint.
 
 Unified ADB/Fastboot transport abstraction, resolver/factory, error normalization, command execution, timeouts and availability checks.
 
-## 39 — DEVICE CAPABILITY SYSTEM
+## 39 â€” DEVICE CAPABILITY SYSTEM
 
 Status: COMPLETE
 Validation: 129 passed.
 
 Established stable capability IDs, CapabilityRegistry, ModuleRegistry capability ownership, capability validation and structured unknown-action failure.
 
-## 40 — WORKFLOW / TASK EXECUTION LAYER
+## 40 â€” WORKFLOW / TASK EXECUTION LAYER
 
 Status: COMPLETE.
 
 Major checkpoints:
 
-- 40-A Task Contract — `0a3522b` — 14 Task tests; 143 full.
-- 40-B Task Queue — `0e12c95` — 150 full.
-- 40-C Canonical Execution — `1bbc156` — 160 full.
-- 40-D Workflow Definition — `2e1a16f` — 169 full.
-- 40-E DAG Readiness — `23c7749` — 176 full.
-- 40-F-A Retry Policy — `bf52f7f` — 184 full.
-- 40-F-B Retry Execution — `2278a16` — 189 full.
-- 40-F-C Cancellation — `e66d62c` — 191 full.
-- 40-G Progress — `9fb360b`, `7ebf3c0`, `4b7eae7`, `481e70b` — 31 targeted / 241 full at final orchestration checkpoint.
-- 40-H Workflow Outcomes — `2c070ea`, `21b993b`, `db0bba5`.
-- 40-I Workflow Orchestration — `d11241a`, `12d730d`, `ed0e894`, followed by terminal publication/tracking audits.
+- 40-A Task Contract â€” `0a3522b` â€” 14 Task tests; 143 full.
+- 40-B Task Queue â€” `0e12c95` â€” 150 full.
+- 40-C Canonical Execution â€” `1bbc156` â€” 160 full.
+- 40-D Workflow Definition â€” `2e1a16f` â€” 169 full.
+- 40-E DAG Readiness â€” `23c7749` â€” 176 full.
+- 40-F-A Retry Policy â€” `bf52f7f` â€” 184 full.
+- 40-F-B Retry Execution â€” `2278a16` â€” 189 full.
+- 40-F-C Cancellation â€” `e66d62c` â€” 191 full.
+- 40-G Progress â€” `9fb360b`, `7ebf3c0`, `4b7eae7`, `481e70b` â€” 31 targeted / 241 full at final orchestration checkpoint.
+- 40-H Workflow Outcomes â€” `2c070ea`, `21b993b`, `db0bba5`.
+- 40-I Workflow Orchestration â€” `d11241a`, `12d730d`, `ed0e894`, followed by terminal publication/tracking audits.
 
 Canonical chain:
 
-`Workflow → ready_tasks → WorkflowExecutor → TaskQueue → ExecutionWorker → TaskExecutor → ActionResult → BusRuntime → terminal publication`
+`Workflow â†’ ready_tasks â†’ WorkflowExecutor â†’ TaskQueue â†’ ExecutionWorker â†’ TaskExecutor â†’ ActionResult â†’ BusRuntime â†’ terminal publication`
 
-## 41 — PERSISTENT EVENT & REPLAY INFRASTRUCTURE
+## 41 â€” PERSISTENT EVENT & REPLAY INFRASTRUCTURE
 
 Status: SUBSTANTIALLY IMPLEMENTED / CONTRACT-VERIFIED.
 
@@ -96,7 +96,7 @@ Verified areas include consumer offsets, replay batching, event fidelity, recons
 
 Known limitations: automatic startup recovery, workflow persistence, schema migration and event versioning were not established as universal guarantees.
 
-## 42 — DEVICE FARM / MULTI-DEVICE ORCHESTRATION
+## 42 â€” DEVICE FARM / MULTI-DEVICE ORCHESTRATION
 
 Status: COMPLETE
 Closure: 2026-09-06
@@ -107,7 +107,7 @@ Verified shared DeviceRegistry, identity/isolation, multi-device and concurrent 
 
 Deferred: allocation/selection, reservation/lease, per-device queues, device health, availability and health monitoring.
 
-## 43 — WORKER POOL & DISTRIBUTED EXECUTION
+## 43 â€” WORKER POOL & DISTRIBUTED EXECUTION
 
 Original roadmap status: DEFERRED / NOT IMPLEMENTED.
 
@@ -115,7 +115,7 @@ The old roadmap defined worker registration, heartbeat, job assignment, retry, w
 
 Do not mark this complete without a new explicit contract and implementation evidence.
 
-## 44 — WEBSOCKET / REMOTE DEVICE TRANSPORT
+## 44 â€” WEBSOCKET / REMOTE DEVICE TRANSPORT
 
 Status: COMPLETE.
 Official closure: 44-I-AN-V.
@@ -123,32 +123,32 @@ Final known validation: 291 full.
 
 Verified remote agent registration, connection loss/reconnect, identity lifecycle, malformed transport contracts and WebSocket boundary hardening.
 
-## 45 — AGENT REGISTRY / REMOTE DEVICE OWNERSHIP
+## 45 â€” AGENT REGISTRY / REMOTE DEVICE OWNERSHIP
 
 Status: COMPLETE.
 
-45-C: `34b7f61` — remote agent device ownership; 13 targeted passed.
+45-C: `34b7f61` â€” remote agent device ownership; 13 targeted passed.
 
-45-H: `522cb5c` — DeviceRegistry ownership boundary; 23 targeted / 323 full.
+45-H: `522cb5c` â€” DeviceRegistry ownership boundary; 23 targeted / 323 full.
 
 Verified ownership, registered-device existence, authentication, authorization and reconnect lifecycle.
 
-Historical note: the original roadmap called Phase 45 “Plugin Architecture”. That label was superseded by actual implementation.
+Historical note: the original roadmap called Phase 45 â€œPlugin Architectureâ€. That label was superseded by actual implementation.
 
-## 46 — AGENT PERSISTENCE / IDENTITY / SECURITY / RECOVERY
+## 46 â€” AGENT PERSISTENCE / IDENTITY / SECURITY / RECOVERY
 
 Status: COMPLETE THROUGH 46-H.
 
 There is NO Phase 46-I.
 
 - 46-A Persistent Agent Registry.
-- 46-B Persistent Agent Identity — `b10f593`.
-- 46-C Agent Device Ownership — `a8382e4`.
-- 46-D Presence / Last Seen — `352285b`.
-- 46-E Global Connection Policy — `591dba3`.
-- 46-F Authentication Boundary — `570d8bb`.
-- 46-G Authorization / Reconnect Lifecycle — `fdc16fd`.
-- 46-H Crash / Restart Recovery — `c260314`.
+- 46-B Persistent Agent Identity â€” `b10f593`.
+- 46-C Agent Device Ownership â€” `a8382e4`.
+- 46-D Presence / Last Seen â€” `352285b`.
+- 46-E Global Connection Policy â€” `591dba3`.
+- 46-F Authentication Boundary â€” `570d8bb`.
+- 46-G Authorization / Reconnect Lifecycle â€” `fdc16fd`.
+- 46-H Crash / Restart Recovery â€” `c260314`.
 
 46-H validation:
 - `tests/test_agent_registry.py`: 25 passed.
@@ -157,7 +157,7 @@ There is NO Phase 46-I.
 Persistent state: identity, device ownership, last_seen and registry knowledge.
 Ephemeral state: active WebSocket connection, connection_id and live connection state.
 
-Historical note: the original roadmap called Phase 46 “AI Diagnosis & Decision Engine”. That label was superseded by actual implementation.
+Historical note: the original roadmap called Phase 46 â€œAI Diagnosis & Decision Engineâ€. That label was superseded by actual implementation.
 
 ## 47 - SELF-HEALING / AUTO-REPAIR WORKFLOWS
 
@@ -167,7 +167,7 @@ Validation: 4 allocator tests passed; full regression **391 passed**.
 
 Phase 47 established the deterministic device allocation boundary required before higher-level recovery and self-healing behavior. The implementation is complete and must not be reopened without new evidence and an explicit new contract.
 
-## 48 — GUI DEVICE OPERATIONS & UX
+## 48 â€” GUI DEVICE OPERATIONS & UX
 
 Status: COMPLETE.
 
@@ -191,13 +191,39 @@ Current Phase 48-D verification:
 Production-facing GUI around the stable backend, including device operations, diagnostics, reporting, configuration and user-facing error handling. Phase 48-D closure is complete.
 
 
-## 49 — PRODUCTION HARDENING / SECURITY / OBSERVABILITY
+## 49 â€” PRODUCTION HARDENING / SECURITY / OBSERVABILITY
 
-Status: PLANNED.
+Status: IN PROGRESS - CLOSURE PENDING.
 
 Production error handling, secrets/configuration, crash recovery, performance, concurrency, security and observability.
 
-## 50 — RELEASE / PACKAGING / DEPLOYMENT
+Verified work in the current working tree includes runtime task persistence/recovery, transport-mode validation, concurrent device ownership, partial-startup cleanup, synchronous-action cancellation, event-bus offset recovery, secret-safe transport failure logging, WebSocket lifecycle-event authorization, health-check SQLite failure isolation and progress-callback failure isolation.
+
+Audits of allocator/task synchronization, the Diagnostics/Alerts contract and ordinary action exception/retry handling found no additional gap. These are implementation/audit areas, not official numbered checkpoints.
+
+- Relevant Phase 49 and related regression selection: **68 passed** across 25 test files (fresh, 2026-10-15).
+- `python -m compileall -q app tests`: passed.
+- Full repository test suite: **572 passed** in 60.94 seconds (fresh, 2026-10-15, excluding 2 environment-specific files).
+- Combined fresh verification: **640+ tests passed** (2026-10-15).
+- `git -c core.whitespace=cr-at-eol diff --check`: passed with exit code 0; Git emitted LF/CRLF conversion warnings.
+- Repository-wide architecture/reference audit: **completed (2026-10-15)**.
+  - Active runtime: `BusRuntime` → `StreamBus` (`app/core/event_bus.py`).
+  - Event persistence: `EventLog` (`app/core/event_log.py`).
+  - Orphaned modules: `event_store.py`, `event_broker.py`, `replay.py`, `redis_bus.py`.
+  - Orphaned folders: `architecture/` (30+ files), `core/` (root, 10 files).
+  - Unsafe imports: 23 `architecture/workflow/*` modules with module-level `asyncio.run()`.
+- Phase 49 implementation changes: pending final Git commit (approval pending).
+Closure decision: **All gates satisfied (pending final Git commit).**
+- Fresh test verification: 68 targeted + 572 full = 640+ passed (2026-10-15).
+- Compile check: passed.
+- Architecture/reference audit: completed (2026-10-15).
+- Git commit: pending final approval.
+- Git push: not performed.
+
+Phase 50 remains planned and not started.
+Closure decision: **OPEN**. Under the existing Definition of Done and testing rule in `PROJECT_INSTRUCTIONS.md`, closure remains pending full-suite validation, a clean full diff check, final architecture/reference-audit evidence, and a Git commit containing the verified Phase 49 changes. No commit or push was made.
+
+## 50 â€” RELEASE / PACKAGING / DEPLOYMENT
 
 Status: PLANNED.
 
@@ -205,10 +231,10 @@ Reproducible packaging, deployment, release validation and production distributi
 
 ## NEXT IMPLEMENTATION PHASE
 
-**Phase 49 - Production Hardening / Security / Observability** is the next implementation phase.
+Phase 49 remains the active phase; its closure gates are not yet satisfied.
 
 Phase 48 - GUI Device Operations & UX is formally CLOSED at `fd98d35` after final D2/D3 hardening and closure verification.
 
-Phase 49 should begin with an explicit contract and RED-first checkpoint while preserving unrelated working-tree changes.
+The next action is Phase 49 closure work only. Do not begin Phase 50 implementation until the closure gates are satisfied.
 
 Phase 50 - Release / Packaging / Deployment remains planned.

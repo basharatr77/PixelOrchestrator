@@ -36,7 +36,7 @@ class MainWindow(QMainWindow):
         self.device_brand = QLabel("Brand: Unknown")
         self.device_android_version = QLabel("Android: Unknown")
         self.device_build_id = QLabel("Build: Unknown")
-        self.device_security_patch = QLabel("??? Security Patch: Unknown")
+        self.device_security_patch = QLabel("Security Patch: Unknown")
         self.device_selector = QComboBox()
         self.device_selector.currentIndexChanged.connect(self._on_device_selected)
         self._populate_device_selector()
@@ -567,7 +567,7 @@ class MainWindow(QMainWindow):
             self.device_brand.setText("Brand: Unknown")
             self.device_android_version.setText("Android: Unknown")
             self.device_build_id.setText("Build: Unknown")
-            self.device_security_patch.setText("??? Security Patch: Unknown")
+            self.device_security_patch.setText("Security Patch: Unknown")
             return
 
         device = self.device_registry.get(self.selected_device_id)
@@ -581,7 +581,7 @@ class MainWindow(QMainWindow):
             self.device_brand.setText("Brand: Unknown")
             self.device_android_version.setText("Android: Unknown")
             self.device_build_id.setText("Build: Unknown")
-            self.device_security_patch.setText("??? Security Patch: Unknown")
+            self.device_security_patch.setText("Security Patch: Unknown")
             return
 
         model = getattr(device, "model", None) or "Unknown"
@@ -610,7 +610,7 @@ class MainWindow(QMainWindow):
         build_id = properties.get("build_id") or "Unknown"
         self.device_build_id.setText(f"Build: {build_id}")
         security_patch = properties.get("security_patch") or "Unknown"
-        self.device_security_patch.setText(f"??? Security Patch: {security_patch}")
+        self.device_security_patch.setText(f"Security Patch: {security_patch}")
 
     def refresh_device_selector(self):
         self._populate_device_selector()
@@ -619,6 +619,7 @@ class MainWindow(QMainWindow):
     def execute_module_action(self, module_id, action_id):
         """Execute a dynamically rendered module action."""
         validation_detail = None
+        dangerous_action_confirmed = False
         try:
             module = self.module_adapter.registry.get(module_id)
 
@@ -655,7 +656,7 @@ class MainWindow(QMainWindow):
 
                 if confirmation != QMessageBox.StandardButton.Yes:
                     return
-
+                dangerous_action_confirmed = True
             device = None
             if getattr(action, "requires_device", False):
                 if self.device_registry is None:
@@ -682,10 +683,22 @@ class MainWindow(QMainWindow):
                         )
                         raise ValueError(validation_detail)
 
+            approval_token = None
+            if dangerous_action_confirmed:
+                approval_token = self.module_adapter.approve_dangerous_action(
+                    module_id,
+                    action_id,
+                    device=device,
+                )
+
+            execute_kwargs = {"device": device}
+            if approval_token is not None:
+                execute_kwargs["approval_token"] = approval_token
+
             result = self.module_adapter.execute_action(
                 module_id,
                 action_id,
-                device=device,
+                **execute_kwargs,
             )
 
             result_message = getattr(result, "message", None) or str(result)
@@ -890,6 +903,7 @@ class MainWindow(QMainWindow):
     def open_health_center(self):
         """Show the Health Center workspace."""
         from app.health_check import run_health_check
+        from app.core.device_report import build_device_report
 
         system_health = self.health_workspace.findChild(
             QLabel,
@@ -899,6 +913,58 @@ class MainWindow(QMainWindow):
             system_health.setProperty(
                 "health_result",
                 run_health_check(),
+            )
+
+        device_health = self.health_workspace.findChild(
+            QLabel,
+            "device_health",
+        )
+        if device_health is not None:
+            device_reports = []
+            if self.device_registry is not None:
+                for device in self.device_registry.snapshot().values():
+                    try:
+                        device_reports.append(build_device_report(device))
+                    except Exception as exc:
+                        device_reports.append(
+                            {
+                                "device_id": getattr(device, "device_id", None),
+                                "error": f"{type(exc).__name__}: {exc}",
+                            }
+                        )
+
+            device_health.setProperty(
+                "health_result",
+                device_reports,
+            )
+
+        connection_health = self.health_workspace.findChild(
+            QLabel,
+            "connection_health",
+        )
+        if connection_health is not None:
+            connection_reports = []
+            if self.device_registry is not None:
+                for device in self.device_registry.snapshot().values():
+                    try:
+                        connection_reports.append(
+                            {
+                                "device_id": device.device_id,
+                                "serial": device.serial,
+                                "transport": device.transport,
+                                "state": device.state.value,
+                            }
+                        )
+                    except Exception as exc:
+                        connection_reports.append(
+                            {
+                                "device_id": getattr(device, "device_id", None),
+                                "error": f"{type(exc).__name__}: {exc}",
+                            }
+                        )
+            connection_health.setProperty(
+                "health_result",
+                connection_reports,
             )
 
         self._show_workspace("health")

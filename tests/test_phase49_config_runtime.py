@@ -18,7 +18,7 @@ def test_main_uses_configured_dashboard_host_and_port(monkeypatch):
         async def run(self):
             await asyncio.Future()
 
-    async def fake_dashboard(bus, host="0.0.0.0", port=8765):
+    async def fake_dashboard(bus, host="0.0.0.0", port=8765, **kwargs):
         captured["host"] = host
         captured["port"] = port
         raise RuntimeError("stop")
@@ -68,7 +68,7 @@ def test_main_uses_configured_database(monkeypatch):
         async def run(self):
             await asyncio.Future()
 
-    async def fake_dashboard(bus, host="0.0.0.0", port=8765):
+    async def fake_dashboard(bus, host="0.0.0.0", port=8765, **kwargs):
         raise RuntimeError("stop")
 
     monkeypatch.setattr(main, "BusRuntime", FakeRuntime)

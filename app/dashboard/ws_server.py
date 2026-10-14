@@ -1,5 +1,7 @@
 import asyncio
+import hmac
 import json
+import os
 
 import websockets
 
@@ -7,6 +9,10 @@ from app.logger import logger
 
 from app.core.adb_transport import ADBTransport
 from app.core.agent_registry import Agent, AgentRegistry
+from app.core.agent_authenticator import ConfiguredAgentAuthenticator
+from app.core.agent_device_ownership import AgentDeviceOwnership
+from app.core.agent_ownership_repository import AgentOwnershipRepository
+from app.core.agent_repository import AgentRepository
 from app.core.broadcaster import broadcaster
 from app.core.event_log import EventLog
 from app.core.events import Event
@@ -14,6 +20,7 @@ from app.core.fastboot_transport import FastbootTransport
 
 
 DASHBOARD_GROUP = "dashboard"
+DASHBOARD_TOKEN_ENV = "PIXEL_ORCHESTRATOR_DASHBOARD_TOKEN"
 
 DASHBOARD_EVENT_TYPES = (
     "DEVICE_CONNECTED",
@@ -45,7 +52,7 @@ def _event_to_dict(event, offset=None):
 
 def push_to_ws(event, offset, group_id):
     asyncio.create_task(
-        broadcaster.broadcast(
+        broadcaster.broadcast_dashboard(
             _event_to_dict(event, offset)
         )
     )
@@ -235,7 +242,7 @@ async def handle_transport_request(ws, data, device_registry=None, ownership=Non
     await ws.send(json.dumps(response))
 
 
-def create_handler(bus, agent_registry=None, device_registry=None, ownership=None, authenticator=None):
+def create_handler(bus, agent_registry=None, device_registry=None, ownership=None, authenticator=None, dashboard_token=None):
     if agent_registry is None:
         agent_registry = AgentRegistry()
     async def handler(ws):
@@ -356,15 +363,78 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                     continue
 
                 if data.get("type") == "dashboard_connect":
-                    last_offset = int(
-                        data.get("last_offset", 0)
-                    )
+                    supplied_token = data.get("token")
 
-                    await replay_dashboard(
-                        ws,
-                        last_offset,
-                    )
+                    if (
+                        not isinstance(dashboard_token, str)
+                        or not dashboard_token
+                        or not isinstance(supplied_token, str)
+                        or not hmac.compare_digest(
+                            supplied_token,
+                            dashboard_token,
+                        )
+                    ):
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "dashboard_connect_response",
+                                    "success": False,
+                                    "error": "dashboard authentication failed",
+                                }
+                            )
+                        )
+                        continue
 
+                    try:
+                        last_offset = data.get("last_offset", 0)
+
+                        if isinstance(last_offset, bool):
+                            raise ValueError
+
+                        last_offset = int(last_offset)
+
+                        if last_offset < 0:
+                            raise ValueError
+
+                    except (TypeError, ValueError, OverflowError):
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "dashboard_connect_response",
+                                    "success": False,
+                                    "error": "invalid last_offset",
+                                }
+                            )
+                        )
+                        continue
+
+                    await broadcaster.register_dashboard(ws)
+
+                    try:
+                        await replay_dashboard(ws, last_offset)
+                    except Exception:
+                        await broadcaster.unregister_dashboard(ws)
+                        logger.exception("Dashboard event replay failed")
+
+                        await ws.send(
+                            json.dumps(
+                                {
+                                    "type": "dashboard_connect_response",
+                                    "success": False,
+                                    "error": "dashboard replay failed",
+                                }
+                            )
+                        )
+                        continue
+
+                    await ws.send(
+                        json.dumps(
+                            {
+                                "type": "dashboard_connect_response",
+                                "success": True,
+                            }
+                        )
+                    )
                     continue
 
                 if data.get("type") == "transport_request":
@@ -413,6 +483,16 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                 event_type = data.get("type")
 
                 if not isinstance(event_type, str) or not event_type:
+                    continue
+
+                if event_type not in AGENT_LIFECYCLE_EVENT_TYPES:
+                    logger.warning(
+                        "Unsupported inbound WebSocket event rejected",
+                        extra={
+                            "event": "inbound_event_rejected",
+                            "event_type": event_type,
+                        },
+                    )
                     continue
 
                 if event_type in AGENT_LIFECYCLE_EVENT_TYPES:
@@ -482,15 +562,44 @@ def create_handler(bus, agent_registry=None, device_registry=None, ownership=Non
                     )
                 except KeyError:
                     pass
+            await broadcaster.unregister_dashboard(ws)
             await broadcaster.unregister(ws)
 
     return handler
 
 
-async def run_dashboard(bus, host="0.0.0.0", port=8765):
+async def run_dashboard(
+    bus,
+    host="0.0.0.0",
+    port=8765,
+    database=None,
+    device_registry=None,
+):
     subscribe_dashboard(bus)
 
-    handler = create_handler(bus)
+    # A configured database restores only previously authorized agent IDs.
+    if database is not None:
+        agent_repository = AgentRepository(database)
+        agent_registry = AgentRegistry(repository=agent_repository)
+
+        ownership_repository = AgentOwnershipRepository(database)
+        ownership = AgentDeviceOwnership(repository=ownership_repository)
+    else:
+        # Keep direct/no-database startup fail-closed for device ownership.
+        agent_registry = AgentRegistry()
+        ownership = AgentDeviceOwnership()
+
+    # Malformed token configuration must prevent dashboard startup.
+    authenticator = ConfiguredAgentAuthenticator.from_environment()
+
+    handler = create_handler(
+        bus,
+        agent_registry=agent_registry,
+        device_registry=device_registry,
+        ownership=ownership,
+        authenticator=authenticator,
+        dashboard_token=os.environ.get(DASHBOARD_TOKEN_ENV),
+    )
 
     print(f"?? Dashboard WebSocket Server :{port}")
 

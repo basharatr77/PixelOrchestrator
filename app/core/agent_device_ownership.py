@@ -34,10 +34,10 @@ class AgentDeviceOwnership:
             if device_id in self._ownership.get(agent_id, set()):
                 return
 
-            self._ownership.setdefault(agent_id, set()).add(device_id)
-
             if self._repository is not None:
                 self._repository.save(agent_id, device_id)
+
+            self._ownership.setdefault(agent_id, set()).add(device_id)
 
     def owns(self, agent_id: str, device_id: str) -> bool:
         with self._lock:
@@ -50,13 +50,13 @@ class AgentDeviceOwnership:
             if device_ids is None or device_id not in device_ids:
                 return False
 
+            if self._repository is not None:
+                self._repository.delete(agent_id, device_id)
+
             device_ids.remove(device_id)
 
             if not device_ids:
                 del self._ownership[agent_id]
-
-            if self._repository is not None:
-                self._repository.delete(agent_id, device_id)
 
             return True
 

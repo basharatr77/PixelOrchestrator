@@ -15,3 +15,31 @@ events.jsonl
 .pytest_cache/
 .pytest-tmp/
 pytest-*.txt
+
+# pytest temp (underscore version)
+.pytest_tmp/
+
+# backup files
+*.bak
+*.backup
+*.before-*
+*_backup
+*_RECONCILED.md
+
+# test output files
+pdf-test-output.txt
+adb_REPORTTEST_report.json
+gui_run_error.txt
+
+# audit/report files (temporary)
+*-diff.txt
+*-diff.patch
+*-analysis.txt
+*_report.json
+
+# archive/package files
+PIXELORCHESTRATOR_MASTER_PACKAGE.zip
+PIXELORCHESTRATOR_MASTER_PACKAGE/
+
+# backup folder
+backups/
